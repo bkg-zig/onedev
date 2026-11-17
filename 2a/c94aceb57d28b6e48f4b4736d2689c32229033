@@ -1,0 +1,45 @@
+crates/onedev-core/src/events/mod.rs
+  s_529267afb46f04::t_3e8a4c574cf0be 285
+  s_529267afb46f04::t_bd379fd49a85b5 272
+  s_529267afb46f04::t_708fd3f66fbfc9 328
+  s_529267afb46f04::t_36d45dd35326ea 275
+  s_529267afb46f04::t_966025e1684d9c 274
+  s_529267afb46f04::t_9bce550f06a769 286
+  s_529267afb46f04::t_7087b1d612993b 281
+  s_529267afb46f04::t_48d341b816da2a 167-173
+  s_529267afb46f04::t_1791b2c40c690d 283
+  s_529267afb46f04::t_39358ccdf8a649 7,11
+  s_529267afb46f04::t_49d4f739f87915 282
+  s_529267afb46f04::t_abd08ce4f24715 287
+  s_529267afb46f04::t_f3a4b8e490eb26 342-351
+  s_529267afb46f04::t_922a717fd2f781 74
+  s_529267afb46f04::t_0f4596d2811c4b 271
+  s_529267afb46f04::t_0690d641d3f0f7 33
+  s_529267afb46f04::t_39d4ecd035ed6d 175,177-180,185,190-191
+  s_529267afb46f04::t_76e69f3292ac2f 288
+  s_529267afb46f04::t_9492843ce37904 279
+  s_529267afb46f04::t_290cf9497dfad2 273
+  s_529267afb46f04::t_6300fe1e019bda 358
+  s_529267afb46f04::t_69d19100c10b34 277
+  s_529267afb46f04::t_1ddfb070fa78fb 278
+crates/onedev-core/src/permissions/mod.rs
+  s_529267afb46f04::t_5b80ec84dfeff5 366-368
+  s_529267afb46f04::t_c6a3de404292b7 384-385
+  s_529267afb46f04::t_00daaf99c31c57 345
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "2ac94aceb57d28b6e48f4b4736d2689c32229033",
+  "prompts": {},
+  "sessions": {
+    "s_529267afb46f04": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "934bb580-5ad8-4123-80f4-d8e72c4207b5",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}
