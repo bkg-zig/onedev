@@ -1,0 +1,68 @@
+crates/onedev-git/src/models.rs
+  s_7bcb4e2163f7ab::t_554f2edfeb4504 1-426
+crates/onedev-git/src/services/hooks.rs
+  s_7bcb4e2163f7ab::t_d9d82ddbf47c53 1-114,120,122,124-347
+  s_7bcb4e2163f7ab::t_5cb6436d775d86 115-119,121,123
+docs/roadmap.md
+  s_d5586d7a68bcfa::t_a45d68e754ca19 4
+crates/onedev-git/src/services/lfs.rs
+  s_7bcb4e2163f7ab::t_7fad3163acde8f 1-313
+crates/onedev-git/src/errors.rs
+  s_7bcb4e2163f7ab::t_62ce17583a320f 1-77
+crates/onedev-git/src/utils.rs
+  s_7bcb4e2163f7ab::t_7069ee40c22ab2 1-2,4,6-7,9-216,266-315
+  s_7bcb4e2163f7ab::t_5e88a70c723312 3,5,8
+  s_7bcb4e2163f7ab::t_df766313508031 217-240,249-265
+  s_7bcb4e2163f7ab::t_c9bde82085d6cd 241-243,246-248
+.gitignore
+  s_64a03048fa7c50::t_3915492cdaa84e 32-38
+crates/onedev-api/src/handlers/git_handlers.rs
+  s_7bcb4e2163f7ab::t_9972b771aca8f3 4,7,31-35,74,87
+crates/onedev-api/src/handlers/lfs_handlers.rs
+  s_7bcb4e2163f7ab::t_5cd5ca3af0bae8 4,31-35,125
+crates/onedev-api/src/handlers/user_handlers.rs
+  s_7bcb4e2163f7ab::t_986bfd32bdf808 8
+crates/onedev-api/src/openapi/mod.rs
+  s_7bcb4e2163f7ab::t_953cf36305322a 3,6-7,19,28-109,112,128,131,133-134,138-167,171-174,176-181
+crates/onedev-api/src/utils/middleware.rs
+  s_7bcb4e2163f7ab::t_7d263fde0d4a51 26-29,39,41
+crates/onedev-git/src/services/repository.rs
+  s_64a03048fa7c50::t_57a4759a8fb65b 1-315
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "64081a002726631e18af354518675c2a742bca3f",
+  "prompts": {},
+  "humans": {
+    "h_76ea00ebfa3ec3": {
+      "author": "bkg <bkg@skill.eysho.info>"
+    }
+  },
+  "sessions": {
+    "s_64a03048fa7c50": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e1433b246ffeU8sEB65yRzI4d1",
+        "model": "iceman-free"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    },
+    "s_7bcb4e2163f7ab": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e1440249dffehMCes2BbRKo9u4",
+        "model": "big-pickle"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    },
+    "s_d5586d7a68bcfa": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b409c9b0-10b4-462f-94ea-930ed609c870",
+        "model": "meta/muse-glimmer-30b"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}
