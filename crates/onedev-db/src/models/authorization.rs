@@ -1,90 +1,124 @@
-//! Authorization Database Model
+//! Authorization Database Models — Vanilla authorization entities.
+//!
+//! Every authorization references a free-form role by id (`role_id`);
+//! there are no fixed project roles. Entities: `UserAuthorization`,
+//! `GroupAuthorization`, `BaseAuthorization`, `AccessTokenAuthorization`,
+//! `LinkAuthorization`, `IssueAuthorization` (issue + user only).
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use sqlx::{FromRow, Row};
+use sqlx::FromRow;
 use uuid::Uuid;
 
-/// User authorization row from database
+/// User authorization row (user + project + role)
 #[derive(Debug, Clone, FromRow, Serialize, Deserialize)]
 pub struct DbUserAuthorization {
     pub id: i64,
     pub uuid: Uuid,
     pub user_id: i64,
     pub project_id: i64,
-    pub role: DbProjectRole,
+    pub role_id: i64,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
 
-/// Project role
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
-#[sqlx(type_name = "project_role", rename_all = "lowercase")]
-pub enum DbProjectRole {
-    Guest,
-    Reporter,
-    Developer,
-    Maintainer,
-    Owner,
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DbCreateUserAuthorization {
+    pub user_id: i64,
+    pub project_id: i64,
+    pub role_id: i64,
 }
 
-// onedev-core has no ProjectRole; project access uses the same levels as groups.
-impl From<DbProjectRole> for onedev_core::models::group::AccessLevel {
-    fn from(r: DbProjectRole) -> Self {
-        match r {
-            DbProjectRole::Guest => Self::Guest,
-            DbProjectRole::Reporter => Self::Reporter,
-            DbProjectRole::Developer => Self::Developer,
-            DbProjectRole::Maintainer => Self::Maintainer,
-            DbProjectRole::Owner => Self::Owner,
-        }
-    }
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct DbUpdateUserAuthorization {
+    pub role_id: Option<i64>,
 }
 
-impl From<onedev_core::models::group::AccessLevel> for DbProjectRole {
-    fn from(r: onedev_core::models::group::AccessLevel) -> Self {
-        match r {
-            onedev_core::models::group::AccessLevel::Guest => Self::Guest,
-            onedev_core::models::group::AccessLevel::Reporter => Self::Reporter,
-            onedev_core::models::group::AccessLevel::Developer => Self::Developer,
-            onedev_core::models::group::AccessLevel::Maintainer => Self::Maintainer,
-            onedev_core::models::group::AccessLevel::Owner => Self::Owner,
-        }
-    }
+/// Group authorization row (group + project + role)
+#[derive(Debug, Clone, FromRow, Serialize, Deserialize)]
+pub struct DbGroupAuthorization {
+    pub id: i64,
+    pub uuid: Uuid,
+    pub group_id: i64,
+    pub project_id: i64,
+    pub role_id: i64,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
 }
 
-/// Issue authorization row from database
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DbCreateGroupAuthorization {
+    pub group_id: i64,
+    pub project_id: i64,
+    pub role_id: i64,
+}
+
+/// Base authorization row (project + role, applies to everyone)
+#[derive(Debug, Clone, FromRow, Serialize, Deserialize)]
+pub struct DbBaseAuthorization {
+    pub id: i64,
+    pub uuid: Uuid,
+    pub project_id: i64,
+    pub role_id: i64,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DbCreateBaseAuthorization {
+    pub project_id: i64,
+    pub role_id: i64,
+}
+
+/// Access-token authorization row (project + token + role)
+#[derive(Debug, Clone, FromRow, Serialize, Deserialize)]
+pub struct DbAccessTokenAuthorization {
+    pub id: i64,
+    pub uuid: Uuid,
+    pub project_id: i64,
+    pub access_token_id: i64,
+    pub role_id: i64,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DbCreateAccessTokenAuthorization {
+    pub project_id: i64,
+    pub access_token_id: i64,
+    pub role_id: i64,
+}
+
+/// Link authorization row (link name + role)
+#[derive(Debug, Clone, FromRow, Serialize, Deserialize)]
+pub struct DbLinkAuthorization {
+    pub id: i64,
+    pub uuid: Uuid,
+    pub link_name: String,
+    pub role_id: i64,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DbCreateLinkAuthorization {
+    pub link_name: String,
+    pub role_id: i64,
+}
+
+/// Issue authorization row (issue + user, no permission level in vanilla)
 #[derive(Debug, Clone, FromRow, Serialize, Deserialize)]
 pub struct DbIssueAuthorization {
     pub id: i64,
     pub uuid: Uuid,
     pub user_id: i64,
     pub issue_id: i64,
-    pub permission: DbIssuePermission,
     pub created_at: DateTime<Utc>,
 }
 
-/// Issue permission
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
-#[sqlx(type_name = "issue_permission", rename_all = "lowercase")]
-pub enum DbIssuePermission {
-    View,
-    Edit,
-    Admin,
-}
-
-/// User authorization creation input for database
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct DbCreateUserAuthorization {
+pub struct DbCreateIssueAuthorization {
     pub user_id: i64,
-    pub project_id: i64,
-    pub role: DbProjectRole,
-}
-
-/// User authorization update input for database
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub struct DbUpdateUserAuthorization {
-    pub role: Option<DbProjectRole>,
+    pub issue_id: i64,
 }
 
 /// Database query builder for user authorizations
@@ -92,45 +126,28 @@ pub struct UserAuthorizationQueryBuilder;
 
 impl UserAuthorizationQueryBuilder {
     pub fn select_all() -> &'static str {
-        r#"
-        SELECT id, uuid, user_id, project_id, role, created_at, updated_at
-        FROM user_authorizations
-        "#
+        "SELECT id, uuid, user_id, project_id, role_id, created_at, updated_at FROM user_authorizations"
     }
 
     pub fn select_by_id() -> &'static str {
-        r#"
-        SELECT id, uuid, user_id, project_id, role, created_at, updated_at
-        FROM user_authorizations WHERE id = $1
-        "#
+        "SELECT id, uuid, user_id, project_id, role_id, created_at, updated_at FROM user_authorizations WHERE id = $1"
     }
 
     pub fn select_by_user_id() -> &'static str {
-        r#"
-        SELECT id, uuid, user_id, project_id, role, created_at, updated_at
-        FROM user_authorizations WHERE user_id = $1
-        ORDER BY project_id
-        "#
+        "SELECT id, uuid, user_id, project_id, role_id, created_at, updated_at FROM user_authorizations WHERE user_id = $1 ORDER BY project_id"
     }
 
     pub fn select_by_project_id() -> &'static str {
-        r#"
-        SELECT id, uuid, user_id, project_id, role, created_at, updated_at
-        FROM user_authorizations WHERE project_id = $1
-        ORDER BY role DESC, user_id
-        "#
+        "SELECT id, uuid, user_id, project_id, role_id, created_at, updated_at FROM user_authorizations WHERE project_id = $1 ORDER BY user_id"
     }
 
     pub fn select_by_user_and_project() -> &'static str {
-        r#"
-        SELECT id, uuid, user_id, project_id, role, created_at, updated_at
-        FROM user_authorizations WHERE user_id = $1 AND project_id = $2
-        "#
+        "SELECT id, uuid, user_id, project_id, role_id, created_at, updated_at FROM user_authorizations WHERE user_id = $1 AND project_id = $2"
     }
 
     pub fn insert() -> &'static str {
         r#"
-        INSERT INTO user_authorizations (uuid, user_id, project_id, role, created_at, updated_at)
+        INSERT INTO user_authorizations (uuid, user_id, project_id, role_id, created_at, updated_at)
         VALUES ($1, $2, $3, $4, $5, $6)
         RETURNING id
         "#
@@ -139,10 +156,10 @@ impl UserAuthorizationQueryBuilder {
     pub fn update() -> &'static str {
         r#"
         UPDATE user_authorizations SET
-            role = COALESCE($2, role),
+            role_id = COALESCE($2, role_id),
             updated_at = NOW()
         WHERE id = $1
-        RETURNING id, uuid, user_id, project_id, role, created_at, updated_at
+        RETURNING id, uuid, user_id, project_id, role_id, created_at, updated_at
         "#
     }
 
@@ -155,24 +172,22 @@ impl UserAuthorizationQueryBuilder {
 pub struct IssueAuthorizationQueryBuilder;
 
 impl IssueAuthorizationQueryBuilder {
+    pub fn select_by_id() -> &'static str {
+        "SELECT id, uuid, user_id, issue_id, created_at FROM issue_authorizations WHERE id = $1"
+    }
+
     pub fn select_by_user_id() -> &'static str {
-        r#"
-        SELECT id, uuid, user_id, issue_id, permission, created_at
-        FROM issue_authorizations WHERE user_id = $1
-        "#
+        "SELECT id, uuid, user_id, issue_id, created_at FROM issue_authorizations WHERE user_id = $1"
     }
 
     pub fn select_by_issue_id() -> &'static str {
-        r#"
-        SELECT id, uuid, user_id, issue_id, permission, created_at
-        FROM issue_authorizations WHERE issue_id = $1
-        "#
+        "SELECT id, uuid, user_id, issue_id, created_at FROM issue_authorizations WHERE issue_id = $1"
     }
 
     pub fn insert() -> &'static str {
         r#"
-        INSERT INTO issue_authorizations (uuid, user_id, issue_id, permission, created_at)
-        VALUES ($1, $2, $3, $4, $5)
+        INSERT INTO issue_authorizations (uuid, user_id, issue_id, created_at)
+        VALUES ($1, $2, $3, $4)
         RETURNING id
         "#
     }

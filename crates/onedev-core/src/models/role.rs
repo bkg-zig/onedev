@@ -1,319 +1,453 @@
-//! Role & Permission Domain Model
+//! Role model — 1-to-1 port of `io.onedev.server.model.Role` (v17.2.1).
+//!
+//! A role is a free-form record created by an administrator, not one of a
+//! fixed set of names. Its flags expand to Vanilla privileges
+//! (`Role.getPermissions()`); the only built-in role is `Project Owner`
+//! (`OWNER_ID = 1`, `manageProject = true`), created on first start.
 
-use super::*;
+use std::collections::BTreeSet;
 
-/// Built-in role names
-pub const ROLE_GUEST: &str = "Guest";
-pub const ROLE_REPORTER: &str = "Reporter";
-pub const ROLE_DEVELOPER: &str = "Developer";
-pub const ROLE_MAINTAINER: &str = "Maintainer";
-pub const ROLE_OWNER: &str = "Owner";
-pub const ROLE_ADMIN: &str = "Admin";
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 
-/// Core Role entity
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+use super::user::SortOrder;
+use crate::permissions::privilege::Privilege;
+
+/// Id of the single built-in role (vanilla `Role.OWNER_ID`).
+pub const OWNER_ID: i64 = 1;
+
+/// Code privilege of a role (vanilla `CodePrivilege`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum CodePrivilege {
+    #[default]
+    None,
+    Read,
+    Write,
+}
+
+/// Package privilege of a role (vanilla `PackPrivilege`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum PackPrivilege {
+    #[default]
+    None,
+    Read,
+    Write,
+}
+
+/// Which issue fields a role may edit (vanilla `IssueFieldSet`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum IssueFieldSet {
+    /// All fields known to the issue setting (resolved by the caller).
+    All,
+    None,
+    Include { fields: BTreeSet<String> },
+    Exclude { fields: BTreeSet<String> },
+}
+
+impl Default for IssueFieldSet {
+    fn default() -> Self {
+        IssueFieldSet::All
+    }
+}
+
+impl IssueFieldSet {
+    /// Included field names. `all_fields` is the full field list of the
+    /// issue setting (vanilla resolves `All`/`Exclude` against it).
+    /// `None` for the `All` variant means "unrestricted" to callers that
+    /// cannot resolve the setting, matching `EditIssueField(null)`.
+    pub fn include_fields(&self, all_fields: &BTreeSet<String>) -> BTreeSet<String> {
+        match self {
+            IssueFieldSet::All => all_fields.clone(),
+            IssueFieldSet::None => BTreeSet::new(),
+            IssueFieldSet::Include { fields } => fields.clone(),
+            IssueFieldSet::Exclude { fields } => {
+                all_fields.difference(fields).cloned().collect()
+            }
+        }
+    }
+}
+
+/// Additional privileges for specific jobs (vanilla `JobPrivilege`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub struct JobPrivilege {
+    /// Space-separated job name patterns (`*`, `?`, `-` excludes).
+    pub job_names: String,
+    pub manage_job: bool,
+    pub run_job: bool,
+    pub access_log: bool,
+    pub access_pipeline: bool,
+    pub accessible_reports: Option<String>,
+}
+
+/// A free-form role record (vanilla `Role` entity, without persistence).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Role {
     pub id: i64,
-    pub uuid: Uuid,
     pub name: String,
     pub description: Option<String>,
-    pub is_builtin: bool,
-    pub is_system: bool, // System roles (cannot be deleted)
-    // Permissions stored as bitflags
-    pub permissions: PermissionSet,
-    // Project/Group scoping
-    pub project_id: Option<i64>,
-    pub group_id: Option<i64>,
-    // Base authorizations (for default roles)
-    pub base_authorizations: Vec<BaseAuthorization>,
-    // Timestamps
+
+    pub manage_project: bool,
+    pub create_children: bool,
+    pub manage_pull_requests: bool,
+    pub manage_code_comments: bool,
+    pub code_privilege: CodePrivilege,
+    pub pack_privilege: PackPrivilege,
+    pub manage_issues: bool,
+    pub access_confidential_issues: bool,
+    /// Vanilla default is `true`.
+    pub access_time_tracking: bool,
+    pub schedule_issues: bool,
+    pub editable_issue_fields: IssueFieldSet,
+    pub can_edit_fields_of_other_issues: bool,
+    /// Names of issue links this role may edit.
+    pub editable_issue_links: Vec<String>,
+    pub manage_builds: bool,
+    pub upload_cache: bool,
+    pub job_privileges: Vec<JobPrivilege>,
+    pub accessible_sites: Option<String>,
+    pub manage_workspaces: bool,
+    pub create_workspaces: bool,
+    pub maintenance: bool,
+
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
 
-bitflags::bitflags! {
-    /// Permission set as bitflags
-    #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
-    pub struct PermissionSet: u64 {
-        // Project permissions
-        const VIEW_PROJECT           = 1 << 0;
-        const READ_CODE              = 1 << 1;
-        const WRITE_CODE             = 1 << 2;
-        const MANAGE_PROJECT         = 1 << 3;
-        const ADMIN_PROJECT          = 1 << 4;
-        const CREATE_PROJECT         = 1 << 5;
-        const DELETE_PROJECT         = 1 << 6;
-        const RENAME_PROJECT         = 1 << 7;
-        const TRANSFER_PROJECT       = 1 << 8;
-        const MANAGE_MEMBERS         = 1 << 9;
-        const MANAGE_HOOKS           = 1 << 10;
-        const MANAGE_DEPLOY_KEYS     = 1 << 11;
-        const MANAGE_PROTECTED_BRANCHES = 1 << 12;
-        const MANAGE_PROTECTED_TAGS  = 1 << 13;
-        const MANAGE_PAGES           = 1 << 14;
-        const MANAGE_WIKI            = 1 << 15;
-        const MANAGE_SNIPPETS        = 1 << 16;
-
-        // Issue permissions
-        const VIEW_ISSUES            = 1 << 17;
-        const CREATE_ISSUE           = 1 << 18;
-        const EDIT_ISSUE             = 1 << 19;
-        const CLOSE_ISSUE            = 1 << 20;
-        const REOPEN_ISSUE           = 1 << 21;
-        const DELETE_ISSUE           = 1 << 22;
-        const MANAGE_ISSUE_LABELS    = 1 << 23;
-        const MANAGE_ISSUE_BOARD     = 1 << 24;
-        const SET_ISSUE_CONFIDENTIAL = 1 << 25;
-        const VIEW_CONFIDENTIAL_ISSUES = 1 << 26;
-
-        // Merge Request permissions
-        const VIEW_MERGE_REQUESTS    = 1 << 27;
-        const CREATE_MERGE_REQUEST   = 1 << 28;
-        const EDIT_MERGE_REQUEST     = 1 << 29;
-        const MERGE_MERGE_REQUEST    = 1 << 30;
-        const CLOSE_MERGE_REQUEST    = 1 << 31;
-        const REOPEN_MERGE_REQUEST   = 1 << 32;
-        const APPROVE_MERGE_REQUEST  = 1 << 33;
-        const MANAGE_MERGE_REQUEST_REVIEWERS = 1 << 34;
-
-        // Build/CI permissions
-        const VIEW_BUILDS            = 1 << 35;
-        const TRIGGER_BUILD          = 1 << 36;
-        const CANCEL_BUILD           = 1 << 37;
-        const RETRY_BUILD            = 1 << 38;
-        const ERASE_BUILD            = 1 << 39;
-        const VIEW_BUILD_LOGS        = 1 << 40;
-        const DOWNLOAD_ARTIFACTS     = 1 << 41;
-        const MANAGE_BUILD_VARIABLES = 1 << 42;
-        const MANAGE_BUILD_SCHEDULES = 1 << 43;
-        const MANAGE_RUNNERS         = 1 << 44;
-
-        // Package permissions
-        const VIEW_PACKAGES          = 1 << 45;
-        const UPLOAD_PACKAGE         = 1 << 46;
-        const DELETE_PACKAGE         = 1 << 47;
-
-        // Container Registry permissions
-        const VIEW_CONTAINER_IMAGES  = 1 << 48;
-        const PUSH_CONTAINER_IMAGE   = 1 << 49;
-        const DELETE_CONTAINER_IMAGE = 1 << 50;
-
-        // Workspace permissions
-        const CREATE_WORKSPACE       = 1 << 51;
-        const VIEW_WORKSPACE         = 1 << 52;
-        const MANAGE_WORKSPACE       = 1 << 53;
-        const DELETE_WORKSPACE       = 1 << 54;
-
-        // Code Review permissions
-        const VIEW_CODE_REVIEWS      = 1 << 55;
-        const CREATE_CODE_REVIEW     = 1 << 56;
-        const MANAGE_CODE_REVIEWS    = 1 << 57;
-
-        // Admin permissions
-        const ADMIN_SYSTEM           = 1 << 58;
-        const ADMIN_USERS            = 1 << 59;
-        const ADMIN_GROUPS           = 1 << 60;
-        const ADMIN_SETTINGS         = 1 << 61;
-        const VIEW_AUDIT_LOG         = 1 << 62;
-        const MANAGE_LICENSE         = 1 << 63;
+impl Default for Role {
+    fn default() -> Self {
+        let now = Utc::now();
+        Role {
+            id: 0,
+            name: String::new(),
+            description: None,
+            manage_project: false,
+            create_children: false,
+            manage_pull_requests: false,
+            manage_code_comments: false,
+            code_privilege: CodePrivilege::None,
+            pack_privilege: PackPrivilege::None,
+            manage_issues: false,
+            access_confidential_issues: false,
+            access_time_tracking: true,
+            schedule_issues: false,
+            editable_issue_fields: IssueFieldSet::All,
+            can_edit_fields_of_other_issues: false,
+            editable_issue_links: Vec::new(),
+            manage_builds: false,
+            upload_cache: false,
+            job_privileges: Vec::new(),
+            accessible_sites: None,
+            manage_workspaces: false,
+            create_workspaces: false,
+            maintenance: false,
+            created_at: now,
+            updated_at: now,
+        }
     }
 }
 
-/// Base authorization (for default roles)
+impl Role {
+    /// The single built-in role created on first start:
+    /// `Project Owner` with `manageProject = true`.
+    pub fn project_owner() -> Self {
+        Role {
+            id: OWNER_ID,
+            name: "Project Owner".to_owned(),
+            manage_project: true,
+            ..Role::default()
+        }
+    }
+
+    pub fn is_owner(&self) -> bool {
+        self.id == OWNER_ID
+    }
+
+    /// Expand the role's flags to privileges — a one-to-one port of
+    /// `Role.getPermissions()`. `all_issue_fields` resolves the
+    /// `All`/`Exclude` field sets; pass an empty set when the issue
+    /// setting is unavailable (the resulting `EditIssueField` then only
+    /// implies field edits within that set).
+    pub fn permissions(&self) -> Vec<Privilege> {
+        self.permissions_with_fields(&BTreeSet::new())
+    }
+
+    pub fn permissions_with_fields(&self, all_issue_fields: &BTreeSet<String>) -> Vec<Privilege> {
+        let mut permissions = vec![Privilege::AccessProject];
+
+        if self.maintenance {
+            permissions.push(Privilege::MaintainProject);
+        }
+        if self.manage_project {
+            permissions.push(Privilege::ManageProject);
+        }
+        if self.create_children {
+            permissions.push(Privilege::CreateChildren);
+        }
+        if self.manage_code_comments {
+            permissions.push(Privilege::ManageCodeComments);
+        }
+        if self.manage_pull_requests {
+            permissions.push(Privilege::ManagePullRequests);
+        }
+        match self.code_privilege {
+            CodePrivilege::Read => permissions.push(Privilege::ReadCode),
+            CodePrivilege::Write => permissions.push(Privilege::WriteCode),
+            CodePrivilege::None => {}
+        }
+        match self.pack_privilege {
+            PackPrivilege::Read => permissions.push(Privilege::ReadPack),
+            PackPrivilege::Write => permissions.push(Privilege::WritePack),
+            PackPrivilege::None => {}
+        }
+        if self.manage_issues {
+            permissions.push(Privilege::ManageIssues);
+        }
+        if self.access_confidential_issues {
+            permissions.push(Privilege::AccessConfidentialIssues);
+        }
+        if self.access_time_tracking {
+            permissions.push(Privilege::AccessTimeTracking);
+        }
+        if self.schedule_issues {
+            permissions.push(Privilege::ScheduleIssues);
+        }
+        // Vanilla always adds EditIssueField with the included fields;
+        // an empty include set (NoneIssueFields) edits nothing.
+        let fields = self.editable_issue_fields.include_fields(all_issue_fields);
+        let fields = if matches!(self.editable_issue_fields, IssueFieldSet::All)
+            && all_issue_fields.is_empty()
+        {
+            None // unresolved All behaves like EditIssueField(null)
+        } else {
+            Some(fields)
+        };
+        permissions.push(Privilege::EditIssueField(fields));
+        if self.can_edit_fields_of_other_issues {
+            permissions.push(Privilege::EditFieldsOfOtherIssues);
+        }
+        for link in &self.editable_issue_links {
+            permissions.push(Privilege::EditIssueLink(Some(link.clone())));
+        }
+        if self.manage_builds {
+            permissions.push(Privilege::ManageBuilds);
+        }
+        if self.manage_workspaces {
+            permissions.push(Privilege::ManageWorkspaces);
+        }
+        if self.create_workspaces {
+            permissions.push(Privilege::CreateWorkspaces);
+        }
+        if let Some(sites) = &self.accessible_sites {
+            permissions.push(Privilege::AccessSites(sites.clone()));
+        }
+        if self.upload_cache {
+            permissions.push(Privilege::UploadCache);
+        }
+        for job in &self.job_privileges {
+            let scoped = |privilege: Privilege| Privilege::Job {
+                job_names: job.job_names.clone(),
+                privilege: Box::new(privilege),
+            };
+            if job.manage_job {
+                permissions.push(scoped(Privilege::ManageJob));
+            }
+            if job.run_job {
+                permissions.push(scoped(Privilege::RunJob));
+            }
+            if job.access_log {
+                permissions.push(scoped(Privilege::AccessBuildLog));
+            }
+            if job.access_pipeline {
+                permissions.push(scoped(Privilege::AccessBuildPipeline));
+            }
+            if let Some(reports) = &job.accessible_reports {
+                permissions.push(scoped(Privilege::AccessBuildReports(reports.clone())));
+            }
+        }
+
+        permissions
+    }
+
+    /// Vanilla `Role.implies`: any expanded privilege implies `required`.
+    pub fn implies(&self, required: &Privilege) -> bool {
+        self.permissions().iter().any(|p| p.implies(required))
+    }
+}
+
+/// `BaseAuthorization`: a role granted on a project for everyone
+/// (vanilla entity: project + role).
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct BaseAuthorization {
     pub id: i64,
-    pub uuid: Uuid,
+    pub project_id: i64,
     pub role_id: i64,
-    pub project_id: Option<i64>,
-    pub group_id: Option<i64>,
-    pub created_at: DateTime<Utc>,
 }
 
-/// User-Project authorization
+/// `UserAuthorization`: a role granted to a user on a project.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct UserAuthorization {
     pub id: i64,
-    pub uuid: Uuid,
-    pub user_id: i64,
     pub project_id: i64,
+    pub user_id: i64,
     pub role_id: i64,
-    pub expires_at: Option<DateTime<Utc>>,
-    pub created_at: DateTime<Utc>,
-    pub created_by_id: i64,
-    // Relations
-    pub user: Option<UserRef>,
-    pub project: Option<ProjectRef>,
-    pub role: Option<Role>,
 }
 
-/// Group-Project authorization
+/// `GroupAuthorization`: a role granted to a group on a project.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct GroupAuthorization {
     pub id: i64,
-    pub uuid: Uuid,
-    pub group_id: i64,
     pub project_id: i64,
+    pub group_id: i64,
     pub role_id: i64,
-    pub expires_at: Option<DateTime<Utc>>,
-    pub created_at: DateTime<Utc>,
-    pub created_by_id: i64,
-    // Relations
-    pub group: Option<GroupRef>,
-    pub project: Option<ProjectRef>,
-    pub role: Option<Role>,
 }
 
-/// Issue-specific authorization
+/// `AccessTokenAuthorization`: a role granted to an access token on a project.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct AccessTokenAuthorization {
+    pub id: i64,
+    pub project_id: i64,
+    pub access_token_id: i64,
+    pub role_id: i64,
+}
+
+/// `IssueAuthorization`: a user authorized on one issue.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct IssueAuthorization {
     pub id: i64,
-    pub uuid: Uuid,
     pub issue_id: i64,
     pub user_id: i64,
-    pub access_level: IssueAccessLevel,
-    pub created_at: DateTime<Utc>,
-    pub created_by_id: i64,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]
-#[serde(rename_all = "snake_case")]
-#[strum(serialize_all = "snake_case")]
-pub enum IssueAccessLevel {
-    View,
-    Edit,
-    Admin,
+/// `LinkAuthorization`: a role may edit issues via one link spec (by name).
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct LinkAuthorization {
+    pub id: i64,
+    pub link_name: String,
+    pub role_id: i64,
 }
 
-/// Role creation input
+/// Role creation input (all flags default like the entity).
 #[derive(Debug, Clone, Serialize, Deserialize, validator::Validate)]
 pub struct CreateRole {
     #[validate(length(min = 1, max = 100))]
     pub name: String,
-
     pub description: Option<String>,
-    pub permissions: PermissionSet,
-    pub project_id: Option<i64>,
-    pub group_id: Option<i64>,
+    #[serde(default)]
+    pub manage_project: bool,
+    #[serde(default)]
+    pub code_privilege: CodePrivilege,
+    #[serde(default)]
+    pub pack_privilege: PackPrivilege,
+    #[serde(default)]
+    pub manage_issues: bool,
+    #[serde(default)]
+    pub manage_builds: bool,
+    #[serde(default)]
+    pub manage_pull_requests: bool,
+    #[serde(default)]
+    pub manage_code_comments: bool,
+    #[serde(default)]
+    pub manage_workspaces: bool,
 }
 
-/// Role update input
+impl From<CreateRole> for Role {
+    fn from(create: CreateRole) -> Self {
+        Role {
+            name: create.name,
+            description: create.description,
+            manage_project: create.manage_project,
+            code_privilege: create.code_privilege,
+            pack_privilege: create.pack_privilege,
+            manage_issues: create.manage_issues,
+            manage_builds: create.manage_builds,
+            manage_pull_requests: create.manage_pull_requests,
+            manage_code_comments: create.manage_code_comments,
+            manage_workspaces: create.manage_workspaces,
+            ..Role::default()
+        }
+    }
+}
+
+/// Role update input.
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct UpdateRole {
     pub name: Option<String>,
     pub description: Option<String>,
-    pub permissions: Option<PermissionSet>,
+    pub manage_project: Option<bool>,
+    pub code_privilege: Option<CodePrivilege>,
+    pub pack_privilege: Option<PackPrivilege>,
+    pub manage_issues: Option<bool>,
+    pub manage_builds: Option<bool>,
+    pub manage_pull_requests: Option<bool>,
+    pub manage_code_comments: Option<bool>,
+    pub manage_workspaces: Option<bool>,
 }
 
-/// Role query params
+/// Role query params.
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct RoleQuery {
-    pub project_id: Option<i64>,
-    pub group_id: Option<i64>,
-    pub is_builtin: Option<bool>,
+    pub term: Option<String>,
     pub sort: Option<String>,
     pub order: Option<SortOrder>,
     pub page: u32,
     pub per_page: u32,
 }
 
-impl Role {
-    pub fn has_permission(&self, permission: PermissionSet) -> bool {
-        self.permissions.contains(permission)
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn project_owner_implies_code_and_issue_privileges() {
+        let owner = Role::project_owner();
+        assert!(owner.is_owner());
+        assert!(owner.implies(&Privilege::WriteCode));
+        assert!(owner.implies(&Privilege::ManageIssues));
+        assert!(owner.implies(&Privilege::AccessProject));
     }
 
-    pub fn is_global(&self) -> bool {
-        self.project_id.is_none() && self.group_id.is_none()
+    #[test]
+    fn plain_role_only_accesses_project_and_time_tracking() {
+        let role = Role::default();
+        assert!(role.implies(&Privilege::AccessProject));
+        assert!(role.implies(&Privilege::AccessTimeTracking));
+        assert!(!role.implies(&Privilege::ReadCode));
+        assert!(!role.implies(&Privilege::WriteCode));
     }
 
-    pub fn is_project_role(&self) -> bool {
-        self.project_id.is_some()
+    #[test]
+    fn write_code_privilege_implies_read_and_workspaces() {
+        let role = Role {
+            code_privilege: CodePrivilege::Write,
+            ..Role::default()
+        };
+        assert!(role.implies(&Privilege::ReadCode));
+        assert!(role.implies(&Privilege::CreateWorkspaces));
+        assert!(!role.implies(&Privilege::ManageProject));
     }
 
-    pub fn is_group_role(&self) -> bool {
-        self.group_id.is_some()
-    }
-}
-
-/// Built-in roles with default permissions
-impl Role {
-    pub fn guest() -> PermissionSet {
-        PermissionSet::VIEW_PROJECT
-            | PermissionSet::VIEW_ISSUES
-            | PermissionSet::VIEW_MERGE_REQUESTS
-            | PermissionSet::VIEW_BUILDS
-            | PermissionSet::VIEW_PACKAGES
-            | PermissionSet::VIEW_CONTAINER_IMAGES
-    }
-
-    pub fn reporter() -> PermissionSet {
-        Self::guest()
-            | PermissionSet::CREATE_ISSUE
-            | PermissionSet::EDIT_ISSUE
-            | PermissionSet::CLOSE_ISSUE
-            | PermissionSet::REOPEN_ISSUE
-            | PermissionSet::MANAGE_ISSUE_LABELS
-            | PermissionSet::CREATE_MERGE_REQUEST
-            | PermissionSet::TRIGGER_BUILD
-            | PermissionSet::DOWNLOAD_ARTIFACTS
-    }
-
-    pub fn developer() -> PermissionSet {
-        Self::reporter()
-            | PermissionSet::READ_CODE
-            | PermissionSet::WRITE_CODE
-            | PermissionSet::CREATE_MERGE_REQUEST
-            | PermissionSet::MERGE_MERGE_REQUEST
-            | PermissionSet::APPROVE_MERGE_REQUEST
-            | PermissionSet::TRIGGER_BUILD
-            | PermissionSet::RETRY_BUILD
-            | PermissionSet::VIEW_BUILD_LOGS
-            | PermissionSet::DOWNLOAD_ARTIFACTS
-            | PermissionSet::UPLOAD_PACKAGE
-            | PermissionSet::PUSH_CONTAINER_IMAGE
-            | PermissionSet::CREATE_WORKSPACE
-            | PermissionSet::VIEW_WORKSPACE
-    }
-
-    pub fn maintainer() -> PermissionSet {
-        Self::developer()
-            | PermissionSet::MANAGE_PROJECT
-            | PermissionSet::MANAGE_MEMBERS
-            | PermissionSet::MANAGE_HOOKS
-            | PermissionSet::MANAGE_DEPLOY_KEYS
-            | PermissionSet::MANAGE_PROTECTED_BRANCHES
-            | PermissionSet::MANAGE_PROTECTED_TAGS
-            | PermissionSet::MANAGE_PAGES
-            | PermissionSet::MANAGE_WIKI
-            | PermissionSet::MANAGE_SNIPPETS
-            | PermissionSet::DELETE_ISSUE
-            | PermissionSet::MANAGE_ISSUE_BOARD
-            | PermissionSet::SET_ISSUE_CONFIDENTIAL
-            | PermissionSet::VIEW_CONFIDENTIAL_ISSUES
-            | PermissionSet::CLOSE_MERGE_REQUEST
-            | PermissionSet::REOPEN_MERGE_REQUEST
-            | PermissionSet::MANAGE_MERGE_REQUEST_REVIEWERS
-            | PermissionSet::CANCEL_BUILD
-            | PermissionSet::ERASE_BUILD
-            | PermissionSet::MANAGE_BUILD_VARIABLES
-            | PermissionSet::MANAGE_BUILD_SCHEDULES
-            | PermissionSet::MANAGE_RUNNERS
-            | PermissionSet::DELETE_PACKAGE
-            | PermissionSet::DELETE_CONTAINER_IMAGE
-            | PermissionSet::MANAGE_WORKSPACE
-            | PermissionSet::DELETE_WORKSPACE
-            | PermissionSet::MANAGE_CODE_REVIEWS
-    }
-
-    pub fn owner() -> PermissionSet {
-        Self::maintainer()
-            | PermissionSet::ADMIN_PROJECT
-            | PermissionSet::DELETE_PROJECT
-            | PermissionSet::RENAME_PROJECT
-            | PermissionSet::TRANSFER_PROJECT
-    }
-
-    pub fn admin() -> PermissionSet {
-        PermissionSet::all()
+    #[test]
+    fn job_privileges_are_scoped_by_name_pattern() {
+        let role = Role {
+            job_privileges: vec![JobPrivilege {
+                job_names: "ci-*".to_owned(),
+                run_job: true,
+                ..JobPrivilege::default()
+            }],
+            ..Role::default()
+        };
+        let run_ci = Privilege::Job {
+            job_names: "ci-test".to_owned(),
+            privilege: Box::new(Privilege::RunJob),
+        };
+        let run_deploy = Privilege::Job {
+            job_names: "deploy".to_owned(),
+            privilege: Box::new(Privilege::RunJob),
+        };
+        assert!(role.implies(&run_ci));
+        assert!(!role.implies(&run_deploy));
     }
 }

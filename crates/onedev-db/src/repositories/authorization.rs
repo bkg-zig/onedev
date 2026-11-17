@@ -1,7 +1,12 @@
-//! Authorization Repository
+//! Authorization Repositories — Vanilla authorization entities.
 
 use crate::{
-    models::authorization::{DbUserAuthorization, DbCreateUserAuthorization, DbUpdateUserAuthorization, DbIssueAuthorization, UserAuthorizationQueryBuilder, IssueAuthorizationQueryBuilder},
+    models::authorization::{
+        DbAccessTokenAuthorization, DbBaseAuthorization, DbCreateIssueAuthorization,
+        DbCreateUserAuthorization, DbGroupAuthorization, DbIssueAuthorization,
+        DbLinkAuthorization, DbUpdateUserAuthorization, DbUserAuthorization,
+        IssueAuthorizationQueryBuilder, UserAuthorizationQueryBuilder,
+    },
     repositories::Repository,
     DbPool, DbResult,
 };
@@ -15,62 +20,79 @@ impl UserAuthorizationRepository {
         Self
     }
 
-    /// Find by user ID
     pub async fn find_by_user_id(&self, pool: &DbPool, user_id: i64) -> DbResult<Vec<DbUserAuthorization>> {
         let rows = sqlx::query(UserAuthorizationQueryBuilder::select_by_user_id())
             .bind(user_id)
             .fetch_all(pool)
             .await?;
-
-        let auths = rows.into_iter().map(|r| DbUserAuthorization::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
-        Ok(auths)
+        Ok(rows.into_iter().map(|r| DbUserAuthorization::from_row(&r)).collect::<Result<Vec<_>, _>>()?)
     }
 
-    /// Find by project ID
     pub async fn find_by_project_id(&self, pool: &DbPool, project_id: i64) -> DbResult<Vec<DbUserAuthorization>> {
         let rows = sqlx::query(UserAuthorizationQueryBuilder::select_by_project_id())
             .bind(project_id)
             .fetch_all(pool)
             .await?;
-
-        let auths = rows.into_iter().map(|r| DbUserAuthorization::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
-        Ok(auths)
+        Ok(rows.into_iter().map(|r| DbUserAuthorization::from_row(&r)).collect::<Result<Vec<_>, _>>()?)
     }
 
-    /// Find by user and project
-    pub async fn find_by_user_and_project(&self, pool: &DbPool, user_id: i64, project_id: i64) -> DbResult<Option<DbUserAuthorization>> {
-        let row = sqlx::query(UserAuthorizationQueryBuilder::select_by_user_and_project())
+    /// All authorizations of a user on a project (a user can hold
+    /// several roles on the same project in vanilla).
+    pub async fn find_by_user_and_project(&self, pool: &DbPool, user_id: i64, project_id: i64) -> DbResult<Vec<DbUserAuthorization>> {
+        let rows = sqlx::query(UserAuthorizationQueryBuilder::select_by_user_and_project())
             .bind(user_id)
             .bind(project_id)
-            .fetch_optional(pool)
+            .fetch_all(pool)
             .await?;
-
-        Ok(row.map(|r| DbUserAuthorization::from_row(&r)).transpose()?)
+        Ok(rows.into_iter().map(|r| DbUserAuthorization::from_row(&r)).collect::<Result<Vec<_>, _>>()?)
     }
 
-    /// Get user's highest role in project
-    pub async fn get_highest_role(&self, pool: &DbPool, user_id: i64, project_id: i64) -> DbResult<Option<crate::models::authorization::DbProjectRole>> {
-        let role: Option<crate::models::authorization::DbProjectRole> = sqlx::query_scalar(
-            r#"
-            SELECT role FROM user_authorizations
-            WHERE user_id = $1 AND project_id = $2
-            ORDER BY CASE role
-                WHEN 'owner' THEN 5
-                WHEN 'maintainer' THEN 4
-                WHEN 'developer' THEN 3
-                WHEN 'reporter' THEN 2
-                WHEN 'guest' THEN 1
-                ELSE 0
-            END DESC
-            LIMIT 1
-            "#
+    pub async fn find_group_authorizations(&self, pool: &DbPool, group_ids: &[i64], project_id: i64) -> DbResult<Vec<DbGroupAuthorization>> {
+        if group_ids.is_empty() {
+            return Ok(Vec::new());
+        }
+        let rows = sqlx::query(
+            "SELECT id, uuid, group_id, project_id, role_id, created_at, updated_at \
+             FROM group_authorizations WHERE group_id = ANY($1) AND project_id = $2",
         )
-        .bind(user_id)
+        .bind(group_ids)
         .bind(project_id)
-        .fetch_optional(pool)
+        .fetch_all(pool)
         .await?;
+        Ok(rows.into_iter().map(|r| DbGroupAuthorization::from_row(&r)).collect::<Result<Vec<_>, _>>()?)
+    }
 
-        Ok(role)
+    pub async fn find_base_authorizations(&self, pool: &DbPool, project_id: i64) -> DbResult<Vec<DbBaseAuthorization>> {
+        let rows = sqlx::query(
+            "SELECT id, uuid, project_id, role_id, created_at, updated_at \
+             FROM base_authorizations WHERE project_id = $1",
+        )
+        .bind(project_id)
+        .fetch_all(pool)
+        .await?;
+        Ok(rows.into_iter().map(|r| DbBaseAuthorization::from_row(&r)).collect::<Result<Vec<_>, _>>()?)
+    }
+
+    pub async fn find_access_token_authorizations(&self, pool: &DbPool, access_token_id: i64, project_id: i64) -> DbResult<Vec<DbAccessTokenAuthorization>> {
+        let rows = sqlx::query(
+            "SELECT id, uuid, project_id, access_token_id, role_id, created_at, updated_at \
+             FROM access_token_authorizations WHERE access_token_id = $1 AND project_id = $2",
+        )
+        .bind(access_token_id)
+        .bind(project_id)
+        .fetch_all(pool)
+        .await?;
+        Ok(rows.into_iter().map(|r| DbAccessTokenAuthorization::from_row(&r)).collect::<Result<Vec<_>, _>>()?)
+    }
+
+    pub async fn find_link_authorizations(&self, pool: &DbPool, role_id: i64) -> DbResult<Vec<DbLinkAuthorization>> {
+        let rows = sqlx::query(
+            "SELECT id, uuid, link_name, role_id, created_at FROM link_authorizations WHERE role_id = $1",
+        )
+        .bind(role_id)
+        .fetch_all(pool)
+        .await?;
+        Ok(rows.into_iter().map(|r| DbLinkAuthorization::from_row(&r)).collect::<Result<Vec<_>, _>>()?)
     }
 }
 
@@ -84,7 +106,7 @@ impl Repository<DbUserAuthorization, DbCreateUserAuthorization, DbUpdateUserAuth
             .bind(uuid)
             .bind(create.user_id)
             .bind(create.project_id)
-            .bind(create.role)
+            .bind(create.role_id)
             .bind(now)
             .bind(now)
             .fetch_one(pool)
@@ -101,17 +123,15 @@ impl Repository<DbUserAuthorization, DbCreateUserAuthorization, DbUpdateUserAuth
             .bind(id)
             .fetch_optional(pool)
             .await?;
-
         Ok(row.map(|r| DbUserAuthorization::from_row(&r)).transpose()?)
     }
 
     async fn update(&self, pool: &DbPool, id: i64, update: DbUpdateUserAuthorization) -> DbResult<DbUserAuthorization> {
         let row = sqlx::query(UserAuthorizationQueryBuilder::update())
             .bind(id)
-            .bind(update.role)
+            .bind(update.role_id)
             .fetch_one(pool)
             .await?;
-
         Ok(DbUserAuthorization::from_row(&row)?)
     }
 
@@ -125,15 +145,13 @@ impl Repository<DbUserAuthorization, DbCreateUserAuthorization, DbUpdateUserAuth
 
     async fn list(&self, pool: &DbPool, limit: i64, offset: i64) -> DbResult<Vec<DbUserAuthorization>> {
         let rows = sqlx::query(
-            "SELECT * FROM user_authorizations ORDER BY created_at DESC LIMIT $1 OFFSET $2"
+            "SELECT id, uuid, user_id, project_id, role_id, created_at, updated_at FROM user_authorizations ORDER BY created_at DESC LIMIT $1 OFFSET $2"
         )
         .bind(limit)
         .bind(offset)
         .fetch_all(pool)
         .await?;
-
-        let auths = rows.into_iter().map(|r| DbUserAuthorization::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
-        Ok(auths)
+        Ok(rows.into_iter().map(|r| DbUserAuthorization::from_row(&r)).collect::<Result<Vec<_>, _>>()?)
     }
 
     async fn count(&self, pool: &DbPool) -> DbResult<i64> {
@@ -151,32 +169,26 @@ impl IssueAuthorizationRepository {
         Self
     }
 
-    /// Find by user ID
     pub async fn find_by_user_id(&self, pool: &DbPool, user_id: i64) -> DbResult<Vec<DbIssueAuthorization>> {
         let rows = sqlx::query(IssueAuthorizationQueryBuilder::select_by_user_id())
             .bind(user_id)
             .fetch_all(pool)
             .await?;
-
-        let auths = rows.into_iter().map(|r| DbIssueAuthorization::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
-        Ok(auths)
+        Ok(rows.into_iter().map(|r| DbIssueAuthorization::from_row(&r)).collect::<Result<Vec<_>, _>>()?)
     }
 
-    /// Find by issue ID
     pub async fn find_by_issue_id(&self, pool: &DbPool, issue_id: i64) -> DbResult<Vec<DbIssueAuthorization>> {
         let rows = sqlx::query(IssueAuthorizationQueryBuilder::select_by_issue_id())
             .bind(issue_id)
             .fetch_all(pool)
             .await?;
-
-        let auths = rows.into_iter().map(|r| DbIssueAuthorization::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
-        Ok(auths)
+        Ok(rows.into_iter().map(|r| DbIssueAuthorization::from_row(&r)).collect::<Result<Vec<_>, _>>()?)
     }
 }
 
 #[async_trait]
-impl Repository<DbIssueAuthorization, DbIssueAuthorization, DbIssueAuthorization> for IssueAuthorizationRepository {
-    async fn create(&self, pool: &DbPool, create: DbIssueAuthorization) -> DbResult<DbIssueAuthorization> {
+impl Repository<DbIssueAuthorization, DbCreateIssueAuthorization, DbIssueAuthorization> for IssueAuthorizationRepository {
+    async fn create(&self, pool: &DbPool, create: DbCreateIssueAuthorization) -> DbResult<DbIssueAuthorization> {
         let uuid = uuid::Uuid::new_v4();
         let now = chrono::Utc::now();
 
@@ -184,7 +196,6 @@ impl Repository<DbIssueAuthorization, DbIssueAuthorization, DbIssueAuthorization
             .bind(uuid)
             .bind(create.user_id)
             .bind(create.issue_id)
-            .bind(create.permission)
             .bind(now)
             .fetch_one(pool)
             .await?;
@@ -196,24 +207,19 @@ impl Repository<DbIssueAuthorization, DbIssueAuthorization, DbIssueAuthorization
     }
 
     async fn find_by_id(&self, pool: &DbPool, id: i64) -> DbResult<Option<DbIssueAuthorization>> {
-        let row = sqlx::query("SELECT * FROM issue_authorizations WHERE id = $1")
+        let row = sqlx::query(IssueAuthorizationQueryBuilder::select_by_id())
             .bind(id)
             .fetch_optional(pool)
             .await?;
-
         Ok(row.map(|r| DbIssueAuthorization::from_row(&r)).transpose()?)
     }
 
-    async fn update(&self, pool: &DbPool, id: i64, update: DbIssueAuthorization) -> DbResult<DbIssueAuthorization> {
-        let row = sqlx::query(
-            "UPDATE issue_authorizations SET permission = $2 WHERE id = $1 RETURNING *"
-        )
-        .bind(id)
-        .bind(update.permission)
-        .fetch_one(pool)
-        .await?;
-
-        Ok(DbIssueAuthorization::from_row(&row)?)
+    async fn update(&self, pool: &DbPool, id: i64, _update: DbIssueAuthorization) -> DbResult<DbIssueAuthorization> {
+        // Vanilla IssueAuthorization has no mutable fields besides the pair.
+        self.find_by_id(pool, id).await?.ok_or_else(|| crate::DbError::NotFound {
+            entity_type: "IssueAuthorization".to_string(),
+            id: id.to_string(),
+        })
     }
 
     async fn delete(&self, pool: &DbPool, id: i64) -> DbResult<()> {
@@ -225,14 +231,12 @@ impl Repository<DbIssueAuthorization, DbIssueAuthorization, DbIssueAuthorization
     }
 
     async fn list(&self, pool: &DbPool, limit: i64, offset: i64) -> DbResult<Vec<DbIssueAuthorization>> {
-        let rows = sqlx::query("SELECT * FROM issue_authorizations ORDER BY created_at DESC LIMIT $1 OFFSET $2")
+        let rows = sqlx::query("SELECT id, uuid, user_id, issue_id, created_at FROM issue_authorizations ORDER BY created_at DESC LIMIT $1 OFFSET $2")
             .bind(limit)
             .bind(offset)
             .fetch_all(pool)
             .await?;
-
-        let auths = rows.into_iter().map(|r| DbIssueAuthorization::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
-        Ok(auths)
+        Ok(rows.into_iter().map(|r| DbIssueAuthorization::from_row(&r)).collect::<Result<Vec<_>, _>>()?)
     }
 
     async fn count(&self, pool: &DbPool) -> DbResult<i64> {

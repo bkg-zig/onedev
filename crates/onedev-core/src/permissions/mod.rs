@@ -1,5 +1,9 @@
 //! Permissions System
 
+pub mod privilege;
+
+pub use privilege::{PatternSet, Privilege, ProjectPrivilege};
+
 use crate::models::*;
 
 /// Permission trait - all permissions implement this
@@ -511,6 +515,48 @@ impl ProjectPermissionType {
     }
 }
 
+impl ProjectPermissionType {
+    /// Translate onto the Vanilla privilege model. Permissions without a
+    /// dedicated Vanilla privilege collapse to the closest one
+    /// (`ManageProject` for administrative actions, `AccessProject` for
+    /// pure visibility); new code should check `Privilege` directly.
+    pub fn to_privilege(&self) -> Privilege {
+        use ProjectPermissionType::*;
+        match self {
+            ViewProject => Privilege::AccessProject,
+            ReadCode => Privilege::ReadCode,
+            WriteCode | PushCode | ForcePush => Privilege::WriteCode,
+            ViewConfidentialIssues | ManageConfidentialIssues | SetConfidential => {
+                Privilege::AccessConfidentialIssues
+            }
+            ViewBuildLogs => Privilege::Job {
+                job_names: "*".to_owned(),
+                privilege: Box::new(Privilege::AccessBuildLog),
+            },
+            TriggerBuild | RetryBuild => Privilege::Job {
+                job_names: "*".to_owned(),
+                privilege: Box::new(Privilege::RunJob),
+            },
+            ViewPackages => Privilege::ReadPack,
+            UploadPackage | PushContainerImage => Privilege::WritePack,
+            CreateWorkspace => Privilege::CreateWorkspaces,
+            _ => Privilege::ManageProject,
+        }
+    }
+}
+
+impl SystemPermission {
+    /// Translate onto the Vanilla privilege model.
+    pub fn to_privilege(&self) -> Privilege {
+        match self {
+            SystemPermission::ViewAllProjects | SystemPermission::ViewAllGroups => {
+                Privilege::AccessProject
+            }
+            _ => Privilege::SystemAdministration,
+        }
+    }
+}
+
 /// System-wide permissions
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum SystemPermission {
@@ -568,23 +614,76 @@ impl Permission for SystemPermission {
     }
 }
 
-/// Permission checker
+/// Permission checker over Vanilla privileges.
+///
+/// All inputs are data (roles/grants of a subject), so checks are pure
+/// and testable; loading the grants is the caller's job.
 pub struct PermissionChecker;
 
 impl PermissionChecker {
-    pub fn check_user_permissions(_user_id: i64, _project_id: i64, _permissions: &[ProjectPermissionType]) -> bool {
-        // Implementation would check user's role in project
-        // and verify all permissions are granted
-        true // Placeholder
+    /// True when any granted project privilege implies `required`.
+    /// `ancestors_of_required` lists the required project's own id chain
+    /// of ancestor project ids (settings inheritance, vanilla
+    /// `Project.isSelfOrSettingsAncestorOf`).
+    pub fn check_project_privilege(
+        granted: &[ProjectPrivilege],
+        required: &ProjectPrivilege,
+        ancestors_of_required: &[i64],
+    ) -> bool {
+        granted
+            .iter()
+            .any(|grant| grant.implies(required, ancestors_of_required))
     }
 
-    pub fn check_group_permissions(_group_id: i64, _project_id: i64, _permissions: &[ProjectPermissionType]) -> bool {
-        // Implementation would check group's role in project
-        true // Placeholder
+    /// Same check, expanding free-form `Role`s granted on `project_id`.
+    pub fn check_roles(
+        roles_on_project: &[(i64, &Role)],
+        required: &ProjectPrivilege,
+        ancestors_of_required: &[i64],
+    ) -> bool {
+        roles_on_project.iter().any(|(project_id, role)| {
+            role.permissions()
+                .iter()
+                .any(|privilege| {
+                    ProjectPrivilege::new(*project_id, privilege.clone())
+                        .implies(required, ancestors_of_required)
+                })
+        })
     }
 
-    pub fn check_system_permissions(_user_id: i64, _permissions: &[SystemPermission]) -> bool {
-        // Implementation would check if user is admin
-        true // Placeholder
+    /// True when every required permission is implied (legacy enum API,
+    /// translated onto Vanilla privileges).
+    pub fn check_user_permissions(
+        granted: &[ProjectPrivilege],
+        project_id: i64,
+        permissions: &[ProjectPermissionType],
+    ) -> bool {
+        permissions.iter().all(|permission| {
+            let required = ProjectPrivilege::new(project_id, permission.to_privilege());
+            Self::check_project_privilege(granted, &required, &[])
+        })
+    }
+
+    /// Group grants are evaluated exactly like user grants.
+    pub fn check_group_permissions(
+        granted: &[ProjectPrivilege],
+        project_id: i64,
+        permissions: &[ProjectPermissionType],
+    ) -> bool {
+        Self::check_user_permissions(granted, project_id, permissions)
+    }
+
+    /// System permissions: only `SystemAdministration` (or the legacy
+    /// `AdminSystem`) implies the rest, mirroring vanilla.
+    pub fn check_system_permissions(
+        granted: &[Privilege],
+        permissions: &[SystemPermission],
+    ) -> bool {
+        permissions.iter().all(|required| {
+            granted.iter().any(|grant| match (grant, required) {
+                (Privilege::SystemAdministration, _) => true,
+                _ => grant.implies(&required.to_privilege()),
+            })
+        })
     }
 }

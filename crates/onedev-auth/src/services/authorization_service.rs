@@ -4,7 +4,7 @@ use crate::models::subject::Subject;
 use crate::models::principal::{UserPrincipal, AccessTokenPrincipal};
 use onedev_core::models::user::UserRef;
 use onedev_core::models::project::ProjectRef;
-use onedev_core::models::role::{Role, PermissionSet};
+use onedev_core::models::role::{CodePrivilege, Role};
 use onedev_core::models::group::GroupRef;
 use onedev_core::permissions::{Permission, ProjectPermissionType, SystemPermission, BasePermission};
 use onedev_db::repositories::{UserRepository, ProjectRepository, RoleRepository, MembershipRepository, GroupRepository, UserAuthorizationRepository, Repository};
@@ -78,13 +78,67 @@ impl AuthorizationService {
         project_id: i64,
         permission: ProjectPermissionType,
     ) -> Result<PermissionCheck, AuthzError> {
-        let permissions = self.get_subject_project_permissions(subject, project_id).await?;
-        
-        if permissions.iter().any(|p| p.implies(&permission)) {
+        // Root/system users pass every project check (vanilla admin chain).
+        if let Subject::User(principal) = subject {
+            if self.is_system_admin(principal.user_id).await? {
+                return Ok(PermissionCheck::Granted);
+            }
+        }
+
+        let roles = self.subject_project_roles(subject, project_id).await?;
+        let granted: Vec<(i64, &Role)> = roles.iter().map(|role| (project_id, role)).collect();
+        let required = onedev_core::permissions::ProjectPrivilege::new(
+            project_id,
+            permission.to_privilege(),
+        );
+
+        if onedev_core::permissions::PermissionChecker::check_roles(&granted, &required, &[]) {
             Ok(PermissionCheck::Granted)
         } else {
             Ok(PermissionCheck::Denied(format!("Missing permission: {}", permission.name())))
         }
+    }
+
+    /// Roles a subject holds on a project: direct user authorizations,
+    /// access-token authorizations, and base authorizations (everyone).
+    async fn subject_project_roles(
+        &self,
+        subject: &Subject,
+        project_id: i64,
+    ) -> Result<Vec<Role>, AuthzError> {
+        let repo = UserAuthorizationRepository::new();
+        let mut role_ids: Vec<i64> = Vec::new();
+
+        match subject {
+            Subject::User(principal) => {
+                for authz in repo
+                    .find_by_user_and_project(&self.db_pool, principal.user_id, project_id)
+                    .await?
+                {
+                    role_ids.push(authz.role_id);
+                }
+            }
+            Subject::AccessToken(principal) => {
+                for authz in repo
+                    .find_access_token_authorizations(&self.db_pool, principal.token_id, project_id)
+                    .await?
+                {
+                    role_ids.push(authz.role_id);
+                }
+            }
+            Subject::Anonymous => {}
+        }
+        for authz in repo.find_base_authorizations(&self.db_pool, project_id).await? {
+            role_ids.push(authz.role_id);
+        }
+
+        let mut roles = Vec::with_capacity(role_ids.len());
+        for role_id in role_ids {
+            if let Some(db_role) = self.role_repo.find_by_id(&self.db_pool, role_id).await? {
+                roles.push(db_role.to_core());
+            }
+        }
+        Ok(roles)
     }
 
     /// Check if subject has a system permission
@@ -117,14 +171,14 @@ impl AuthorizationService {
         project_id: i64,
         permissions: &[ProjectPermissionType],
     ) -> Result<PermissionCheck, AuthzError> {
-        let subject_perms = self.get_subject_project_permissions(subject, project_id).await?;
-        
         for required in permissions {
-            if !subject_perms.iter().any(|p| p.implies(required)) {
+            if self.check_project_permission(subject, project_id, *required).await?
+                != PermissionCheck::Granted
+            {
                 return Ok(PermissionCheck::Denied(format!("Missing permission: {}", required.name())));
             }
         }
-        
+
         Ok(PermissionCheck::Granted)
     }
 
@@ -158,74 +212,56 @@ impl AuthorizationService {
         Ok(result == PermissionCheck::Granted)
     }
 
-    /// Get all project permissions for a subject
+    /// Get all project permissions for a subject: the legacy permission
+    /// types implied by the subject's Vanilla roles on the project.
     async fn get_subject_project_permissions(
         &self,
         subject: &Subject,
         project_id: i64,
     ) -> Result<Vec<ProjectPermissionType>, AuthzError> {
         let cache_key = format!("{}:{}", subject.principal_string(), project_id);
-        
-        // Check cache
+
         if let Some(cached) = self.cache.get(&cache_key) {
             if cached.expires_at > std::time::Instant::now() {
                 return Ok(cached.permissions.clone());
             }
         }
 
-        let mut permissions = Vec::new();
+        // Candidate set: every legacy type is tested against the roles.
+        const CANDIDATES: &[ProjectPermissionType] = &[
+            ProjectPermissionType::ViewProject,
+            ProjectPermissionType::ManageProject,
+            ProjectPermissionType::AdminProject,
+            ProjectPermissionType::ReadCode,
+            ProjectPermissionType::WriteCode,
+            ProjectPermissionType::ViewConfidentialIssues,
+            ProjectPermissionType::ViewBuildLogs,
+            ProjectPermissionType::TriggerBuild,
+            ProjectPermissionType::ViewPackages,
+            ProjectPermissionType::UploadPackage,
+            ProjectPermissionType::CreateWorkspace,
+        ];
 
-        match subject {
-            Subject::User(principal) => {
-                // TODO: Implement proper authorization lookup
-                // For now, return empty permissions - this should be implemented
-                // when the authorization repositories are complete
-                let _ = principal;
-            }
-            Subject::AccessToken(principal) => {
-                // TODO: Implement proper authorization lookup
-                let _ = principal;
-            }
-            Subject::Anonymous => {
-                // TODO: Implement anonymous access check
+        let roles = self.subject_project_roles(subject, project_id).await?;
+        let granted: Vec<(i64, &Role)> = roles.iter().map(|role| (project_id, role)).collect();
+        let mut permissions = Vec::new();
+        for candidate in CANDIDATES {
+            let required = onedev_core::permissions::ProjectPrivilege::new(
+                project_id,
+                candidate.to_privilege(),
+            );
+            if onedev_core::permissions::PermissionChecker::check_roles(&granted, &required, &[]) {
+                permissions.push(*candidate);
             }
         }
 
-        // Cache the result
         self.cache.insert(cache_key, CachedAuthzInfo {
             permissions: permissions.clone(),
-            roles: Vec::new(),
+            roles,
             expires_at: std::time::Instant::now() + self.cache_ttl,
         });
 
         Ok(permissions)
-    }
-
-    /// Convert role permission set to project permission types
-    fn role_permissions_to_project(&self, perm_set: &PermissionSet) -> Vec<ProjectPermissionType> {
-        let mut perms = Vec::new();
-        
-        // Map PermissionSet flags to ProjectPermissionType
-        // This is a simplified mapping - in reality you'd have a complete mapping
-        if perm_set.contains(PermissionSet::VIEW_PROJECT) {
-            perms.push(ProjectPermissionType::ViewProject);
-        }
-        if perm_set.contains(PermissionSet::READ_CODE) {
-            perms.push(ProjectPermissionType::ReadCode);
-        }
-        if perm_set.contains(PermissionSet::WRITE_CODE) {
-            perms.push(ProjectPermissionType::WriteCode);
-            perms.push(ProjectPermissionType::PushCode);
-        }
-        if perm_set.contains(PermissionSet::MANAGE_PROJECT) {
-            perms.push(ProjectPermissionType::ManageProject);
-        }
-        if perm_set.contains(PermissionSet::ADMIN_PROJECT) {
-            perms.push(ProjectPermissionType::AdminProject);
-        }
-        // ... add more mappings as needed
-        
-        perms
     }
 
     /// Check if user is system admin
@@ -234,45 +270,22 @@ impl AuthorizationService {
         Ok(user.map(|u| u.id == onedev_core::models::user::ROOT_USER_ID || u.id == onedev_core::models::user::SYSTEM_USER_ID).unwrap_or(false))
     }
 
-    /// Get user's role in a project
-    pub async fn get_user_project_role(&self, user_id: i64, project_id: i64) -> Result<Option<Role>, AuthzError> {
+    /// Get a user's roles in a project (vanilla: a user can hold
+    /// several roles on the same project).
+    pub async fn get_user_project_roles(&self, user_id: i64, project_id: i64) -> Result<Vec<Role>, AuthzError> {
         let repo = UserAuthorizationRepository::new();
         let authz = repo
             .find_by_user_and_project(&self.db_pool, user_id, project_id)
             .await
             .map_err(|e| AuthzError::Internal(e.to_string()))?;
 
-        Ok(authz.map(|row| {
-            let permissions = match row.role {
-                onedev_db::models::authorization::DbProjectRole::Guest => PermissionSet::VIEW_PROJECT,
-                onedev_db::models::authorization::DbProjectRole::Reporter => {
-                    PermissionSet::VIEW_PROJECT | PermissionSet::READ_CODE | PermissionSet::VIEW_ISSUES
-                }
-                onedev_db::models::authorization::DbProjectRole::Developer => {
-                    PermissionSet::VIEW_PROJECT | PermissionSet::READ_CODE | PermissionSet::WRITE_CODE
-                        | PermissionSet::VIEW_ISSUES | PermissionSet::CREATE_ISSUE
-                }
-                onedev_db::models::authorization::DbProjectRole::Maintainer => {
-                    PermissionSet::VIEW_PROJECT | PermissionSet::READ_CODE | PermissionSet::WRITE_CODE
-                        | PermissionSet::MANAGE_PROJECT | PermissionSet::VIEW_ISSUES
-                }
-                onedev_db::models::authorization::DbProjectRole::Owner => PermissionSet::all(),
-            };
-            Role {
-                id: row.id,
-                uuid: row.uuid,
-                name: format!("{:?}", row.role),
-                description: None,
-                is_builtin: true,
-                is_system: false,
-                permissions,
-                project_id: Some(row.project_id),
-                group_id: None,
-                base_authorizations: Vec::new(),
-                created_at: row.created_at,
-                updated_at: row.updated_at,
+        let mut roles = Vec::with_capacity(authz.len());
+        for row in authz {
+            if let Some(db_role) = self.role_repo.find_by_id(&self.db_pool, row.role_id).await? {
+                roles.push(db_role.to_core());
             }
-        }))
+        }
+        Ok(roles)
     }
 
     /// Get effective permissions for a subject on a project (for UI)

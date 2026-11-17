@@ -1,12 +1,12 @@
-//! Role Repository
+//! Role Repository — Vanilla free-form roles.
 
 use crate::{
-    models::role::{DbRole, DbCreateRole, DbUpdateRole, DbRolePermission, RoleQueryBuilder, RolePermissionQueryBuilder},
+    models::role::{DbCreateRole, DbRole, DbUpdateRole, RoleQueryBuilder},
     repositories::Repository,
     DbPool, DbResult,
 };
 use async_trait::async_trait;
-use sqlx::{FromRow, Row};
+use sqlx::FromRow;
 
 pub struct RoleRepository;
 
@@ -17,39 +17,12 @@ impl RoleRepository {
 
     /// Find by name
     pub async fn find_by_name(&self, pool: &DbPool, name: &str) -> DbResult<Option<DbRole>> {
-        let row = sqlx::query(RoleQueryBuilder::select_by_name())
+        let row = sqlx::query(&RoleQueryBuilder::select_by_name())
             .bind(name)
             .fetch_optional(pool)
             .await?;
 
         Ok(row.map(|r| DbRole::from_row(&r)).transpose()?)
-    }
-
-    /// Find with permissions
-    pub async fn find_with_permissions(&self, pool: &DbPool, id: i64) -> DbResult<Option<(DbRole, Vec<String>)>> {
-        let rows = sqlx::query(RoleQueryBuilder::select_with_permissions())
-            .bind(id)
-            .fetch_all(pool)
-            .await?;
-
-        if rows.is_empty() {
-            return Ok(None);
-        }
-
-        let mut role: Option<DbRole> = None;
-        let mut permissions = Vec::new();
-
-        for row in rows {
-            if role.is_none() {
-                role = Some(DbRole::from_row(&row)?);
-            }
-            let permission: Option<String> = row.get("permission");
-            if let Some(p) = permission {
-                permissions.push(p);
-            }
-        }
-
-        Ok(role.map(|r| (r, permissions)))
     }
 }
 
@@ -64,6 +37,26 @@ impl Repository<DbRole, DbCreateRole, DbUpdateRole> for RoleRepository {
             .bind(&create.name)
             .bind(&create.description)
             .bind(create.is_system)
+            .bind(create.manage_project)
+            .bind(create.create_children)
+            .bind(create.manage_pull_requests)
+            .bind(create.manage_code_comments)
+            .bind(create.code_privilege_str())
+            .bind(create.pack_privilege_str())
+            .bind(create.manage_issues)
+            .bind(create.access_confidential_issues)
+            .bind(create.access_time_tracking)
+            .bind(create.schedule_issues)
+            .bind(serde_json::to_value(&create.editable_issue_fields)?)
+            .bind(create.can_edit_fields_of_other_issues)
+            .bind(serde_json::to_value(&create.editable_issue_links)?)
+            .bind(create.manage_builds)
+            .bind(create.upload_cache)
+            .bind(serde_json::to_value(&create.job_privileges)?)
+            .bind(&create.accessible_sites)
+            .bind(create.manage_workspaces)
+            .bind(create.create_workspaces)
+            .bind(create.maintenance)
             .bind(now)
             .bind(now)
             .fetch_one(pool)
@@ -76,7 +69,7 @@ impl Repository<DbRole, DbCreateRole, DbUpdateRole> for RoleRepository {
     }
 
     async fn find_by_id(&self, pool: &DbPool, id: i64) -> DbResult<Option<DbRole>> {
-        let row = sqlx::query(RoleQueryBuilder::select_by_id())
+        let row = sqlx::query(&RoleQueryBuilder::select_by_id())
             .bind(id)
             .fetch_optional(pool)
             .await?;
@@ -85,10 +78,46 @@ impl Repository<DbRole, DbCreateRole, DbUpdateRole> for RoleRepository {
     }
 
     async fn update(&self, pool: &DbPool, id: i64, update: DbUpdateRole) -> DbResult<DbRole> {
-        let row = sqlx::query(RoleQueryBuilder::update())
+        let editable_issue_fields = update
+            .editable_issue_fields
+            .as_ref()
+            .map(serde_json::to_value)
+            .transpose()?;
+        let editable_issue_links = update
+            .editable_issue_links
+            .as_ref()
+            .map(serde_json::to_value)
+            .transpose()?;
+        let job_privileges = update
+            .job_privileges
+            .as_ref()
+            .map(serde_json::to_value)
+            .transpose()?;
+
+        let row = sqlx::query(&RoleQueryBuilder::update())
             .bind(id)
             .bind(&update.name)
             .bind(&update.description)
+            .bind(update.manage_project)
+            .bind(update.create_children)
+            .bind(update.manage_pull_requests)
+            .bind(update.manage_code_comments)
+            .bind(update.code_privilege_str())
+            .bind(update.pack_privilege_str())
+            .bind(update.manage_issues)
+            .bind(update.access_confidential_issues)
+            .bind(update.access_time_tracking)
+            .bind(update.schedule_issues)
+            .bind(editable_issue_fields)
+            .bind(update.can_edit_fields_of_other_issues)
+            .bind(editable_issue_links)
+            .bind(update.manage_builds)
+            .bind(update.upload_cache)
+            .bind(job_privileges)
+            .bind(&update.accessible_sites)
+            .bind(update.manage_workspaces)
+            .bind(update.create_workspaces)
+            .bind(update.maintenance)
             .fetch_one(pool)
             .await?;
 
@@ -104,9 +133,10 @@ impl Repository<DbRole, DbCreateRole, DbUpdateRole> for RoleRepository {
     }
 
     async fn list(&self, pool: &DbPool, limit: i64, offset: i64) -> DbResult<Vec<DbRole>> {
-        let rows = sqlx::query(
-            "SELECT * FROM roles ORDER BY created_at DESC LIMIT $1 OFFSET $2"
-        )
+        let rows = sqlx::query(&format!(
+            "{} ORDER BY created_at DESC LIMIT $1 OFFSET $2",
+            RoleQueryBuilder::select_all()
+        ))
         .bind(limit)
         .bind(offset)
         .fetch_all(pool)
@@ -118,137 +148,6 @@ impl Repository<DbRole, DbCreateRole, DbUpdateRole> for RoleRepository {
 
     async fn count(&self, pool: &DbPool) -> DbResult<i64> {
         let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM roles")
-            .fetch_one(pool)
-            .await?;
-        Ok(count)
-    }
-}
-
-pub struct RolePermissionRepository;
-
-impl RolePermissionRepository {
-    pub fn new() -> Self {
-        Self
-    }
-
-    /// Find by role ID
-    pub async fn find_by_role_id(&self, pool: &DbPool, role_id: i64) -> DbResult<Vec<DbRolePermission>> {
-        let rows = sqlx::query(RolePermissionQueryBuilder::select_by_role_id())
-            .bind(role_id)
-            .fetch_all(pool)
-            .await?;
-
-        let perms = rows.into_iter().map(|r| DbRolePermission::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
-        Ok(perms)
-    }
-
-    /// Add permission
-    pub async fn add_permission(&self, pool: &DbPool, role_id: i64, permission: &str, resource_type: Option<&str>, resource_id: Option<i64>) -> DbResult<DbRolePermission> {
-        let uuid = uuid::Uuid::new_v4();
-        let now = chrono::Utc::now();
-
-        let id: i64 = sqlx::query_scalar(RolePermissionQueryBuilder::insert())
-            .bind(uuid)
-            .bind(role_id)
-            .bind(permission)
-            .bind(resource_type)
-            .bind(resource_id)
-            .bind(now)
-            .fetch_one(pool)
-            .await?;
-
-        self.find_by_id(pool, id).await?.ok_or_else(|| crate::DbError::NotFound {
-            entity_type: "RolePermission".to_string(),
-            id: id.to_string(),
-        })
-    }
-
-    /// Remove permission
-    pub async fn remove_permission(&self, pool: &DbPool, role_id: i64, permission: &str) -> DbResult<()> {
-        sqlx::query(RolePermissionQueryBuilder::delete_by_role_and_permission())
-            .bind(role_id)
-            .bind(permission)
-            .execute(pool)
-            .await?;
-        Ok(())
-    }
-
-    /// Remove all permissions for role
-    pub async fn remove_all_permissions(&self, pool: &DbPool, role_id: i64) -> DbResult<()> {
-        sqlx::query(RolePermissionQueryBuilder::delete_by_role_id())
-            .bind(role_id)
-            .execute(pool)
-            .await?;
-        Ok(())
-    }
-}
-
-#[async_trait]
-impl Repository<DbRolePermission, DbRolePermission, DbRolePermission> for RolePermissionRepository {
-    async fn create(&self, pool: &DbPool, create: DbRolePermission) -> DbResult<DbRolePermission> {
-        let uuid = uuid::Uuid::new_v4();
-        let now = chrono::Utc::now();
-
-        let id: i64 = sqlx::query_scalar(RolePermissionQueryBuilder::insert())
-            .bind(uuid)
-            .bind(create.role_id)
-            .bind(&create.permission)
-            .bind(&create.resource_type)
-            .bind(create.resource_id)
-            .bind(now)
-            .fetch_one(pool)
-            .await?;
-
-        self.find_by_id(pool, id).await?.ok_or_else(|| crate::DbError::NotFound {
-            entity_type: "RolePermission".to_string(),
-            id: id.to_string(),
-        })
-    }
-
-    async fn find_by_id(&self, pool: &DbPool, id: i64) -> DbResult<Option<DbRolePermission>> {
-        let row = sqlx::query("SELECT * FROM role_permissions WHERE id = $1")
-            .bind(id)
-            .fetch_optional(pool)
-            .await?;
-
-        Ok(row.map(|r| DbRolePermission::from_row(&r)).transpose()?)
-    }
-
-    async fn update(&self, pool: &DbPool, id: i64, update: DbRolePermission) -> DbResult<DbRolePermission> {
-        let row = sqlx::query(
-            "UPDATE role_permissions SET permission = $2, resource_type = $3, resource_id = $4 WHERE id = $1 RETURNING *"
-        )
-        .bind(id)
-        .bind(&update.permission)
-        .bind(&update.resource_type)
-        .bind(update.resource_id)
-        .fetch_one(pool)
-        .await?;
-
-        Ok(DbRolePermission::from_row(&row)?)
-    }
-
-    async fn delete(&self, pool: &DbPool, id: i64) -> DbResult<()> {
-        sqlx::query("DELETE FROM role_permissions WHERE id = $1")
-            .bind(id)
-            .execute(pool)
-            .await?;
-        Ok(())
-    }
-
-    async fn list(&self, pool: &DbPool, limit: i64, offset: i64) -> DbResult<Vec<DbRolePermission>> {
-        let rows = sqlx::query("SELECT * FROM role_permissions ORDER BY created_at DESC LIMIT $1 OFFSET $2")
-            .bind(limit)
-            .bind(offset)
-            .fetch_all(pool)
-            .await?;
-
-        let perms = rows.into_iter().map(|r| DbRolePermission::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
-        Ok(perms)
-    }
-
-    async fn count(&self, pool: &DbPool) -> DbResult<i64> {
-        let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM role_permissions")
             .fetch_one(pool)
             .await?;
         Ok(count)
