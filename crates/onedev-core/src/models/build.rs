@@ -400,12 +400,13 @@ pub struct JobCacheSpec {
     pub when: Option<CacheWhen>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, strum::EnumString, strum::Display)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum CachePolicy {
     Pull,
     Push,
+    #[default]
     PullPush,
 }
 

@@ -244,18 +244,7 @@ pub struct LabelRef {
     pub is_scoped: bool,
 }
 
-/// Merge request reference
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub struct MergeRequestRef {
-    pub id: i64,
-    pub uuid: Uuid,
-    pub project_id: i64,
-    pub number: i64,
-    pub title: String,
-    pub state: MergeRequestState,
-    pub source_branch: String,
-    pub target_branch: String,
-}
+// `MergeRequestRef` is defined once in `pull_request.rs`.
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]
 #[serde(rename_all = "lowercase")]

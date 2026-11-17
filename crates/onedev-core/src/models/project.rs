@@ -95,7 +95,7 @@ pub struct ProjectRef {
 #[derive(Debug, Clone, Serialize, Deserialize, validator::Validate)]
 pub struct CreateProject {
     #[validate(length(min = 1, max = 100))]
-    #[validate(regex(path = "crate::utils::validation::PROJECT_PATH_REGEX"))]
+    #[validate(regex(path = *crate::utils::validation::PROJECT_PATH_REGEX))]
     pub path: String,
 
     #[validate(length(min = 1, max = 200))]

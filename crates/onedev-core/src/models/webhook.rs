@@ -144,7 +144,7 @@ pub struct CreateWebhook {
 }
 
 /// Webhook update input
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, validator::Validate, Default)]
 pub struct UpdateWebhook {
     #[validate(url)]
     pub url: Option<String>,

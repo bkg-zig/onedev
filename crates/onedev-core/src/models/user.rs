@@ -4,7 +4,7 @@ use super::*;
 use crate::utils::*;
 
 /// User types in the system
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, strum::EnumString, strum::Display)]
 #[serde(rename_all = "lowercase")]
 #[strum(serialize_all = "lowercase")]
 pub enum UserType {
@@ -96,7 +96,7 @@ impl From<&User> for UserRef {
 #[derive(Debug, Clone, Serialize, Deserialize, validator::Validate)]
 pub struct CreateUser {
     #[validate(length(min = 3, max = 100))]
-    #[validate(regex(path = "crate::utils::validation::USERNAME_REGEX"))]
+    #[validate(regex(path = *crate::utils::validation::USERNAME_REGEX))]
     pub name: String,
 
     #[validate(length(max = 200))]

@@ -98,7 +98,7 @@ pub struct GroupRef {
 #[derive(Debug, Clone, Serialize, Deserialize, validator::Validate)]
 pub struct CreateGroup {
     #[validate(length(min = 1, max = 100))]
-    #[validate(regex(path = "crate::utils::validation::GROUP_PATH_REGEX"))]
+    #[validate(regex(path = *crate::utils::validation::GROUP_PATH_REGEX))]
     pub path: String,
 
     #[validate(length(min = 1, max = 200))]

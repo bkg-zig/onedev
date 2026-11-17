@@ -164,7 +164,7 @@ pub struct WorkspaceRef {
 #[derive(Debug, Clone, Serialize, Deserialize, validator::Validate)]
 pub struct CreateWorkspace {
     #[validate(length(min = 1, max = 100))]
-    #[validate(regex(path = "crate::utils::validation::WORKSPACE_NAME_REGEX"))]
+    #[validate(regex(path = *crate::utils::validation::WORKSPACE_NAME_REGEX))]
     pub name: String,
 
     pub workspace_type: WorkspaceType,

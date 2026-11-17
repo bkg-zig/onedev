@@ -26,6 +26,7 @@ pub use chrono::{DateTime, Utc, NaiveDateTime};
 pub use serde::{Serialize, Deserialize};
 pub use anyhow::Result;
 pub use thiserror::Error;
+pub(crate) use std::collections::HashMap;
 
 pub use user::*;
 pub use project::*;

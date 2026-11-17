@@ -227,19 +227,7 @@ pub struct CommitRef {
     pub parent_ids: Vec<String>,
 }
 
-/// Build reference
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub struct BuildRef {
-    pub id: i64,
-    pub uuid: Uuid,
-    pub project_id: i64,
-    pub number: i64,
-    pub status: BuildStatus,
-    pub ref_name: String,
-    pub sha: String,
-    pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
-}
+// `BuildRef` is defined once in `build.rs`.
 
 /// Approval
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
