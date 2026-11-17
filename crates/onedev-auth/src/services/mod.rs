@@ -3,6 +3,7 @@
 pub mod auth_service;
 pub mod authorization_service;
 pub mod session_service;
+pub mod token_mapping;
 pub mod token_service;
 pub mod two_factor_service;
 

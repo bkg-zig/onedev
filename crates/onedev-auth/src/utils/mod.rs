@@ -113,7 +113,7 @@ pub fn sanitize_for_log(input: &str) -> String {
     
     let mut result = input.to_string();
     for (pattern, replacement) in patterns {
-        let regex = regex::Regex::new(&format!(r#"(?i){}=["']?[^"'\s]+"#", pattern)).ok();
+        let regex = regex::Regex::new(&format!(r#"(?i){}=["']?[^"'\s]+"#, pattern)).ok();
         if let Some(re) = regex {
             result = re.replace_all(&result, format!("{}=\"{}\"", pattern, replacement)).to_string();
         }

@@ -7,8 +7,12 @@ use crate::models::token::{JwtService, TokenPair, TokenConfig, Claims, TokenType
 use crate::models::two_factor::{TwoFactorService, TwoFactorSetup, TotpConfig};
 use crate::models::password::{hash_password, verify_password, validate_password_strength, generate_reset_token, hash_reset_token, verify_reset_token};
 use onedev_core::models::user::{User, UserType, UserStatus, CreateUser, UserRef};
-use onedev_core::models::access_token::{AccessToken, AccessTokenType, TokenScope, CreateAccessToken};
-use onedev_db::repositories::{UserRepository, AccessTokenRepository, SessionRepository};
+use onedev_core::models::access_token::{AccessToken, CreateAccessToken};
+use onedev_db::models::access_token::DbCreateAccessToken;
+use onedev_db::models::user::DbUpdateUser;
+use onedev_db::repositories::{UserRepository, AccessTokenRepository};
+use crate::repositories::SessionRepository;
+use crate::services::token_mapping::{access_token_from_db, scopes_to_db};
 use onedev_db::DbPool;
 use secrecy::SecretString;
 use thiserror::Error;
@@ -149,7 +153,9 @@ impl AuthService {
             self.user_repo.find_by_email(&self.db_pool, identifier).await?
         } else {
             self.user_repo.find_by_name(&self.db_pool, identifier).await?
-        }.ok_or(AuthError::UserNotFound)?;
+        }
+        .ok_or(AuthError::UserNotFound)?
+        .to_core();
 
         // Check user status
         match user.status {
@@ -212,7 +218,8 @@ impl AuthService {
         ip_address: Option<String>,
     ) -> Result<AuthResult, AuthError> {
         let mut user = self.user_repo.find_by_id(&self.db_pool, user_id).await?
-            .ok_or(AuthError::UserNotFound)?;
+            .ok_or(AuthError::UserNotFound)?
+            .to_core();
 
         // Verify TOTP code
         if let Some(secret) = &user.two_factor_secret {
@@ -226,7 +233,10 @@ impl AuthService {
                 }
                 // Update backup codes
                 user.backup_codes = codes;
-                self.user_repo.update(&self.db_pool, user.id, user.into()).await?;
+                self.user_repo.update(&self.db_pool, user.id, DbUpdateUser {
+                    backup_codes: Some(user.backup_codes.clone()),
+                    ..Default::default()
+                }).await?;
             } else {
                 return Err(AuthError::InvalidTwoFactorCode);
             }
@@ -265,19 +275,21 @@ impl AuthService {
 
         // Fall back to access token lookup (for PATs)
         let token_hash = AccessToken::hash_token(token);
-        let db_token = self.token_repo.find_by_hash(&self.db_pool, &token_hash).await?
+        let db_token = self.token_repo.find_by_token_hash(&self.db_pool, &token_hash).await?
+            .map(access_token_from_db)
             .ok_or(AuthError::InvalidToken)?;
 
         if !db_token.is_active() {
             return Err(if db_token.is_expired() { AuthError::TokenExpired } else { AuthError::TokenRevoked });
         }
 
-        // Update last used
-        self.token_repo.update_last_used(&self.db_pool, db_token.id, Utc::now()).await?;
+        // The column is stamped with NOW(); the caller clock is not stored.
+        self.token_repo.update_last_used(&self.db_pool, db_token.id).await?;
 
         // Get owner user
         let owner = self.user_repo.find_by_id(&self.db_pool, db_token.owner_id).await?
-            .ok_or(AuthError::Internal("Token owner not found".to_string()))?;
+            .ok_or(AuthError::Internal("Token owner not found".to_string()))?
+            .to_core();
 
         let principal = AccessTokenPrincipal {
             token_id: db_token.id,
@@ -303,7 +315,8 @@ impl AuthService {
                 .map_err(|_| AuthError::InvalidToken)?;
             
             let user = self.user_repo.find_by_id(&self.db_pool, user_id).await?
-                .ok_or(AuthError::UserNotFound)?;
+                .ok_or(AuthError::UserNotFound)?
+                .to_core();
 
             if !matches!(user.status, UserStatus::Active) {
                 return Err(AuthError::UserDisabled);
@@ -321,6 +334,7 @@ impl AuthService {
                 .map_err(|_| AuthError::InvalidToken)?;
             
             let db_token = self.token_repo.find_by_id(&self.db_pool, token_id).await?
+                .map(access_token_from_db)
                 .ok_or(AuthError::AccessTokenNotFound)?;
 
             if !db_token.is_active() {
@@ -328,7 +342,8 @@ impl AuthService {
             }
 
             let owner = self.user_repo.find_by_id(&self.db_pool, db_token.owner_id).await?
-                .ok_or(AuthError::Internal("Token owner not found".to_string()))?;
+                .ok_or(AuthError::Internal("Token owner not found".to_string()))?
+                .to_core();
 
             let principal = AccessTokenPrincipal {
                 token_id: db_token.id,
@@ -383,7 +398,8 @@ impl AuthService {
         }
 
         let user = self.user_repo.find_by_id(&self.db_pool, session.user_id).await?
-            .ok_or(AuthError::UserNotFound)?;
+            .ok_or(AuthError::UserNotFound)?
+            .to_core();
 
         if !matches!(user.status, UserStatus::Active) {
             return Err(AuthError::UserDisabled);
@@ -420,8 +436,9 @@ impl AuthService {
         current_password: &str,
         new_password: &str,
     ) -> Result<(), AuthError> {
-        let mut user = self.user_repo.find_by_id(&self.db_pool, user_id).await?
-            .ok_or(AuthError::UserNotFound)?;
+        let user = self.user_repo.find_by_id(&self.db_pool, user_id).await?
+            .ok_or(AuthError::UserNotFound)?
+            .to_core();
 
         // Verify current password
         let current_hash = user.password_hash.as_ref()
@@ -435,9 +452,10 @@ impl AuthService {
         validate_password_strength(new_password)?;
         let new_hash = hash_password(new_password)?;
 
-        // Update password
-        user.password_hash = Some(new_hash);
-        self.user_repo.update(&self.db_pool, user.id, user.into()).await?;
+        self.user_repo.update(&self.db_pool, user.id, DbUpdateUser {
+            password_hash: Some(new_hash),
+            ..Default::default()
+        }).await?;
 
         // Revoke all sessions (force re-login)
         self.revoke_all_sessions(user_id).await?;
@@ -483,7 +501,7 @@ impl AuthService {
 
     /// Enable 2FA for a user (after verification)
     pub async fn enable_two_factor(&self, user_id: i64, code: &str, secret: &str, backup_codes: Vec<String>) -> Result<(), AuthError> {
-        let mut user = self.user_repo.find_by_id(&self.db_pool, user_id).await?
+        let user = self.user_repo.find_by_id(&self.db_pool, user_id).await?
             .ok_or(AuthError::UserNotFound)?;
 
         // Verify the code
@@ -494,18 +512,19 @@ impl AuthService {
         // Hash backup codes
         let hashed_backup_codes = self.two_factor_service.hash_backup_codes(&backup_codes);
 
-        // Update user
-        user.two_factor_enabled = true;
-        user.two_factor_secret = Some(secret.to_string());
-        user.backup_codes = hashed_backup_codes;
-        self.user_repo.update(&self.db_pool, user.id, user.into()).await?;
+        self.user_repo.update(&self.db_pool, user.id, DbUpdateUser {
+            two_factor_enabled: Some(true),
+            two_factor_secret: Some(secret.to_string()),
+            backup_codes: Some(hashed_backup_codes),
+            ..Default::default()
+        }).await?;
 
         Ok(())
     }
 
     /// Disable 2FA for a user
     pub async fn disable_two_factor(&self, user_id: i64, password: &str) -> Result<(), AuthError> {
-        let mut user = self.user_repo.find_by_id(&self.db_pool, user_id).await?
+        let user = self.user_repo.find_by_id(&self.db_pool, user_id).await?
             .ok_or(AuthError::UserNotFound)?;
 
         // Verify password
@@ -516,18 +535,21 @@ impl AuthService {
             return Err(AuthError::CurrentPasswordIncorrect);
         }
 
-        // Disable 2FA
-        user.two_factor_enabled = false;
-        user.two_factor_secret = None;
-        user.backup_codes = Vec::new();
-        self.user_repo.update(&self.db_pool, user.id, user.into()).await?;
+        // COALESCE keeps the old secret when the bind is NULL, so write an
+        // empty string to wipe it. Login checks two_factor_enabled first.
+        self.user_repo.update(&self.db_pool, user.id, DbUpdateUser {
+            two_factor_enabled: Some(false),
+            two_factor_secret: Some(String::new()),
+            backup_codes: Some(Vec::new()),
+            ..Default::default()
+        }).await?;
 
         Ok(())
     }
 
     /// Generate new backup codes
     pub async fn regenerate_backup_codes(&self, user_id: i64, password: &str) -> Result<Vec<String>, AuthError> {
-        let mut user = self.user_repo.find_by_id(&self.db_pool, user_id).await?
+        let user = self.user_repo.find_by_id(&self.db_pool, user_id).await?
             .ok_or(AuthError::UserNotFound)?;
 
         if !user.two_factor_enabled {
@@ -546,8 +568,10 @@ impl AuthService {
         let backup_codes = self.two_factor_service.generate_backup_codes(10);
         let hashed_backup_codes = self.two_factor_service.hash_backup_codes(&backup_codes);
 
-        user.backup_codes = hashed_backup_codes;
-        self.user_repo.update(&self.db_pool, user.id, user.into()).await?;
+        self.user_repo.update(&self.db_pool, user.id, DbUpdateUser {
+            backup_codes: Some(hashed_backup_codes),
+            ..Default::default()
+        }).await?;
 
         Ok(backup_codes)
     }
@@ -565,55 +589,33 @@ impl AuthService {
         let token_hash = AccessToken::hash_token(&raw_token);
         let token_prefix = AccessToken::token_prefix(&raw_token);
 
-        let db_create = onedev_db::models::access_token::DbCreateAccessToken {
+        let db_create = DbCreateAccessToken {
+            user_id: owner_id,
             name: create.name,
             token_hash,
-            token_prefix,
-            token_type: create.token_type,
-            scopes: create.scopes,
-            owner_id,
-            impersonated_user_id: create.impersonated_user_id,
-            project_id: create.project_id,
-            group_id: create.group_id,
+            scopes: scopes_to_db(create.token_type, create.scopes),
             expires_at: create.expires_at,
         };
 
-        let token = self.token_repo.create(&self.db_pool, db_create).await?;
-        
-        // Return with raw token (only time it's exposed)
-        Ok(AccessToken {
-            id: token.id,
-            uuid: token.uuid,
-            name: token.name,
-            token_hash: token.token_hash,
-            token_prefix: token.token_prefix,
-            token_type: token.token_type,
-            scopes: token.scopes,
-            owner_id: token.owner_id,
-            impersonated_user_id: token.impersonated_user_id,
-            project_id: token.project_id,
-            group_id: token.group_id,
-            expires_at: token.expires_at,
-            last_used_at: token.last_used_at,
-            last_used_ip: token.last_used_ip,
-            revoked: token.revoked,
-            revoked_at: token.revoked_at,
-            revoked_by_id: token.revoked_by_id,
-            created_at: token.created_at,
-            updated_at: token.updated_at,
-        })
+        let mut token = access_token_from_db(self.token_repo.create(&self.db_pool, db_create).await?);
+        token.token_prefix = token_prefix;
+        let _ = raw_token;
+        Ok(token)
     }
 
-    /// Revoke an access token
+    /// Revoke an access token.
+    ///
+    /// `revoked_by` is not stored: `access_tokens` only has `revoked_at`.
     pub async fn revoke_access_token(&self, token_id: i64, revoked_by: i64) -> Result<(), AuthError> {
-        self.token_repo.revoke(&self.db_pool, token_id, revoked_by).await?;
+        let _ = revoked_by;
+        self.token_repo.revoke(&self.db_pool, token_id).await?;
         Ok(())
     }
 
     /// List access tokens for a user
     pub async fn list_access_tokens(&self, owner_id: i64) -> Result<Vec<AccessToken>, AuthError> {
-        self.token_repo.list_by_owner(&self.db_pool, owner_id).await
-            .map_err(AuthError::Database)
+        let tokens = self.token_repo.find_by_user_id(&self.db_pool, owner_id).await?;
+        Ok(tokens.into_iter().map(access_token_from_db).collect())
     }
 
     /// Get the JWT service

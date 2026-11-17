@@ -11,8 +11,8 @@ use crate::models::principal::{UserPrincipal, AccessTokenPrincipal};
 use crate::models::token::{JwtService, Claims, TokenType};
 use crate::services::AuthService;
 use crate::errors::AuthError;
+use onedev_core::permissions::ProjectPermissionType;
 use std::sync::Arc;
-use tracing::debug;
 
 /// Extractor for validated JWT claims
 #[derive(Debug, Clone)]
@@ -106,13 +106,13 @@ where
 /// Extractor for project permission
 #[derive(Debug, Clone)]
 pub struct RequireProjectPermission {
-    pub permission: crate::models::principal::ProjectPermissionType,
+    pub permission: ProjectPermissionType,
     pub project_id: i64,
     pub subject: Subject,
 }
 
 impl RequireProjectPermission {
-    pub fn new(permission: crate::models::principal::ProjectPermissionType, project_id: i64) -> Self {
+    pub fn new(permission: ProjectPermissionType, project_id: i64) -> Self {
         Self {
             permission,
             project_id,
@@ -136,7 +136,7 @@ where
         // This extractor mainly provides the subject for the handler to check
         
         Ok(RequireProjectPermission {
-            permission: crate::models::principal::ProjectPermissionType::ViewProject,
+            permission: ProjectPermissionType::ViewProject,
             project_id: 0,
             subject,
         })
@@ -184,7 +184,7 @@ where
 macro_rules! require_permission {
     ($subject:expr, $authz:expr, $project_id:expr, $perm:expr) => {{
         use $crate::services::AuthorizationService;
-        use $crate::models::principal::ProjectPermissionType;
+        use onedev_core::permissions::Permission;
         
         let result = $authz.check_project_permission(&$subject, $project_id, $perm).await?;
         if result != $crate::services::authorization_service::PermissionCheck::Granted {

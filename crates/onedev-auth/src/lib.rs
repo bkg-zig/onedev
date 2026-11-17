@@ -2,6 +2,7 @@
 
 pub mod models;
 pub mod services;
+pub mod repositories;
 pub mod handlers;
 pub mod errors;
 pub mod utils;

@@ -1,7 +1,7 @@
 //! Session Service - Session management
 
 use crate::models::session::{Session, CreateSession, SessionQuery};
-use onedev_db::repositories::SessionRepository;
+use crate::repositories::SessionRepository;
 use onedev_db::{DbPool, DbResult};
 use uuid::Uuid;
 use chrono::{DateTime, Utc};

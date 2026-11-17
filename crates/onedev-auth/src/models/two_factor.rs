@@ -1,8 +1,7 @@
 //! Two-Factor Authentication (TOTP) support
 
 use totp_lite::{totp, Sha1, Sha256, Sha512};
-use base64::{Engine as _, engine::general_purpose};
-use base64ct::Base32;
+use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
 use qrcode::QrCode;
 use qrcode::render::svg;
 use serde::{Deserialize, Serialize};
@@ -10,6 +9,52 @@ use secrecy::{SecretString, ExposeSecret};
 use thiserror::Error;
 use rand::RngCore;
 use crate::models::password::hash_password;
+
+const BASE32_ALPHABET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+
+fn encode_base32(data: &[u8]) -> String {
+    let mut out = String::new();
+    let mut buffer: u64 = 0;
+    let mut bits: u32 = 0;
+    for &byte in data {
+        buffer = (buffer << 8) | u64::from(byte);
+        bits += 8;
+        while bits >= 5 {
+            bits -= 5;
+            let idx = ((buffer >> bits) & 0x1f) as usize;
+            out.push(BASE32_ALPHABET[idx] as char);
+        }
+    }
+    if bits > 0 {
+        let idx = ((buffer << (5 - bits)) & 0x1f) as usize;
+        out.push(BASE32_ALPHABET[idx] as char);
+    }
+    out
+}
+
+fn decode_base32(input: &str) -> Vec<u8> {
+    let mut buffer: u64 = 0;
+    let mut bits: u32 = 0;
+    let mut out = Vec::new();
+    for c in input.chars() {
+        if c == '=' || c.is_whitespace() {
+            continue;
+        }
+        let value = match c {
+            'A'..='Z' => u32::from(c) - u32::from('A'),
+            'a'..='z' => u32::from(c) - u32::from('a'),
+            '2'..='7' => u32::from(c) - u32::from('2') + 26,
+            _ => return Vec::new(),
+        };
+        buffer = (buffer << 5) | u64::from(value);
+        bits += 5;
+        if bits >= 8 {
+            bits -= 8;
+            out.push((buffer >> bits) as u8);
+        }
+    }
+    out
+}
 
 /// TOTP algorithm
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -88,7 +133,7 @@ impl TwoFactorService {
     pub fn generate_secret() -> String {
         let mut bytes = [0u8; 20];
         rand::rng().fill_bytes(&mut bytes);
-        Base32::encode_string(&bytes).to_lowercase()
+        encode_base32(&bytes).to_lowercase()
     }
 
     /// Generate backup codes (10 codes, 8 chars each)
@@ -121,8 +166,8 @@ impl TwoFactorService {
         let backup_codes = Self::generate_backup_codes(10);
         
         // Build otpauth URI
-        let encoded_issuer = urlencoding::encode(issuer);
-        let encoded_account = urlencoding::encode(username);
+        let encoded_issuer = utf8_percent_encode(issuer, NON_ALPHANUMERIC);
+        let encoded_account = utf8_percent_encode(username, NON_ALPHANUMERIC);
         let otpauth_uri = format!(
             "otpauth://totp/{}:{}?secret={}&issuer={}&algorithm={}&digits={}&period={}",
             encoded_issuer,
@@ -253,7 +298,7 @@ impl TwoFactorService {
 
     /// Decode base32 secret
     fn decode_secret(&self, secret: &str) -> Vec<u8> {
-        Base32::decode_vec(secret.to_uppercase().as_bytes()).unwrap_or_default()
+        decode_base32(&secret.to_uppercase())
     }
 }
 

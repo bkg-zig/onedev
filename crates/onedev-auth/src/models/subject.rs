@@ -67,7 +67,7 @@ impl Subject {
     /// Check if subject can impersonate (has sudo scope)
     pub fn can_impersonate(&self) -> bool {
         match self {
-            Subject::AccessToken(p) => p.scopes.contains(crate::models::token::TokenScope::SUDO),
+            Subject::AccessToken(p) => p.scopes.contains(onedev_core::models::access_token::TokenScope::SUDO),
             _ => false,
         }
     }
@@ -76,7 +76,7 @@ impl Subject {
     pub fn is_service_account(&self) -> bool {
         match self {
             Subject::User(p) => p.user_type == UserType::Service,
-            Subject::AccessToken(p) => p.token_type == crate::models::token::AccessTokenType::ServiceAccount,
+            Subject::AccessToken(p) => p.token_type == onedev_core::models::access_token::AccessTokenType::ServiceAccount,
             Subject::Anonymous => false,
         }
     }

@@ -7,7 +7,7 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use crate::services::TokenService;
 use crate::models::token::TokenPair;
-use crate::models::access_token::{AccessToken, AccessTokenType, TokenScope, CreateAccessToken};
+use onedev_core::models::access_token::{AccessToken, AccessTokenType, TokenScope, CreateAccessToken};
 use crate::errors::AuthError;
 use std::sync::Arc;
 use chrono::{DateTime, Utc};

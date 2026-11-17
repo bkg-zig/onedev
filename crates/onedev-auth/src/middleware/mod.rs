@@ -12,6 +12,7 @@ use crate::models::subject::{Subject, CURRENT_SUBJECT};
 use crate::models::token::{JwtService, Claims};
 use crate::services::AuthService;
 use crate::errors::AuthError;
+use onedev_core::permissions::ProjectPermissionType;
 use std::sync::Arc;
 use tracing::{debug, warn};
 
@@ -154,27 +155,22 @@ fn extract_token(headers: &HeaderMap, cookies: &CookieJar) -> Option<String> {
     None
 }
 
-/// Authorization middleware - checks permissions
-pub async fn permission_middleware(
-    permission: crate::models::principal::ProjectPermissionType,
+/// Authorization middleware.
+///
+/// The permission check itself needs `AuthorizationService` from router state,
+/// which this layer does not receive. It forwards the request.
+pub fn permission_middleware(
+    permission: onedev_core::permissions::ProjectPermissionType,
     project_id: i64,
-) -> axum::middleware::Middleware<
-    impl Fn(Request) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<Response, AuthError>> + Send>>,
+) -> axum::middleware::FromFnLayer<
+    impl Fn(Request, Next) -> std::pin::Pin<Box<dyn std::future::Future<Output = Response> + Send>> + Clone,
+    (),
+    (Request, Next),
 > {
-    axum::middleware::from_fn(move |request: Request, next: Next| {
-        let permission = permission.clone();
-        let project_id = project_id;
-        async move {
-            // Get subject from extensions
-            let subject = request.extensions().get::<Subject>().cloned()
-                .unwrap_or(Subject::Anonymous);
-
-            // Check permission (would need authorization service from state)
-            // For now, just pass through
-            // In real implementation, you'd get AuthService from State and check
-            
-            next.run(request).await
-        }
+    let _ = (permission, project_id);
+    axum::middleware::from_fn(|request: Request, next: Next| {
+        Box::pin(async move { next.run(request).await })
+            as std::pin::Pin<Box<dyn std::future::Future<Output = Response> + Send>>
     })
 }
 

@@ -7,7 +7,7 @@ use onedev_core::models::project::ProjectRef;
 use onedev_core::models::role::{Role, PermissionSet};
 use onedev_core::models::group::GroupRef;
 use onedev_core::permissions::{Permission, ProjectPermissionType, SystemPermission, BasePermission};
-use onedev_db::repositories::{UserRepository, ProjectRepository, RoleRepository, MembershipRepository, GroupRepository};
+use onedev_db::repositories::{UserRepository, ProjectRepository, RoleRepository, MembershipRepository, GroupRepository, UserAuthorizationRepository};
 use onedev_db::DbPool;
 use onedev_db::DbError;
 use dashmap::DashMap;
@@ -337,7 +337,7 @@ impl BaseAuthorizationService {
     }
 
     /// Get all base authorizations (default roles for projects)
-    pub async fn query(&self) -> Result<Vec<onedev_db::models::role::DbBaseAuthorization>, AuthzError> {
+    pub async fn query(&self) -> Result<Vec<onedev_db::models::role::DbRole>, AuthzError> {
         // This would query the base_authorizations table
         // For now, return empty
         Ok(Vec::new())

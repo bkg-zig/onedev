@@ -1,12 +1,44 @@
 //! Router for Authentication & Authorization API
 
 use axum::{
+    extract::FromRef,
     routing::{get, post, patch, delete},
     Router,
 };
 use crate::services::{AuthService, SessionService, TokenService, TwoFactorService};
 use crate::handlers::*;
 use std::sync::Arc;
+
+type AuthState = (
+    Arc<AuthService>,
+    Arc<SessionService>,
+    Arc<TokenService>,
+    Arc<TwoFactorService>,
+);
+
+impl FromRef<AuthState> for Arc<AuthService> {
+    fn from_ref(state: &AuthState) -> Self {
+        Arc::clone(&state.0)
+    }
+}
+
+impl FromRef<AuthState> for Arc<SessionService> {
+    fn from_ref(state: &AuthState) -> Self {
+        Arc::clone(&state.1)
+    }
+}
+
+impl FromRef<AuthState> for Arc<TokenService> {
+    fn from_ref(state: &AuthState) -> Self {
+        Arc::clone(&state.2)
+    }
+}
+
+impl FromRef<AuthState> for Arc<TwoFactorService> {
+    fn from_ref(state: &AuthState) -> Self {
+        Arc::clone(&state.3)
+    }
+}
 
 /// Create the auth router
 pub fn create_auth_router(

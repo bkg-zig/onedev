@@ -1,9 +1,11 @@
 //! Token Service - Access token management
 
 use crate::models::token::{JwtService, TokenConfig, TokenPair, Claims, TokenType, JwtError};
-use onedev_core::models::access_token::{AccessToken, AccessTokenType, TokenScope, CreateAccessToken};
+use onedev_core::models::access_token::{AccessToken, CreateAccessToken};
+use onedev_db::models::access_token::{DbCreateAccessToken, DbUpdateAccessToken};
 use onedev_db::repositories::AccessTokenRepository;
 use onedev_db::{DbPool, DbResult};
+use crate::services::token_mapping::{access_token_from_db, scopes_to_db};
 use chrono::{DateTime, Utc};
 
 /// Token service
@@ -29,87 +31,76 @@ impl TokenService {
         let token_hash = AccessToken::hash_token(&raw_token);
         let token_prefix = AccessToken::token_prefix(&raw_token);
 
-        let db_create = onedev_db::models::access_token::DbCreateAccessToken {
+        let db_create = DbCreateAccessToken {
+            user_id: owner_id,
             name: create.name,
             token_hash,
-            token_prefix,
-            token_type: create.token_type,
-            scopes: create.scopes,
-            owner_id,
-            impersonated_user_id: create.impersonated_user_id,
-            project_id: create.project_id,
-            group_id: create.group_id,
+            scopes: scopes_to_db(create.token_type, create.scopes),
             expires_at: create.expires_at,
         };
 
-        let token = self.repo.create(&self.db_pool, db_create).await?;
-        
-        Ok(AccessToken {
-            id: token.id,
-            uuid: token.uuid,
-            name: token.name,
-            token_hash: token.token_hash,
-            token_prefix: token.token_prefix,
-            token_type: token.token_type,
-            scopes: token.scopes,
-            owner_id: token.owner_id,
-            impersonated_user_id: token.impersonated_user_id,
-            project_id: token.project_id,
-            group_id: token.group_id,
-            expires_at: token.expires_at,
-            last_used_at: token.last_used_at,
-            last_used_ip: token.last_used_ip,
-            revoked: token.revoked,
-            revoked_at: token.revoked_at,
-            revoked_by_id: token.revoked_by_id,
-            created_at: token.created_at,
-            updated_at: token.updated_at,
-        })
+        let mut token = access_token_from_db(self.repo.create(&self.db_pool, db_create).await?);
+        token.token_prefix = token_prefix;
+        let _ = raw_token;
+        Ok(token)
     }
 
     /// Find token by hash (for PAT authentication)
     pub async fn find_by_hash(&self, hash: &str) -> DbResult<Option<AccessToken>> {
-        self.repo.find_by_hash(&self.db_pool, hash).await
+        Ok(self.repo.find_by_token_hash(&self.db_pool, hash).await?.map(access_token_from_db))
     }
 
     /// Find token by ID
     pub async fn find_by_id(&self, id: i64) -> DbResult<Option<AccessToken>> {
-        self.repo.find_by_id(&self.db_pool, id).await
+        Ok(self.repo.find_by_id(&self.db_pool, id).await?.map(access_token_from_db))
     }
 
     /// List tokens by owner
     pub async fn list_by_owner(&self, owner_id: i64) -> DbResult<Vec<AccessToken>> {
-        self.repo.list_by_owner(&self.db_pool, owner_id).await
+        let tokens = self.repo.find_by_user_id(&self.db_pool, owner_id).await?;
+        Ok(tokens.into_iter().map(access_token_from_db).collect())
     }
 
-    /// List tokens by project
+    /// List tokens by project.
+    ///
+    /// `access_tokens` is user-scoped, so a project filter matches nothing.
     pub async fn list_by_project(&self, project_id: i64) -> DbResult<Vec<AccessToken>> {
-        self.repo.list_by_project(&self.db_pool, project_id).await
+        let _ = project_id;
+        Ok(Vec::new())
     }
 
-    /// List tokens by group
+    /// List tokens by group.
+    ///
+    /// `access_tokens` is user-scoped, so a group filter matches nothing.
     pub async fn list_by_group(&self, group_id: i64) -> DbResult<Vec<AccessToken>> {
-        self.repo.list_by_group(&self.db_pool, group_id).await
+        let _ = group_id;
+        Ok(Vec::new())
     }
 
     /// Update token
-    pub async fn update(&self, id: i64, update: onedev_db::models::access_token::DbUpdateAccessToken) -> DbResult<AccessToken> {
-        self.repo.update(&self.db_pool, id, update).await
+    pub async fn update(&self, id: i64, update: DbUpdateAccessToken) -> DbResult<AccessToken> {
+        Ok(access_token_from_db(self.repo.update(&self.db_pool, id, update).await?))
     }
 
-    /// Revoke a token
+    /// Revoke a token.
+    ///
+    /// `revoked_by` is not stored: the table only records `revoked_at`.
     pub async fn revoke(&self, id: i64, revoked_by: i64) -> DbResult<()> {
-        self.repo.revoke(&self.db_pool, id, revoked_by).await
+        let _ = revoked_by;
+        self.repo.revoke(&self.db_pool, id).await
     }
 
-    /// Update last used timestamp
+    /// Update last used timestamp.
+    ///
+    /// The repository stamps `NOW()` and does not store the client address.
     pub async fn update_last_used(&self, id: i64, last_used_at: DateTime<Utc>, ip: Option<String>) -> DbResult<()> {
-        self.repo.update_last_used(&self.db_pool, id, last_used_at, ip).await
+        let _ = (last_used_at, ip);
+        self.repo.update_last_used(&self.db_pool, id).await
     }
 
     /// Delete expired/revoked tokens
     pub async fn cleanup(&self) -> DbResult<u64> {
-        self.repo.cleanup(&self.db_pool).await
+        self.repo.cleanup_expired(&self.db_pool).await
     }
 
     /// Get JWT service
