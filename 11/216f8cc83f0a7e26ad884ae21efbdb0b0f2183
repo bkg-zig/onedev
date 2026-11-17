@@ -1,0 +1,109 @@
+crates/onedev-api/src/handlers/git_handlers.rs
+  s_fc4968d509c3df::t_2b4d381ef4869b 1-97
+crates/onedev-api/src/handlers/issue_handlers.rs
+  s_fc4968d509c3df::t_725ad3d50f9ad8 1-161
+docs/port-review/01-web-ui.md
+  s_529267afb46f04::t_ebac2105824860 1-83
+docs/port-review/03-security-roles-auth.md
+  s_529267afb46f04::t_07ab99b808a698 1-118
+crates/onedev-api/src/handlers/mr_handlers.rs
+  s_fc4968d509c3df::t_464b1b78f23fff 1-152
+crates/onedev-api/src/handlers/build_handlers.rs
+  s_fc4968d509c3df::t_3cd90fccf96451 1-128
+docs/port-review/README.md
+  s_529267afb46f04::t_6a659a5f8eadac 1-36
+crates/onedev-db/src/models/access_token.rs
+  s_4dc460dbf339a2::t_7df15102dbe985 5
+crates/onedev-db/src/models/agent.rs
+  s_4dc460dbf339a2::t_34e57ecded879f 5
+crates/onedev-db/src/models/audit.rs
+  s_4dc460dbf339a2::t_3e7150f322de35 5
+crates/onedev-db/src/models/authorization.rs
+  s_4dc460dbf339a2::t_cca3bc0f0d5e7b 5
+crates/onedev-db/src/models/build.rs
+  s_4dc460dbf339a2::t_4eee009f5dd77c 5
+crates/onedev-db/src/models/code_comment.rs
+  s_4dc460dbf339a2::t_aebedcb832231e 5
+crates/onedev-db/src/models/dashboard.rs
+  s_4dc460dbf339a2::t_2f23b7bff947a0 5
+crates/onedev-db/src/models/email.rs
+  s_4dc460dbf339a2::t_61b5f5126710e2 5
+crates/onedev-db/src/models/gpg_key.rs
+  s_4dc460dbf339a2::t_3929488770d747 5
+crates/onedev-db/src/models/group.rs
+  s_4dc460dbf339a2::t_3ee7caa7a5ac05 5
+crates/onedev-db/src/models/issue.rs
+  s_4dc460dbf339a2::t_69cc4c719044d5 5
+crates/onedev-db/src/models/label.rs
+  s_4dc460dbf339a2::t_3c0d7eccaa136a 5
+crates/onedev-db/src/models/membership.rs
+  s_4dc460dbf339a2::t_1c9199454644ba 5
+crates/onedev-db/src/models/oauth.rs
+  s_4dc460dbf339a2::t_985d9c4dd1d7cf 5
+crates/onedev-db/src/models/pack.rs
+  s_4dc460dbf339a2::t_e82705c0a4f1fb 5
+crates/onedev-db/src/models/pipeline.rs
+  s_4dc460dbf339a2::t_cea75c45e396b0 5
+crates/onedev-db/src/models/project.rs
+  s_4dc460dbf339a2::t_75cae09b465c92 5
+crates/onedev-db/src/models/pull_request.rs
+  s_4dc460dbf339a2::t_2595f72ad0e68e 5
+crates/onedev-db/src/models/role.rs
+  s_4dc460dbf339a2::t_1f08e3a0184ac7 5
+crates/onedev-db/src/models/setting.rs
+  s_4dc460dbf339a2::t_1c6e457e1d0e81 5
+crates/onedev-db/src/models/ssh_key.rs
+  s_4dc460dbf339a2::t_a2aa6b55f649b9 5
+crates/onedev-db/src/models/sso_account.rs
+  s_4dc460dbf339a2::t_f4ba98991c7935 5
+crates/onedev-db/src/models/user.rs
+  s_4dc460dbf339a2::t_2eac69c64ed841 5
+crates/onedev-db/src/models/watch.rs
+  s_4dc460dbf339a2::t_960fc4488c69b5 5
+crates/onedev-db/src/models/webhook.rs
+  s_4dc460dbf339a2::t_0b86846af97137 5
+crates/onedev-db/src/models/workspace.rs
+  s_4dc460dbf339a2::t_65c3ff869f4b42 5
+crates/onedev-db/src/repositories/audit.rs
+  s_4dc460dbf339a2::t_2bd8cd8bb84d9d 119
+crates/onedev-db/src/repositories/group.rs
+  s_4dc460dbf339a2::t_2f6ca8847f8c87 55
+crates/onedev-db/src/repositories/project.rs
+  s_4dc460dbf339a2::t_1ce4e01b20972e 56,71,127,142
+crates/onedev-db/src/repositories/user.rs
+  s_4dc460dbf339a2::t_f1af9bcbdc1d37 101,162
+crates/onedev-db/src/repositories/watch.rs
+  s_4dc460dbf339a2::t_208c203b90b3ac 109,208
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "11216f8cc83f0a7e26ad884ae21efbdb0b0f2183",
+  "prompts": {},
+  "sessions": {
+    "s_4dc460dbf339a2": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e163f433bffe5t2PzgPpubA64u",
+        "model": "unknown"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    },
+    "s_529267afb46f04": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "934bb580-5ad8-4123-80f4-d8e72c4207b5",
+        "model": "grok-4.7-build"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    },
+    "s_fc4968d509c3df": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e152e6bc4ffejPRtPDKqejzaSv",
+        "model": "combo/best-free"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}
