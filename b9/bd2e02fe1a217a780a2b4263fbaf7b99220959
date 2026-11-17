@@ -1,0 +1,50 @@
+Cargo.toml
+  s_fc4968d509c3df::t_1b8cb489ecaf76 30
+  s_fc4968d509c3df::t_d06cb74e6a8cd2 94
+  s_fc4968d509c3df::t_a3b4e0bd20eac0 32
+  s_fc4968d509c3df::t_991eab981f09f1 58
+  s_fc4968d509c3df::t_a632c4a1d7b0bd 45
+  s_fc4968d509c3df::t_80cb0a269bdadb 109
+  s_fc4968d509c3df::t_405dc6d0443649 29
+  s_fc4968d509c3df::t_43003ffbcbd30b 99
+  s_fc4968d509c3df::t_874d719e267610 46
+  s_fc4968d509c3df::t_cfc86cac13f69e 92
+  s_fc4968d509c3df::t_a2b322eb32b27b 143
+  s_fc4968d509c3df::t_ff673a8d236be8 62
+  s_fc4968d509c3df::t_0ca90324c56dd7 115
+  s_fc4968d509c3df::t_0bb0a2a18e033d 112
+  s_fc4968d509c3df::t_1447a50f6a15f4 122-123
+crates/onedev-api/Cargo.toml
+  s_fc4968d509c3df::t_6adae926065ab3 26
+crates/onedev-build/Cargo.toml
+  s_fc4968d509c3df::t_48377a95d8634c 34
+crates/onedev-auth/src/handlers/password_handlers.rs
+  s_fc4968d509c3df::t_c7760196a9ac41 1-119
+crates/onedev-core/Cargo.toml
+  s_fc4968d509c3df::t_3cfbbe52a018ee 25
+  s_fc4968d509c3df::t_9cecffe09c0530 20-21
+crates/onedev-auth/src/lib.rs
+  s_fc4968d509c3df::t_cd5f964ed4bf23 10,19
+crates/onedev-auth/src/router.rs
+  s_fc4968d509c3df::t_14030f7b7ad5a7 1-112
+crates/onedev-cli/Cargo.toml
+  s_fc4968d509c3df::t_7a7d50a180fdb9 35
+crates/onedev-core/src/models/mod.rs
+  s_fc4968d509c3df::t_074e5be879db0c 23-29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "b9bd2e02fe1a217a780a2b4263fbaf7b99220959",
+  "prompts": {},
+  "sessions": {
+    "s_fc4968d509c3df": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e152e6bc4ffejPRtPDKqejzaSv",
+        "model": "combo/best-free"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}
