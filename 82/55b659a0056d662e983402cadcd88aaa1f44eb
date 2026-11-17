@@ -1,0 +1,21 @@
+server-product/docker/docker-compose.yaml
+  s_4dc460dbf339a2::t_e6d055f59bf44d 25-27
+.gitignore
+  s_4dc460dbf339a2::t_a32412bc6262e2 31-33
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "8255b659a0056d662e983402cadcd88aaa1f44eb",
+  "prompts": {},
+  "sessions": {
+    "s_4dc460dbf339a2": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e163f433bffe5t2PzgPpubA64u",
+        "model": "big-pickle"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}
