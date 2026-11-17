@@ -1,0 +1,85 @@
+docs/port-review/05-cicd-packages-workspaces.md
+  s_529267afb46f04::t_a399400134bc2d 1-93
+crates/onedev-api/src/utils/middleware.rs
+  s_fc4968d509c3df::t_144d065c49cbfe 1-127
+crates/onedev-api/src/services/issue_service.rs
+  s_fc4968d509c3df::t_d920d5cdc5d1e8 1-13
+crates/onedev-api/src/services/mod.rs
+  s_fc4968d509c3df::t_daf4e72994511c 1-25
+crates/onedev-api/src/services/build_service.rs
+  s_fc4968d509c3df::t_879671d953fcab 1-13
+docs/port-review/06-platform-api-ops.md
+  s_529267afb46f04::t_c7ce66dd9562af 1-94
+crates/onedev-api/src/services/system_service.rs
+  s_fc4968d509c3df::t_937f039f1d3a33 1-13
+docs/port-review/04-git-collaboration.md
+  s_529267afb46f04::t_5bccb4b904b593 7
+  s_529267afb46f04::t_14a4eb533e9971 1-6,8-84
+crates/onedev-api/src/services/lfs_service.rs
+  s_fc4968d509c3df::t_dbc2440be9bd36 1-13
+docs/progress.md
+  s_529267afb46f04::t_b5ffb2eea0fe3d 11-17
+crates/onedev-api/src/utils/validators.rs
+  s_fc4968d509c3df::t_bc526cdd5a85fa 1-114
+crates/onedev-api/src/handlers/lfs_handlers.rs
+  s_fc4968d509c3df::t_7b2db94e4f2741 1-191
+crates/onedev-api/src/lib.rs
+  s_fc4968d509c3df::t_9f6ed8675abacb 8-9,16
+crates/onedev-api/src/utils/mod.rs
+  s_fc4968d509c3df::t_b3d8f64a63011d 1-9
+crates/onedev-api/src/handlers/system_handlers.rs
+  s_fc4968d509c3df::t_9935807319ed72 1-88
+docs/port-review/02-model-persistence.md
+  s_529267afb46f04::t_581e11f9e071eb 1-2,4-6,8-12,14-17,19-20,22-55,57-69
+  s_529267afb46f04::t_9e224d0084f4cb 56
+  s_529267afb46f04::t_3e4f349cd24213 18
+  s_529267afb46f04::t_9d324feac83b03 3,7
+  s_529267afb46f04::t_bb634006a4236f 13
+  s_529267afb46f04::t_8be4c0e2827d61 21
+crates/onedev-api/src/errors/mod.rs
+  s_fc4968d509c3df::t_fd02939551dae4 1-181
+crates/onedev-api/src/services/project_service.rs
+  s_fc4968d509c3df::t_34fee6e3ad7c4c 1-13
+crates/onedev-api/src/services/authz.rs
+  s_fc4968d509c3df::t_c7035a2182aa31 1-57
+crates/onedev-api/src/services/group_service.rs
+  s_fc4968d509c3df::t_d52357a4b8b0a4 1-13
+crates/onedev-api/src/services/git_service.rs
+  s_fc4968d509c3df::t_b33e693f5173dd 1-13
+docs/port-review/README.md
+  s_529267afb46f04::t_2e32b68434696b 10
+crates/onedev-api/src/services/auth.rs
+  s_fc4968d509c3df::t_882603e324742e 1-42
+crates/onedev-api/src/utils/extractors.rs
+  s_fc4968d509c3df::t_508631bb28512f 1-84
+crates/onedev-api/src/services/user_service.rs
+  s_fc4968d509c3df::t_4a4823094f24a8 1-14
+crates/onedev-api/src/services/mr_service.rs
+  s_fc4968d509c3df::t_552dcceef640a9 1-13
+docs/roadmap.md
+  s_fc4968d509c3df::t_202afe9c4a7f68 2-3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "4ffd099254be0abc959580f58166ec18499a03ef",
+  "prompts": {},
+  "sessions": {
+    "s_529267afb46f04": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "934bb580-5ad8-4123-80f4-d8e72c4207b5",
+        "model": "grok-4.7-build"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    },
+    "s_fc4968d509c3df": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e152e6bc4ffejPRtPDKqejzaSv",
+        "model": "combo/best-free"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}
