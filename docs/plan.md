@@ -2,7 +2,22 @@
 
 ## Ziel
 Vollständige Portierung von OneDev (Java) nach Rust, **nur** im Ordner `/srv/bkg/services/bkg-core-admin/infra/onedev` auf Branch `mango`.  
-Der Java-Code unter `vendor/bkg-core-dev` bleibt **read-only** bis Freigabe.
+Der Java-Code unter `vendor/vanilla-onedev` (OneDev v17.2.1, Submodul, read-only) ist die Referenz.
+
+## Ist-Zustand (Stand 2026-11-17)
+Referenz: `docs/port-review/README.md`. Deckung gegen Vanilla v17.2.1:
+
+| Bereich | Deckung | Hinweis |
+|---|---|---|
+| Web-UI | ~0 % | `onedev-web` und `onedev-server` Stubs mit je 19 Zeilen |
+| Domain-Modelle | ~25 % | `onedev-core` teilweise, Geschäftslogik ~0 % (104 @Entity, 92 Service-Interfaces in Vanilla) |
+| Security-Mechanik | vorhanden, Modell falsch | Auth-Mechanik vorhanden, Rollenmodell ist GitLab-artig |
+| Git/Zusammenarbeit | ~5 % | |
+| CI/CD | ~5 %, falsches Konzept | Rust modelliert GitLab-Pipeline/Stage/Runner statt OneDev Build-Spec/Job/Step/Trigger |
+| REST/Plattform | ~0 % | 47 Ressourcen-Gruppen in Vanilla, `onedev-api`/`onedev-server`/`onedev-cli` Stubs |
+
+Sechs Crates sind Stubs: `onedev-api`, `onedev-server`, `onedev-web`, `onedev-git`, `onedev-build`, `onedev-cli`.
+`onedev-db` kompiliert nicht (zuletzt 268 Fehler, 136 Warnungen). Hauptursache: DB sagt `PullRequest*`, `onedev-core` sagt `MergeRequest*`. Migration `migrations/001__init.sql` hat falsches Schema für sqlx (erwartet `<zahl>_<name>.sql`).
 
 ---
 
@@ -24,15 +39,18 @@ Der Java-Code unter `vendor/bkg-core-dev` bleibt **read-only** bis Freigabe.
 ## 2. Architektur – Rust Workspace (bereits angelegt)
 
 ```
-rust/
-├── Cargo.toml                 # Workspace-Definition
+# Repo-Root
+├── Cargo.toml                 # Workspace-Definition (Repo-Root, nicht rust/)
 └── crates/
-    ├── onedev-core/           # Domain Model (bereits vorhanden)
-    ├── onedev-db/             # Persistenz (sqlx, Postgres/pgrust)
-    ├── onedev-api/            # HTTP API (axum), Auth, Stack-Control
-    ├── onedev-server/         # Haupt-Service, Composition, Lifecycle
-    ├── onedev-git/            # Git-Operationen (gix / libgit2)
-    └── onedev-build/          # Build-System, Pipeline, Executor
+    ├── onedev-core/           # Domain Model (vorhanden, semantisch zu korrigieren)
+    ├── onedev-db/             # Persistenz (sqlx, Postgres/pgrust, kompiliert nicht)
+    ├── onedev-auth/           # AuthN/AuthZ
+    ├── onedev-api/            # HTTP API (Stub)
+    ├── onedev-server/         # Haupt-Service, Composition, Lifecycle (Stub)
+    ├── onedev-git/            # Git-Operationen (Stub)
+    ├── onedev-build/          # Build-System (Stub)
+    ├── onedev-web/            # Web UI (Stub, 19 Zeilen)
+    └── onedev-cli/            # CLI Tools (Stub)
 ```
 
 **Workspace-Dependencies** (aus `Cargo.toml`):
@@ -49,7 +67,7 @@ rust/
 ## 3. Phasen & Meilensteine
 
 ### Phase 0 – Vorbereitung (Woche 0)
-- [ ] Java-Code unter `vendor/bkg-core-dev` als **read-only** markieren (Git: `git update-index --skip-worktree` oder Submodul read-only)
+- [ ] Java-Code unter `vendor/vanilla-onedev` als **read-only** markieren (Submodul, bereits read-only)
 - [ ] Bestehende Rust-Crates (`onedev-core`) auf Vollständigkeit prüfen & Lücken schließen
 - [ ] `docker/ports.env` & `/srv/bkg/admin-state/db.env` für Dev-Environment anlegen
 - [ ] Compose-Datei für `bkg-core-admin` (DB, Core, Gateway-Profil) erstellen

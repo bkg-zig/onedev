@@ -5,8 +5,8 @@ use axum::{
     http::{header, HeaderMap, StatusCode},
     middleware::Next,
     response::Response,
-    async_trait,
 };
+use axum::http::request::Parts;
 use axum_extra::extract::CookieJar;
 use crate::models::subject::{Subject, CURRENT_SUBJECT};
 use crate::models::token::{JwtService, Claims};
@@ -20,14 +20,13 @@ use tracing::{debug, warn};
 #[derive(Debug, Clone)]
 pub struct CurrentSubject(pub Subject);
 
-#[async_trait]
 impl<S> FromRequestParts<S> for CurrentSubject
 where
     S: Send + Sync,
 {
     type Rejection = AuthError;
 
-    async fn from_request_parts(parts: &mut axum::http::request::Parts, _state: &S) -> Result<Self, Self::Rejection> {
+    async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
         // Try to get from extensions (set by auth middleware)
         if let Some(subject) = parts.extensions.get::<Subject>() {
             return Ok(CurrentSubject(subject.clone()));
@@ -42,14 +41,13 @@ where
 #[derive(Debug, Clone)]
 pub struct OptionalSubject(pub Option<Subject>);
 
-#[async_trait]
 impl<S> FromRequestParts<S> for OptionalSubject
 where
     S: Send + Sync,
 {
     type Rejection = AuthError;
 
-    async fn from_request_parts(parts: &mut axum::http::request::Parts, _state: &S) -> Result<Self, Self::Rejection> {
+    async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
         if let Some(subject) = parts.extensions.get::<Subject>() {
             Ok(OptionalSubject(Some(subject.clone())))
         } else {
@@ -121,9 +119,9 @@ pub async fn auth_middleware(
     request.extensions_mut().insert(subject.clone());
     
     // Also set in task-local for internal use
-    CURRENT_SUBJECT.scope(subject, async {
+    Ok(CURRENT_SUBJECT.scope(subject, async {
         next.run(request).await
-    }).await
+    }).await)
 }
 
 /// Extract token from Authorization header or cookie

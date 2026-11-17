@@ -3,7 +3,6 @@
 use axum::{
     extract::{FromRequestParts, Request, State},
     http::{header, HeaderMap, StatusCode, request::Parts},
-    async_trait,
 };
 use axum_extra::extract::CookieJar;
 use crate::models::subject::{Subject, CURRENT_SUBJECT};
@@ -18,7 +17,6 @@ use std::sync::Arc;
 #[derive(Debug, Clone)]
 pub struct JwtClaims(pub Claims);
 
-#[async_trait]
 impl<S> FromRequestParts<S> for JwtClaims
 where
     S: Send + Sync,
@@ -41,7 +39,6 @@ where
 #[derive(Debug, Clone)]
 pub struct RequireAuth(pub Subject);
 
-#[async_trait]
 impl<S> FromRequestParts<S> for RequireAuth
 where
     S: Send + Sync,
@@ -65,7 +62,6 @@ where
 #[derive(Debug, Clone)]
 pub struct RequireUser(pub UserPrincipal);
 
-#[async_trait]
 impl<S> FromRequestParts<S> for RequireUser
 where
     S: Send + Sync,
@@ -86,7 +82,6 @@ where
 #[derive(Debug, Clone)]
 pub struct RequireAdmin(pub Subject);
 
-#[async_trait]
 impl<S> FromRequestParts<S> for RequireAdmin
 where
     S: Send + Sync,
@@ -121,7 +116,6 @@ impl RequireProjectPermission {
     }
 }
 
-#[async_trait]
 impl<S> FromRequestParts<S> for RequireProjectPermission
 where
     S: Send + Sync,
@@ -147,7 +141,6 @@ where
 #[derive(Debug, Clone)]
 pub struct OptionalAuth(pub Option<Subject>);
 
-#[async_trait]
 impl<S> FromRequestParts<S> for OptionalAuth
 where
     S: Send + Sync,
@@ -163,7 +156,6 @@ where
 #[derive(Debug, Clone)]
 pub struct CurrentUserId(pub Option<i64>);
 
-#[async_trait]
 impl<S> FromRequestParts<S> for CurrentUserId
 where
     S: Send + Sync,

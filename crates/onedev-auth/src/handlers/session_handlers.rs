@@ -53,7 +53,7 @@ pub struct ListSessionsQuery {
 
 /// GET /api/auth/sessions
 pub async fn list_sessions(
-    State(session_service): State<Arc<SessionService>>,
+    State(crate::router::AuthState { session_service, .. }): State<crate::router::AuthState>,
     subject: crate::models::subject::Subject,
     Query(query): Query<ListSessionsQuery>,
 ) -> Result<Json<Vec<SessionResponse>>, AuthError> {
@@ -77,7 +77,7 @@ pub async fn list_sessions(
 
 /// GET /api/auth/sessions/{id}
 pub async fn get_session(
-    State(session_service): State<Arc<SessionService>>,
+    State(crate::router::AuthState { session_service, .. }): State<crate::router::AuthState>,
     subject: crate::models::subject::Subject,
     Path(id): Path<String>,
 ) -> Result<Json<SessionResponse>, AuthError> {
@@ -88,7 +88,7 @@ pub async fn get_session(
         .ok_or(AuthError::SessionNotFound)?;
 
     // Verify ownership
-    let user_id = match subject {
+    let user_id = match &subject {
         crate::models::subject::Subject::User(p) => p.user_id,
         _ => return Err(AuthError::Unauthorized("User authentication required".to_string())),
     };
@@ -102,7 +102,7 @@ pub async fn get_session(
 
 /// DELETE /api/auth/sessions/{id}
 pub async fn revoke_session(
-    State(session_service): State<Arc<SessionService>>,
+    State(crate::router::AuthState { session_service, .. }): State<crate::router::AuthState>,
     subject: crate::models::subject::Subject,
     Path(id): Path<String>,
 ) -> Result<StatusCode, AuthError> {
@@ -113,7 +113,7 @@ pub async fn revoke_session(
         .ok_or(AuthError::SessionNotFound)?;
 
     // Verify ownership
-    let user_id = match subject {
+    let user_id = match &subject {
         crate::models::subject::Subject::User(p) => p.user_id,
         _ => return Err(AuthError::Unauthorized("User authentication required".to_string())),
     };
@@ -128,7 +128,7 @@ pub async fn revoke_session(
 
 /// DELETE /api/auth/sessions
 pub async fn revoke_all_sessions(
-    State(session_service): State<Arc<SessionService>>,
+    State(crate::router::AuthState { session_service, .. }): State<crate::router::AuthState>,
     subject: crate::models::subject::Subject,
 ) -> Result<StatusCode, AuthError> {
     let user_id = match subject {

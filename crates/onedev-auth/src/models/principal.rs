@@ -23,6 +23,10 @@ impl UserPrincipal {
     }
 
     /// Create from a UserRef
+    pub fn principal_string(&self) -> String {
+        format!("u:{}", self.user_id)
+    }
+
     pub fn from_ref(user_ref: &UserRef) -> Self {
         Self {
             user_id: user_ref.id,
@@ -73,6 +77,10 @@ impl AccessTokenPrincipal {
     }
 
     /// Check if token is expired
+    pub fn principal_string(&self) -> String {
+        format!("a:{}", self.token_id)
+    }
+
     pub fn is_expired(&self) -> bool {
         self.expires_at.map_or(false, |exp| exp < Utc::now())
     }

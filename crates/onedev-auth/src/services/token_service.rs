@@ -3,7 +3,7 @@
 use crate::models::token::{JwtService, TokenConfig, TokenPair, Claims, TokenType, JwtError};
 use onedev_core::models::access_token::{AccessToken, CreateAccessToken};
 use onedev_db::models::access_token::{DbCreateAccessToken, DbUpdateAccessToken};
-use onedev_db::repositories::AccessTokenRepository;
+use onedev_db::repositories::{AccessTokenRepository, Repository};
 use onedev_db::{DbPool, DbResult};
 use crate::services::token_mapping::{access_token_from_db, scopes_to_db};
 use chrono::{DateTime, Utc};

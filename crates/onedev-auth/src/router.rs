@@ -1,7 +1,6 @@
 //! Router for Authentication & Authorization API
 
 use axum::{
-    extract::FromRef,
     routing::{get, post, patch, delete},
     Router,
 };
@@ -9,44 +8,17 @@ use crate::services::{AuthService, SessionService, TokenService, TwoFactorServic
 use crate::handlers::*;
 use std::sync::Arc;
 
-type AuthState = (
-    Arc<AuthService>,
-    Arc<SessionService>,
-    Arc<TokenService>,
-    Arc<TwoFactorService>,
-);
-
-impl FromRef<AuthState> for Arc<AuthService> {
-    fn from_ref(state: &AuthState) -> Self {
-        Arc::clone(&state.0)
-    }
-}
-
-impl FromRef<AuthState> for Arc<SessionService> {
-    fn from_ref(state: &AuthState) -> Self {
-        Arc::clone(&state.1)
-    }
-}
-
-impl FromRef<AuthState> for Arc<TokenService> {
-    fn from_ref(state: &AuthState) -> Self {
-        Arc::clone(&state.2)
-    }
-}
-
-impl FromRef<AuthState> for Arc<TwoFactorService> {
-    fn from_ref(state: &AuthState) -> Self {
-        Arc::clone(&state.3)
-    }
+/// Application state for auth routes
+#[derive(Clone)]
+pub struct AuthState {
+    pub auth_service: Arc<AuthService>,
+    pub session_service: Arc<SessionService>,
+    pub token_service: Arc<TokenService>,
+    pub two_factor_service: Arc<TwoFactorService>,
 }
 
 /// Create the auth router
-pub fn create_auth_router(
-    auth_service: Arc<AuthService>,
-    session_service: Arc<SessionService>,
-    token_service: Arc<TokenService>,
-    two_factor_service: Arc<TwoFactorService>,
-) -> Router {
+pub fn create_auth_router(state: AuthState) -> Router {
     Router::new()
         // Auth endpoints
         .route("/login", post(auth_handlers::login))
@@ -80,21 +52,11 @@ pub fn create_auth_router(
         .route("/password/reset/request", post(password_handlers::request_password_reset))
         .route("/password/reset/confirm", post(password_handlers::confirm_password_reset))
         .route("/password/validate", post(password_handlers::validate_password))
-        .with_state((
-            auth_service,
-            session_service,
-            token_service,
-            two_factor_service,
-        ))
+        .with_state(state)
 }
 
 /// Create the public auth router (no auth required)
-pub fn create_public_auth_router(
-    auth_service: Arc<AuthService>,
-    session_service: Arc<SessionService>,
-    token_service: Arc<TokenService>,
-    two_factor_service: Arc<TwoFactorService>,
-) -> Router {
+pub fn create_public_auth_router(state: AuthState) -> Router {
     Router::new()
         .route("/login", post(auth_handlers::login))
         .route("/verify-2fa", post(auth_handlers::verify_two_factor))
@@ -102,21 +64,11 @@ pub fn create_public_auth_router(
         .route("/password/reset/request", post(password_handlers::request_password_reset))
         .route("/password/reset/confirm", post(password_handlers::confirm_password_reset))
         .route("/password/validate", post(password_handlers::validate_password))
-        .with_state((
-            auth_service,
-            session_service,
-            token_service,
-            two_factor_service,
-        ))
+        .with_state(state)
 }
 
 /// Create the protected auth router (auth required)
-pub fn create_protected_auth_router(
-    auth_service: Arc<AuthService>,
-    session_service: Arc<SessionService>,
-    token_service: Arc<TokenService>,
-    two_factor_service: Arc<TwoFactorService>,
-) -> Router {
+pub fn create_protected_auth_router(state: AuthState) -> Router {
     Router::new()
         .route("/logout", post(auth_handlers::logout))
         .route("/me", get(auth_handlers::current_user))
@@ -135,10 +87,5 @@ pub fn create_protected_auth_router(
         .route("/2fa/status", get(two_factor_handlers::two_factor_status))
         .route("/2fa/backup-codes/regenerate", post(two_factor_handlers::regenerate_backup_codes))
         .route("/password/change", post(password_handlers::change_password))
-        .with_state((
-            auth_service,
-            session_service,
-            token_service,
-            two_factor_service,
-        ))
+        .with_state(state)
 }

@@ -161,3 +161,34 @@ impl From<onedev_db::DbError> for AuthzError {
         AuthzError::Internal(err.to_string())
     }
 }
+
+impl From<crate::services::auth_service::AuthError> for AuthError {
+    fn from(err: crate::services::auth_service::AuthError) -> Self {
+        use crate::services::auth_service::AuthError as ServiceError;
+        match err {
+            ServiceError::InvalidCredentials => AuthError::InvalidCredentials,
+            ServiceError::UserNotFound => AuthError::UserNotFound,
+            ServiceError::UserDisabled | ServiceError::PendingVerification => AuthError::UserDisabled,
+            ServiceError::Locked => AuthError::UserLocked,
+            ServiceError::InvalidToken => AuthError::TokenInvalid,
+            ServiceError::TokenExpired => AuthError::TokenExpired,
+            other => AuthError::Internal(other.to_string()),
+        }
+    }
+}
+
+impl From<String> for AuthError {
+    fn from(err: String) -> Self {
+        AuthError::Internal(err)
+    }
+}
+
+impl From<crate::models::token::JwtError> for AuthError {
+    fn from(err: crate::models::token::JwtError) -> Self {
+        use crate::models::token::JwtError;
+        match err {
+            JwtError::Expired => AuthError::TokenExpired,
+            other => AuthError::TokenInvalid,
+        }
+    }
+}

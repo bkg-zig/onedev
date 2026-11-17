@@ -1,7 +1,8 @@
 //! Two-Factor Service - Wrapper for 2FA operations with database
 
 use crate::models::two_factor::{TwoFactorService as TwoFactorModel, TwoFactorSetup, TotpConfig, TotpAlgorithm};
-use onedev_db::repositories::UserRepository;
+use onedev_db::models::user::DbUpdateUser;
+use onedev_db::repositories::{Repository, UserRepository};
 use onedev_db::{DbPool, DbResult};
 use onedev_core::models::user::User;
 
@@ -46,14 +47,19 @@ impl TwoFactorService {
         }
 
         // Hash backup codes
-        let hashed_backup_codes = self.model.hash_backup_codes(&backup_codes);
+        let hashed_backup_codes = TwoFactorModel::hash_backup_codes(&backup_codes);
 
         // Update user
         user.two_factor_enabled = true;
         user.two_factor_secret = Some(secret.to_string());
         user.backup_codes = hashed_backup_codes;
 
-        self.user_repo.update(&self.db_pool, user.id, user.into()).await
+        self.user_repo.update(&self.db_pool, user.id, DbUpdateUser {
+            two_factor_enabled: Some(user.two_factor_enabled),
+            two_factor_secret: user.two_factor_secret.clone(),
+            backup_codes: Some(user.backup_codes.clone()),
+            ..Default::default()
+        }).await
             .map_err(|e| format!("Database error: {}", e))?;
 
         Ok(())
@@ -75,7 +81,12 @@ impl TwoFactorService {
         user.two_factor_secret = None;
         user.backup_codes = Vec::new();
 
-        self.user_repo.update(&self.db_pool, user.id, user.into()).await
+        self.user_repo.update(&self.db_pool, user.id, DbUpdateUser {
+            two_factor_enabled: Some(user.two_factor_enabled),
+            two_factor_secret: user.two_factor_secret.clone(),
+            backup_codes: Some(user.backup_codes.clone()),
+            ..Default::default()
+        }).await
             .map_err(|e| format!("Database error: {}", e))?;
 
         Ok(())
@@ -98,9 +109,10 @@ impl TwoFactorService {
         if let Some(bc) = backup_code {
             let mut codes = user.backup_codes.clone();
             if self.model.verify_hashed_backup_code(bc, &mut codes) {
-                // Update backup codes in database
-                user.backup_codes = codes;
-                self.user_repo.update(&self.db_pool, user.id, user.into()).await
+                self.user_repo.update(&self.db_pool, user.id, DbUpdateUser {
+                    backup_codes: Some(codes),
+                    ..Default::default()
+                }).await
                     .map_err(|e| format!("Database error: {}", e))?;
                 return Ok(true);
             }
@@ -125,11 +137,16 @@ impl TwoFactorService {
         }
 
         // Generate new backup codes
-        let backup_codes = self.model.generate_backup_codes(10);
-        let hashed_backup_codes = self.model.hash_backup_codes(&backup_codes);
+        let backup_codes = TwoFactorModel::generate_backup_codes(10);
+        let hashed_backup_codes = TwoFactorModel::hash_backup_codes(&backup_codes);
 
         user.backup_codes = hashed_backup_codes;
-        self.user_repo.update(&self.db_pool, user.id, user.into()).await
+        self.user_repo.update(&self.db_pool, user.id, DbUpdateUser {
+            two_factor_enabled: Some(user.two_factor_enabled),
+            two_factor_secret: user.two_factor_secret.clone(),
+            backup_codes: Some(user.backup_codes.clone()),
+            ..Default::default()
+        }).await
             .map_err(|e| format!("Database error: {}", e))?;
 
         Ok(backup_codes)

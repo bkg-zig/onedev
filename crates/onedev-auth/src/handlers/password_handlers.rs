@@ -37,7 +37,7 @@ pub struct PasswordResetResponse {
 
 /// POST /api/auth/password/change
 pub async fn change_password(
-    State(auth_service): State<Arc<AuthService>>,
+    State(crate::router::AuthState { auth_service, .. }): State<crate::router::AuthState>,
     subject: crate::models::subject::Subject,
     Json(request): Json<ChangePasswordRequest>,
 ) -> Result<StatusCode, AuthError> {
@@ -52,7 +52,7 @@ pub async fn change_password(
 
 /// POST /api/auth/password/reset/request
 pub async fn request_password_reset(
-    State(auth_service): State<Arc<AuthService>>,
+    State(crate::router::AuthState { auth_service, .. }): State<crate::router::AuthState>,
     Json(request): Json<RequestPasswordResetRequest>,
 ) -> Result<Json<PasswordResetResponse>, AuthError> {
     // Always return success to prevent email enumeration
@@ -65,7 +65,7 @@ pub async fn request_password_reset(
 
 /// POST /api/auth/password/reset/confirm
 pub async fn confirm_password_reset(
-    State(auth_service): State<Arc<AuthService>>,
+    State(crate::router::AuthState { auth_service, .. }): State<crate::router::AuthState>,
     Json(request): Json<ConfirmPasswordResetRequest>,
 ) -> Result<Json<PasswordResetResponse>, AuthError> {
     auth_service.confirm_password_reset(&request.token, &request.new_password).await?;

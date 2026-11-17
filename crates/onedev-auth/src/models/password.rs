@@ -1,10 +1,12 @@
 //! Password hashing with Argon2id
 
 use argon2::{
-    password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
+    password_hash::{rand_core::OsRng as SaltRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
     Argon2, Algorithm, Version, Params,
 };
+use base64::Engine;
 use rand::rngs::OsRng;
+use rand::TryRngCore;
 use secrecy::{SecretString, ExposeSecret};
 use thiserror::Error;
 
@@ -55,7 +57,7 @@ pub fn hash_password(password: &str) -> Result<String, PasswordError> {
     validate_password_strength(password)?;
 
     // Generate salt
-    let salt = SaltString::generate(&mut OsRng);
+    let salt = SaltString::generate(&mut SaltRng);
 
     // Configure Argon2id
     let params = Params::new(
@@ -105,8 +107,9 @@ pub fn needs_rehash(hash: &str) -> bool {
     // Try to parse and check parameters
     if let Ok(parsed) = PasswordHash::new(hash) {
         // Check if it's Argon2id with correct parameters
-        if parsed.algorithm.ident() == "argon2id" {
-            if let Some(params) = parsed.params {
+        if parsed.algorithm.as_str() == "argon2id" {
+            {
+                let params = &parsed.params;
                 // Check memory cost
                 if let Some(m) = params.get("m") {
                     if m != &ARGON2_MEMORY_COST.to_string() {
@@ -146,7 +149,7 @@ pub fn generate_secure_password(length: usize) -> String {
     const CHARSET: &[u8] = b"ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%^&*";
     let mut password = String::with_capacity(length);
     let mut bytes = vec![0u8; length];
-    OsRng.fill_bytes(&mut bytes);
+    OsRng.try_fill_bytes(&mut bytes).expect("OS random source");
     
     for &b in &bytes {
         password.push(CHARSET[(b as usize) % CHARSET.len()] as char);
@@ -171,6 +174,6 @@ pub fn verify_reset_token(token: &str, hash: &str) -> bool {
 /// Generate a password reset token (URL-safe, 32 bytes)
 pub fn generate_reset_token() -> String {
     let mut bytes = [0u8; 32];
-    OsRng.fill_bytes(&mut bytes);
+    OsRng.try_fill_bytes(&mut bytes).expect("OS random source");
     base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(bytes)
 }

@@ -67,7 +67,7 @@ pub struct BackupCodesResponse {
 
 /// GET /api/auth/2fa/setup
 pub async fn setup_two_factor(
-    State(two_factor_service): State<Arc<TwoFactorService>>,
+    State(crate::router::AuthState { two_factor_service, .. }): State<crate::router::AuthState>,
     subject: crate::models::subject::Subject,
 ) -> Result<Json<TwoFactorSetupResponse>, AuthError> {
     let user_id = match subject {
@@ -84,7 +84,7 @@ pub async fn setup_two_factor(
 
 /// POST /api/auth/2fa/enable
 pub async fn enable_two_factor(
-    State(two_factor_service): State<Arc<TwoFactorService>>,
+    State(crate::router::AuthState { two_factor_service, .. }): State<crate::router::AuthState>,
     subject: crate::models::subject::Subject,
     Json(request): Json<EnableTwoFactorRequest>,
 ) -> Result<StatusCode, AuthError> {
@@ -105,8 +105,7 @@ pub async fn enable_two_factor(
 
 /// POST /api/auth/2fa/disable
 pub async fn disable_two_factor(
-    State(two_factor_service): State<Arc<TwoFactorService>>,
-    State(auth_service): State<Arc<crate::services::AuthService>>,
+    State(crate::router::AuthState { two_factor_service, auth_service, .. }): State<crate::router::AuthState>,
     subject: crate::models::subject::Subject,
     Json(request): Json<DisableTwoFactorRequest>,
 ) -> Result<StatusCode, AuthError> {
@@ -128,8 +127,7 @@ pub async fn disable_two_factor(
 
 /// POST /api/auth/2fa/backup-codes/regenerate
 pub async fn regenerate_backup_codes(
-    State(two_factor_service): State<Arc<TwoFactorService>>,
-    State(auth_service): State<Arc<crate::services::AuthService>>,
+    State(crate::router::AuthState { two_factor_service, auth_service, .. }): State<crate::router::AuthState>,
     subject: crate::models::subject::Subject,
     Json(request): Json<RegenerateBackupCodesRequest>,
 ) -> Result<Json<BackupCodesResponse>, AuthError> {
@@ -158,7 +156,7 @@ pub struct TwoFactorStatusResponse {
 }
 
 pub async fn two_factor_status(
-    State(auth_service): State<Arc<crate::services::AuthService>>,
+    State(crate::router::AuthState { auth_service, .. }): State<crate::router::AuthState>,
     subject: crate::models::subject::Subject,
 ) -> Result<Json<TwoFactorStatusResponse>, AuthError> {
     let user_id = match subject {

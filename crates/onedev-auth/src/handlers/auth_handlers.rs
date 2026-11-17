@@ -62,7 +62,7 @@ pub struct CurrentUserResponse {
 
 /// POST /api/auth/login
 pub async fn login(
-    State(auth_service): State<Arc<AuthService>>,
+    State(crate::router::AuthState { auth_service, .. }): State<crate::router::AuthState>,
     Json(request): Json<LoginRequest>,
 ) -> Result<Json<LoginResponse>, AuthError> {
     let remember_me = request.remember_me.unwrap_or(false);
@@ -95,7 +95,7 @@ pub async fn login(
 
 /// POST /api/auth/verify-2fa
 pub async fn verify_two_factor(
-    State(auth_service): State<Arc<AuthService>>,
+    State(crate::router::AuthState { auth_service, .. }): State<crate::router::AuthState>,
     Json(request): Json<VerifyTwoFactorRequest>,
 ) -> Result<Json<LoginResponse>, AuthError> {
     let remember_me = request.remember_me.unwrap_or(false);
@@ -122,7 +122,7 @@ pub async fn verify_two_factor(
 
 /// POST /api/auth/logout
 pub async fn logout(
-    State(auth_service): State<Arc<AuthService>>,
+    State(crate::router::AuthState { auth_service, .. }): State<crate::router::AuthState>,
     subject: Subject,
     Json(request): Json<LogoutRequest>,
 ) -> Result<StatusCode, AuthError> {
@@ -184,7 +184,7 @@ pub async fn current_user(
 
 /// POST /api/auth/refresh
 pub async fn refresh_token(
-    State(auth_service): State<Arc<AuthService>>,
+    State(crate::router::AuthState { auth_service, .. }): State<crate::router::AuthState>,
     Json(request): Json<RefreshTokenRequest>,
 ) -> Result<Json<TokenPair>, AuthError> {
     let claims = auth_service.jwt_service().validate_refresh_token(&request.refresh_token)?;

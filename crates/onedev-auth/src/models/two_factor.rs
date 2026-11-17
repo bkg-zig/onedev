@@ -1,6 +1,6 @@
 //! Two-Factor Authentication (TOTP) support
 
-use totp_lite::{totp, Sha1, Sha256, Sha512};
+use totp_lite::{totp_custom, Sha1, Sha256, Sha512};
 use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
 use qrcode::QrCode;
 use qrcode::render::svg;
@@ -224,9 +224,9 @@ impl TwoFactorService {
             };
 
             let expected = match self.config.algorithm {
-                TotpAlgorithm::Sha1 => totp::<Sha1>(&self.decode_secret(secret), check_time, self.config.digits, self.config.period),
-                TotpAlgorithm::Sha256 => totp::<Sha256>(&self.decode_secret(secret), check_time, self.config.digits, self.config.period),
-                TotpAlgorithm::Sha512 => totp::<Sha512>(&self.decode_secret(secret), check_time, self.config.digits, self.config.period),
+                TotpAlgorithm::Sha1 => totp_custom::<Sha1>(self.config.period, self.config.digits as u32, &self.decode_secret(secret), check_time),
+                TotpAlgorithm::Sha256 => totp_custom::<Sha256>(self.config.period, self.config.digits as u32, &self.decode_secret(secret), check_time),
+                TotpAlgorithm::Sha512 => totp_custom::<Sha512>(self.config.period, self.config.digits as u32, &self.decode_secret(secret), check_time),
             };
 
             if expected == code {
@@ -237,9 +237,9 @@ impl TwoFactorService {
             if i > 0 {
                 let future_time = timestamp + i;
                 let expected = match self.config.algorithm {
-                    TotpAlgorithm::Sha1 => totp::<Sha1>(&self.decode_secret(secret), future_time, self.config.digits, self.config.period),
-                    TotpAlgorithm::Sha256 => totp::<Sha256>(&self.decode_secret(secret), future_time, self.config.digits, self.config.period),
-                    TotpAlgorithm::Sha512 => totp::<Sha512>(&self.decode_secret(secret), future_time, self.config.digits, self.config.period),
+                    TotpAlgorithm::Sha1 => totp_custom::<Sha1>(self.config.period, self.config.digits as u32, &self.decode_secret(secret), future_time),
+                    TotpAlgorithm::Sha256 => totp_custom::<Sha256>(self.config.period, self.config.digits as u32, &self.decode_secret(secret), future_time),
+                    TotpAlgorithm::Sha512 => totp_custom::<Sha512>(self.config.period, self.config.digits as u32, &self.decode_secret(secret), future_time),
                 };
                 if expected == code {
                     return true;
@@ -290,9 +290,9 @@ impl TwoFactorService {
             .as_secs() / self.config.period;
 
         match self.config.algorithm {
-            TotpAlgorithm::Sha1 => totp::<Sha1>(&self.decode_secret(secret), timestamp, self.config.digits, self.config.period),
-            TotpAlgorithm::Sha256 => totp::<Sha256>(&self.decode_secret(secret), timestamp, self.config.digits, self.config.period),
-            TotpAlgorithm::Sha512 => totp::<Sha512>(&self.decode_secret(secret), timestamp, self.config.digits, self.config.period),
+            TotpAlgorithm::Sha1 => totp_custom::<Sha1>(self.config.period, self.config.digits as u32, &self.decode_secret(secret), timestamp),
+            TotpAlgorithm::Sha256 => totp_custom::<Sha256>(self.config.period, self.config.digits as u32, &self.decode_secret(secret), timestamp),
+            TotpAlgorithm::Sha512 => totp_custom::<Sha512>(self.config.period, self.config.digits as u32, &self.decode_secret(secret), timestamp),
         }
     }
 

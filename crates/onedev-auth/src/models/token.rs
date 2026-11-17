@@ -83,8 +83,8 @@ impl Default for TokenConfig {
             access_ttl_seconds: 15 * 60, // 15 minutes
             refresh_ttl_seconds: 7 * 24 * 60 * 60, // 7 days
             temporary_ttl_seconds: 5 * 60, // 5 minutes
-            private_key: SecretString::new(String::new()),
-            public_key: SecretString::new(String::new()),
+            private_key: SecretString::from(String::new()),
+            public_key: SecretString::from(String::new()),
             algorithm: Algorithm::RS256,
         }
     }
@@ -308,7 +308,7 @@ impl JwtService {
         // Decode without verification for subject extraction
         let mut validation = Validation::new(self.config.algorithm);
         validation.validate_exp = false;
-        validation.validate_signature = false;
+        validation.insecure_disable_signature_validation();
         
         decode::<Claims>(token, &DecodingKey::from_secret(b""), &validation)
             .ok()

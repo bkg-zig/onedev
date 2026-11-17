@@ -103,7 +103,7 @@ pub struct ListTokensQuery {
 
 /// POST /api/auth/tokens
 pub async fn create_token(
-    State(token_service): State<Arc<TokenService>>,
+    State(crate::router::AuthState { token_service, .. }): State<crate::router::AuthState>,
     subject: crate::models::subject::Subject,
     Json(request): Json<CreateAccessTokenRequest>,
 ) -> Result<Json<AccessTokenWithRawResponse>, AuthError> {
@@ -137,7 +137,7 @@ pub async fn create_token(
 
 /// GET /api/auth/tokens
 pub async fn list_tokens(
-    State(token_service): State<Arc<TokenService>>,
+    State(crate::router::AuthState { token_service, .. }): State<crate::router::AuthState>,
     subject: crate::models::subject::Subject,
     Query(query): Query<ListTokensQuery>,
 ) -> Result<Json<Vec<AccessTokenResponse>>, AuthError> {
@@ -155,7 +155,7 @@ pub async fn list_tokens(
 
 /// GET /api/auth/tokens/{id}
 pub async fn get_token(
-    State(token_service): State<Arc<TokenService>>,
+    State(crate::router::AuthState { token_service, .. }): State<crate::router::AuthState>,
     subject: crate::models::subject::Subject,
     Path(id): Path<i64>,
 ) -> Result<Json<AccessTokenResponse>, AuthError> {
@@ -163,7 +163,7 @@ pub async fn get_token(
         .ok_or(AuthError::AccessTokenNotFound)?;
 
     // Verify ownership
-    let owner_id = match subject {
+    let owner_id = match &subject {
         crate::models::subject::Subject::User(p) => p.user_id,
         crate::models::subject::Subject::AccessToken(p) if p.can_impersonate() => p.effective_user_id(),
         _ => return Err(AuthError::Unauthorized("User authentication required".to_string())),
@@ -178,7 +178,7 @@ pub async fn get_token(
 
 /// PATCH /api/auth/tokens/{id}
 pub async fn update_token(
-    State(token_service): State<Arc<TokenService>>,
+    State(crate::router::AuthState { token_service, .. }): State<crate::router::AuthState>,
     subject: crate::models::subject::Subject,
     Path(id): Path<i64>,
     Json(request): Json<UpdateAccessTokenRequest>,
@@ -187,7 +187,7 @@ pub async fn update_token(
         .ok_or(AuthError::AccessTokenNotFound)?;
 
     // Verify ownership
-    let owner_id = match subject {
+    let owner_id = match &subject {
         crate::models::subject::Subject::User(p) => p.user_id,
         crate::models::subject::Subject::AccessToken(p) if p.can_impersonate() => p.effective_user_id(),
         _ => return Err(AuthError::Unauthorized("User authentication required".to_string())),
@@ -200,9 +200,11 @@ pub async fn update_token(
     // Build update
     let update = onedev_db::models::access_token::DbUpdateAccessToken {
         name: request.name,
-        scopes: request.scopes,
-        expires_at: request.expires_at,
-        revoked: request.revoked,
+        scopes: request.scopes.map(|scopes| {
+            crate::services::token_mapping::scopes_to_db(AccessTokenType::Personal, scopes)
+        }),
+        expires_at: request.expires_at.unwrap_or(None),
+        revoked_at: request.revoked.and_then(|revoked| revoked.then(Utc::now)),
     };
 
     let updated = token_service.update(id, update).await?;
@@ -211,7 +213,7 @@ pub async fn update_token(
 
 /// DELETE /api/auth/tokens/{id}
 pub async fn revoke_token(
-    State(token_service): State<Arc<TokenService>>,
+    State(crate::router::AuthState { token_service, .. }): State<crate::router::AuthState>,
     subject: crate::models::subject::Subject,
     Path(id): Path<i64>,
 ) -> Result<StatusCode, AuthError> {
@@ -219,7 +221,7 @@ pub async fn revoke_token(
         .ok_or(AuthError::AccessTokenNotFound)?;
 
     // Verify ownership
-    let owner_id = match subject {
+    let owner_id = match &subject {
         crate::models::subject::Subject::User(p) => p.user_id,
         crate::models::subject::Subject::AccessToken(p) if p.can_impersonate() => p.effective_user_id(),
         _ => return Err(AuthError::Unauthorized("User authentication required".to_string())),
@@ -229,7 +231,7 @@ pub async fn revoke_token(
         return Err(AuthError::Forbidden("Not authorized to revoke this token".to_string()));
     }
 
-    let revoked_by = match subject {
+    let revoked_by = match &subject {
         crate::models::subject::Subject::User(p) => p.user_id,
         crate::models::subject::Subject::AccessToken(p) => p.effective_user_id(),
         _ => return Err(AuthError::Unauthorized("User authentication required".to_string())),

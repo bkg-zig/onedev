@@ -5,7 +5,10 @@
 //! - An access token (AccessTokenPrincipal)
 //! - An anonymous/unauthenticated request (Anonymous)
 
+use crate::errors::AuthError;
 use crate::models::principal::{UserPrincipal, AccessTokenPrincipal};
+use axum::extract::FromRequestParts;
+use axum::http::request::Parts;
 use onedev_core::models::user::{UserType, UserRef};
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -115,6 +118,17 @@ impl Default for Subject {
     }
 }
 
+impl<S> FromRequestParts<S> for Subject
+where
+    S: Send + Sync,
+{
+    type Rejection = AuthError;
+
+    async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
+        Ok(parts.extensions.get::<Subject>().cloned().unwrap_or(Subject::Anonymous))
+    }
+}
+
 /// Thread-local storage for the current subject
 ///
 /// Uses tokio's task-local storage to maintain subject across async boundaries
@@ -128,8 +142,8 @@ pub fn current_subject() -> Subject {
 }
 
 /// Set the current subject for the current task
-pub fn set_current_subject(subject: Subject) {
-    CURRENT_SUBJECT.scope(subject, || {});
+pub async fn set_current_subject(subject: Subject) {
+    CURRENT_SUBJECT.scope(subject, async {}).await;
 }
 
 /// Run a closure with a specific subject set

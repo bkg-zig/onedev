@@ -11,6 +11,7 @@ use onedev_core::models::access_token::{AccessToken, CreateAccessToken};
 use onedev_db::models::access_token::DbCreateAccessToken;
 use onedev_db::models::user::DbUpdateUser;
 use onedev_db::repositories::{UserRepository, AccessTokenRepository};
+use onedev_db::repositories::Repository;
 use crate::repositories::SessionRepository;
 use crate::services::token_mapping::{access_token_from_db, scopes_to_db};
 use onedev_db::DbPool;
@@ -114,12 +115,12 @@ pub struct AuthResult {
 /// Main authentication service
 pub struct AuthService {
     config: AuthConfig,
-    user_repo: UserRepository,
+    pub(crate) user_repo: UserRepository,
     token_repo: AccessTokenRepository,
     session_repo: SessionRepository,
     jwt_service: JwtService,
     two_factor_service: TwoFactorService,
-    db_pool: DbPool,
+    pub(crate) db_pool: DbPool,
 }
 
 impl AuthService {
@@ -309,7 +310,7 @@ impl AuthService {
     }
 
     /// Create subject from JWT claims
-    async fn subject_from_claims(&self, claims: &Claims) -> Result<Subject, AuthError> {
+    pub(crate) async fn subject_from_claims(&self, claims: &Claims) -> Result<Subject, AuthError> {
         if claims.sub.starts_with("u:") {
             let user_id = claims.sub[2..].parse::<i64>()
                 .map_err(|_| AuthError::InvalidToken)?;
@@ -510,7 +511,7 @@ impl AuthService {
         }
 
         // Hash backup codes
-        let hashed_backup_codes = self.two_factor_service.hash_backup_codes(&backup_codes);
+        let hashed_backup_codes = TwoFactorService::hash_backup_codes(&backup_codes);
 
         self.user_repo.update(&self.db_pool, user.id, DbUpdateUser {
             two_factor_enabled: Some(true),
@@ -565,8 +566,8 @@ impl AuthService {
         }
 
         // Generate new backup codes
-        let backup_codes = self.two_factor_service.generate_backup_codes(10);
-        let hashed_backup_codes = self.two_factor_service.hash_backup_codes(&backup_codes);
+        let backup_codes = TwoFactorService::generate_backup_codes(10);
+        let hashed_backup_codes = TwoFactorService::hash_backup_codes(&backup_codes);
 
         self.user_repo.update(&self.db_pool, user.id, DbUpdateUser {
             backup_codes: Some(hashed_backup_codes),
