@@ -1,0 +1,46 @@
+docs/port-review/missing-functions-mapping.md
+  s_69b0b731fb41cc::t_df9bfa7ccb3c64 1-224
+crates/onedev-auth/src/services/authorization_service.rs
+  s_4dc460dbf339a2::t_bf3288d4122c15 7
+crates/onedev-core/src/permissions/mod.rs
+  s_4dc460dbf339a2::t_c104f44a0ce881 3-6
+  s_e213d8b74427f6::t_e35e3ffbfcfbbd 518-559,617-620,624-664,667-673,676-687
+crates/onedev-core/src/permissions/privilege.rs
+  s_4dc460dbf339a2::t_c104f44a0ce881 1-410
+docs/port-review/01-web-ui.md
+  s_69b0b731fb41cc::t_56ba501dc5e31a 1,7,9,13-31,46,50,52,54,56-57
+crates/onedev-core/src/models/role.rs
+  s_69b0b731fb41cc::t_daf8d569be826e 1-6,8,10-11,13-86,91-114,119-148,152-281,285,289,294,298,302,304-310,312,316,324-329,332,338-371,374,379-386,389,392,399-401,403-409,412-418,421-429,432-451,453
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "869d93c5756d717379255e3e5c1cd8f38c909c56",
+  "prompts": {},
+  "sessions": {
+    "s_4dc460dbf339a2": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e163f433bffe5t2PzgPpubA64u",
+        "model": "minimaxai/minimax-m3.1-flash"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    },
+    "s_69b0b731fb41cc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1a3d675b-0ad0-4764-8b9e-e422cf985156",
+        "model": "poolside/laguna-xs-2.1"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    },
+    "s_e213d8b74427f6": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e143a2903ffeqMLWwIOGrADl23",
+        "model": "minimaxai/minimax-m3.1-flash"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}
