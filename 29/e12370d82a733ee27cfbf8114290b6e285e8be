@@ -1,0 +1,40 @@
+crates/onedev-core/src/models/project.rs
+  s_529267afb46f04::t_3150e9199aa7a0 98
+crates/onedev-core/src/models/pull_request.rs
+  s_529267afb46f04::t_63110b2e10be45 230
+crates/onedev-core/src/models/issue.rs
+  s_529267afb46f04::t_de33e05a086495 247
+crates/onedev-core/src/models/workspace.rs
+  s_529267afb46f04::t_d331d3cdcb7ef0 167
+crates/onedev-core/src/models/build.rs
+  s_529267afb46f04::t_5528b17b146851 403,409
+crates/onedev-core/src/models/webhook.rs
+  s_529267afb46f04::t_9c932435efe322 147
+crates/onedev-core/src/models/user.rs
+  s_529267afb46f04::t_62939fa7dec66d 99
+  s_529267afb46f04::t_b9ab279b22a2a0 7
+crates/onedev-core/src/models/gpg_key.rs
+  s_529267afb46f04::t_df3b0839b7ad6f 35
+crates/onedev-core/src/models/group.rs
+  s_529267afb46f04::t_77c5184b45951b 101
+crates/onedev-core/src/search/mod.rs
+  s_529267afb46f04::t_20ccb5669cc8ee 149,153
+crates/onedev-core/src/models/mod.rs
+  s_529267afb46f04::t_2417d7951f7be8 29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "29e12370d82a733ee27cfbf8114290b6e285e8be",
+  "prompts": {},
+  "sessions": {
+    "s_529267afb46f04": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "934bb580-5ad8-4123-80f4-d8e72c4207b5",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}
