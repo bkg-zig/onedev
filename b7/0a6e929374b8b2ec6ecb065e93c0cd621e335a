@@ -1,0 +1,39 @@
+crates/onedev-db/src/migrations.rs
+  s_529267afb46f04::t_aefc45cddb0d42 3,7-12,14-16,22-23,25-30,32-34,46,51,54,58,60-66
+crates/onedev-db/src/models/user.rs
+  s_529267afb46f04::t_fed083d8c6bec8 41
+  s_529267afb46f04::t_51e86a7087b292 85-86
+crates/onedev-db/migrations/001__init.sql
+  s_529267afb46f04::t_70131080e95928 84
+  s_529267afb46f04::t_65a88d1853879d 875-876
+  s_529267afb46f04::t_12624d7bdce661 93
+  s_529267afb46f04::t_7aae5885c6f6cd 16
+crates/onedev-db/src/error.rs
+  s_529267afb46f04::t_86edb970a1a2ec 36-38,43-46
+crates/onedev-db/src/models/group.rs
+  s_529267afb46f04::t_9e0ac3c3f837b1 56-126
+  s_529267afb46f04::t_a9a67dcb2f2743 159-163,171,173,175-183
+crates/onedev-db/src/pool.rs
+  s_529267afb46f04::t_718e6e27c82f0f 5-6,8,11,14-19,28,30,32,36-61,104,106-109,113-115,123-133,153,184,195-205,207-212,219
+crates/onedev-db/src/repositories/user.rs
+  s_529267afb46f04::t_f3b64c3d567ef2 71
+  s_529267afb46f04::t_2d7967c5fc03e3 272
+  s_529267afb46f04::t_e62ba4a786e07e 9
+  s_529267afb46f04::t_152c0606212e16 219
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "b70a6e929374b8b2ec6ecb065e93c0cd621e335a",
+  "prompts": {},
+  "sessions": {
+    "s_529267afb46f04": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "934bb580-5ad8-4123-80f4-d8e72c4207b5",
+        "model": "unknown"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}
