@@ -1,0 +1,33 @@
+crates/onedev-db/src/repositories/webhook.rs
+  s_529267afb46f04::t_836f2d66a7a330 91
+  s_529267afb46f04::t_f7af314cbe14f8 61
+crates/onedev-db/src/models/audit.rs
+  s_529267afb46f04::t_b96b8cd2736cd5 24
+  s_529267afb46f04::t_9b42de236d999e 40
+crates/onedev-db/src/models/webhook.rs
+  s_529267afb46f04::t_4b970f46cd6ad2 112
+  s_529267afb46f04::t_ef4379f49c01a6 119
+  s_529267afb46f04::t_6c19a93ba191d0 18-19
+  s_529267afb46f04::t_f74aadbc10b79d 99
+  s_529267afb46f04::t_9d8eee129a0832 61,70,79,89
+crates/onedev-db/src/repositories/audit.rs
+  s_529267afb46f04::t_b66535d7a0f766 95-96
+crates/onedev-db/migrations/001__init.sql
+  s_529267afb46f04::t_a35b941e96041c 511
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "368ebb88060b856401efd3fdf4adf477ddad9833",
+  "prompts": {},
+  "sessions": {
+    "s_529267afb46f04": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "934bb580-5ad8-4123-80f4-d8e72c4207b5",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}
