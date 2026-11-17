@@ -1,0 +1,80 @@
+crates/onedev-db/src/repositories/oauth.rs
+  s_fc4968d509c3df::t_d8af63e3cadfe4 1-253
+crates/onedev-auth/src/models/mod.rs
+  s_fc4968d509c3df::t_746f418d93118f 1-15
+crates/onedev-auth/Cargo.toml
+  s_fc4968d509c3df::t_d8a182f16d70eb 40-41
+crates/onedev-auth/src/lib.rs
+  s_fc4968d509c3df::t_ab452678b02eae 1-20
+crates/onedev-build/src/lib.rs
+  s_fc4968d509c3df::t_abb86ca8a05dd1 1-20
+crates/onedev-cli/Cargo.toml
+  s_fc4968d509c3df::t_841438d762dffc 36
+crates/onedev-api/Cargo.toml
+  s_fc4968d509c3df::t_9f8081bcf506a3 25
+  s_fc4968d509c3df::t_59bf968bb7f891 27
+  s_fc4968d509c3df::t_0c968aaff2f3ab 23
+crates/onedev-auth/src/models/subject.rs
+  s_fc4968d509c3df::t_c1b0b5575c79a1 1-141
+crates/onedev-git/src/lib.rs
+  s_fc4968d509c3df::t_445a3298bdf597 1-20
+crates/onedev-server/src/lib.rs
+  s_fc4968d509c3df::t_79a0db680a7637 1-20
+crates/onedev-db/src/repositories/audit.rs
+  s_fc4968d509c3df::t_4e5e2b0479384d 1-153
+crates/onedev-web/src/lib.rs
+  s_fc4968d509c3df::t_f3074918a929a6 1-20
+Cargo.toml
+  s_fc4968d509c3df::t_19999b47039d2f 47
+  s_fc4968d509c3df::t_7bfca26cc01dcd 132
+  s_fc4968d509c3df::t_11a8bca82933b9 145-146
+  s_fc4968d509c3df::t_8522de1d0036f7 56-57
+  s_fc4968d509c3df::t_60cdd0c60f4f15 95
+  s_fc4968d509c3df::t_72f6bf97a47b19 182
+  s_fc4968d509c3df::t_bd04476fef920f 103
+  s_fc4968d509c3df::t_cddf719cbfef7b 93
+  s_fc4968d509c3df::t_a2f0dd15cc836a 71
+  s_fc4968d509c3df::t_45ce67630bd5e6 116
+  s_fc4968d509c3df::t_c558f4ca78ab6a 64
+  s_fc4968d509c3df::t_97fd94bdbdadf3 175
+  s_fc4968d509c3df::t_e7f25e616f150f 66
+  s_fc4968d509c3df::t_f2e17eb79fe9dd 108
+  s_fc4968d509c3df::t_9da2940871dfd8 178
+  s_fc4968d509c3df::t_9639940a22ce3e 124
+  s_fc4968d509c3df::t_97f9fd40bf0e23 65
+  s_fc4968d509c3df::t_0ed90ba88d15be 75
+crates/onedev-server/Cargo.toml
+  s_fc4968d509c3df::t_978a05bc90ccc0 28
+crates/onedev-api/src/lib.rs
+  s_fc4968d509c3df::t_cca7afe29b0723 1-20
+crates/onedev-build/Cargo.toml
+  s_fc4968d509c3df::t_cb3c3c858ccf8f 35
+  s_fc4968d509c3df::t_2051e4ec77aeda 41
+crates/onedev-cli/src/lib.rs
+  s_fc4968d509c3df::t_7818796ceaa6e3 1-20
+.gitmodules
+  s_fc4968d509c3df::t_c0e2902e67eac9 1-3
+vendor/vanilla-onedev
+  s_fc4968d509c3df::t_aeb650679fa9da 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "0f388cc928a2a22ef8beabc21e8dff2ae2c14ab0",
+  "prompts": {},
+  "humans": {
+    "h_76ea00ebfa3ec3": {
+      "author": "bkg <bkg@skill.eysho.info>"
+    }
+  },
+  "sessions": {
+    "s_fc4968d509c3df": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e152e6bc4ffejPRtPDKqejzaSv",
+        "model": "combo/best-free"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}
