@@ -1,0 +1,40 @@
+crates/onedev-db/src/repositories/label.rs
+  s_fc4968d509c3df::t_d449539d6af9a5 1-111
+crates/onedev-db/src/repositories/membership.rs
+  s_fc4968d509c3df::t_992c8ddd6b0d6a 1-129
+crates/onedev-db/migrations/V1__init.sql
+  s_fc4968d509c3df::t_97849998082fa9 1-936
+crates/onedev-db/src/migrations.rs
+  s_fc4968d509c3df::t_83c289284bfb7f 1-51
+crates/onedev-db/src/repositories/sso_account.rs
+  s_fc4968d509c3df::t_e644ecf20fbbcf 1-119
+crates/onedev-db/src/repositories/ssh_key.rs
+  s_fc4968d509c3df::t_2d382fa4962c58 1-122
+crates/onedev-db/src/repositories/gpg_key.rs
+  s_fc4968d509c3df::t_abb9ca5ce408f6 1-110
+crates/onedev-db/src/repositories/email.rs
+  s_fc4968d509c3df::t_e8b00ef40e7fad 1-153
+.gitignore
+  h_76ea00ebfa3ec3 31
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "f0adf420bb716d00f0494cf2605e283e0cec76d0",
+  "prompts": {},
+  "humans": {
+    "h_76ea00ebfa3ec3": {
+      "author": "bkg <bkg@skill.eysho.info>"
+    }
+  },
+  "sessions": {
+    "s_fc4968d509c3df": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e152e6bc4ffejPRtPDKqejzaSv",
+        "model": "combo/best-free"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}

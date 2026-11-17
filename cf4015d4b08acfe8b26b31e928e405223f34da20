@@ -1,0 +1,23 @@
+crates/onedev-db/src/repositories/group.rs
+  s_fc4968d509c3df::t_0181e8a04f1ccc 1-188
+crates/onedev-db/src/pool.rs
+  s_fc4968d509c3df::t_58f5dc0ab8920e 1-166
+crates/onedev-db/src/repositories/access_token.rs
+  s_fc4968d509c3df::t_1730f926844d72 1-140
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "cf4015d4b08acfe8b26b31e928e405223f34da20",
+  "prompts": {},
+  "sessions": {
+    "s_fc4968d509c3df": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e152e6bc4ffejPRtPDKqejzaSv",
+        "model": "combo/best-free"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}

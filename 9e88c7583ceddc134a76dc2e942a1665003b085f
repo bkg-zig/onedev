@@ -1,0 +1,92 @@
+crates/onedev-db/src/models/project.rs
+  s_fc4968d509c3df::t_74028929a98333 1-471
+crates/onedev-db/src/models/group.rs
+  s_fc4968d509c3df::t_a5befd812b4fa8 1-201
+crates/onedev-db/src/lib.rs
+  s_fc4968d509c3df::t_48df7b66ee548e 1-28
+crates/onedev-db/src/models/access_token.rs
+  s_fc4968d509c3df::t_81ef9358b6b10d 1-129
+crates/onedev-db/src/models/ssh_key.rs
+  s_fc4968d509c3df::t_5dc9f29099652d 1-128
+crates/onedev-db/src/models/webhook.rs
+  s_fc4968d509c3df::t_a3f87f528cd8ee 1-136
+crates/onedev-db/src/models/audit.rs
+  s_fc4968d509c3df::t_939395dae39fd4 1-115
+crates/onedev-db/src/models/dashboard.rs
+  s_fc4968d509c3df::t_b68a42bdb77f02 1-166
+crates/onedev-db/src/models/pack.rs
+  s_fc4968d509c3df::t_85e10198396377 1-149
+crates/onedev-db/src/models/gpg_key.rs
+  s_fc4968d509c3df::t_3a9cd92306c8e3 1-102
+crates/onedev-db/src/models/email.rs
+  s_fc4968d509c3df::t_33ee0782c3adea 1-122
+crates/onedev-db/src/models/build.rs
+  s_fc4968d509c3df::t_87d2875ec6e840 1-213
+crates/onedev-db/src/error.rs
+  s_fc4968d509c3df::t_130a9381ca942d 1-44
+crates/onedev-db/src/models/agent.rs
+  s_fc4968d509c3df::t_eca46b3c61c00b 1-165
+crates/onedev-db/src/models/authorization.rs
+  s_fc4968d509c3df::t_3487bb69b83e16 1-184
+crates/onedev-db/src/models/role.rs
+  s_fc4968d509c3df::t_969afa819e9db9 1-134
+crates/onedev-db/src/repositories/user.rs
+  s_fc4968d509c3df::t_c4cda1799a7e83 1-302
+crates/onedev-db/src/repositories/issue.rs
+  s_fc4968d509c3df::t_6fc9104de2f8a7 1-207
+crates/onedev-db/src/models/pipeline.rs
+  s_fc4968d509c3df::t_8c8fdecc3f314a 1-170
+crates/onedev-db/src/repositories/pull_request.rs
+  s_fc4968d509c3df::t_0870375b073679 1-211
+crates/onedev-db/src/models/membership.rs
+  s_fc4968d509c3df::t_b47e4effc95b43 1-137
+crates/onedev-db/src/repositories/mod.rs
+  s_fc4968d509c3df::t_de5a915094db58 1-69
+crates/onedev-db/src/models/user.rs
+  s_fc4968d509c3df::t_89b87de030f370 1-332
+crates/onedev-db/src/models/sso_account.rs
+  s_fc4968d509c3df::t_ee407838a5cff3 1-125
+crates/onedev-db/src/models/mod.rs
+  s_fc4968d509c3df::t_0c5146c1983e86 1-55
+crates/onedev-db/src/models/code_comment.rs
+  s_fc4968d509c3df::t_cbe1e0a245d20d 1-129
+crates/onedev-db/src/models/pull_request.rs
+  s_fc4968d509c3df::t_f1553a015b17cf 1-244
+crates/onedev-db/src/models/issue.rs
+  s_fc4968d509c3df::t_f5803aea21c177 1-201
+crates/onedev-db/src/models/label.rs
+  s_fc4968d509c3df::t_8473fa0f8fdb68 1-96
+.gitignore
+  h_76ea00ebfa3ec3 1-32
+crates/onedev-db/src/models/watch.rs
+  s_fc4968d509c3df::t_3408f0d6fcc1c4 1-152
+crates/onedev-db/src/models/workspace.rs
+  s_fc4968d509c3df::t_e47c99926caef8 1-149
+crates/onedev-db/src/models/oauth.rs
+  s_fc4968d509c3df::t_57c1820387f0db 1-241
+crates/onedev-db/src/repositories/project.rs
+  s_fc4968d509c3df::t_14a302da6fc373 1-378
+crates/onedev-db/src/models/setting.rs
+  s_fc4968d509c3df::t_5d63b0a05b4952 1-153
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "9e88c7583ceddc134a76dc2e942a1665003b085f",
+  "prompts": {},
+  "humans": {
+    "h_76ea00ebfa3ec3": {
+      "author": "bkg <bkg@skill.eysho.info>"
+    }
+  },
+  "sessions": {
+    "s_fc4968d509c3df": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e152e6bc4ffejPRtPDKqejzaSv",
+        "model": "combo/best-free"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}
