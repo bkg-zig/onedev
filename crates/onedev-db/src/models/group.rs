@@ -52,8 +52,78 @@ pub enum DbProjectCreationLevel {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
 #[sqlx(type_name = "subgroup_creation_level", rename_all = "lowercase")]
 pub enum DbSubgroupCreationLevel {
-    Noone,
     Owner,
+    Maintainer,
+}
+
+impl From<DbGroupVisibility> for onedev_core::models::group::GroupVisibility {
+    fn from(v: DbGroupVisibility) -> Self {
+        match v {
+            DbGroupVisibility::Private => Self::Private,
+            DbGroupVisibility::Internal => Self::Internal,
+            DbGroupVisibility::Public => Self::Public,
+        }
+    }
+}
+
+impl From<onedev_core::models::group::GroupVisibility> for DbGroupVisibility {
+    fn from(v: onedev_core::models::group::GroupVisibility) -> Self {
+        match v {
+            onedev_core::models::group::GroupVisibility::Private => Self::Private,
+            onedev_core::models::group::GroupVisibility::Internal => Self::Internal,
+            onedev_core::models::group::GroupVisibility::Public => Self::Public,
+        }
+    }
+}
+
+impl From<DbGroupVisibility> for onedev_core::models::group::VisibilityLevel {
+    fn from(v: DbGroupVisibility) -> Self {
+        match v {
+            DbGroupVisibility::Private => Self::Private,
+            DbGroupVisibility::Internal => Self::Internal,
+            DbGroupVisibility::Public => Self::Public,
+        }
+    }
+}
+
+impl From<DbProjectCreationLevel> for onedev_core::models::group::ProjectCreationLevel {
+    fn from(l: DbProjectCreationLevel) -> Self {
+        match l {
+            DbProjectCreationLevel::Noone => Self::NoOne,
+            DbProjectCreationLevel::Maintainer => Self::Maintainer,
+            DbProjectCreationLevel::Developer => Self::Developer,
+            DbProjectCreationLevel::Owner => Self::Owner,
+        }
+    }
+}
+
+impl From<onedev_core::models::group::ProjectCreationLevel> for DbProjectCreationLevel {
+    fn from(l: onedev_core::models::group::ProjectCreationLevel) -> Self {
+        match l {
+            onedev_core::models::group::ProjectCreationLevel::NoOne => Self::Noone,
+            onedev_core::models::group::ProjectCreationLevel::Maintainer => Self::Maintainer,
+            onedev_core::models::group::ProjectCreationLevel::Developer => Self::Developer,
+            onedev_core::models::group::ProjectCreationLevel::Owner => Self::Owner,
+        }
+    }
+}
+
+impl From<DbSubgroupCreationLevel> for onedev_core::models::group::SubgroupCreationLevel {
+    fn from(l: DbSubgroupCreationLevel) -> Self {
+        match l {
+            DbSubgroupCreationLevel::Owner => Self::Owner,
+            DbSubgroupCreationLevel::Maintainer => Self::Maintainer,
+        }
+    }
+}
+
+impl From<onedev_core::models::group::SubgroupCreationLevel> for DbSubgroupCreationLevel {
+    fn from(l: onedev_core::models::group::SubgroupCreationLevel) -> Self {
+        match l {
+            onedev_core::models::group::SubgroupCreationLevel::Owner => Self::Owner,
+            onedev_core::models::group::SubgroupCreationLevel::Maintainer => Self::Maintainer,
+        }
+    }
 }
 
 /// Group creation input for database
@@ -86,6 +156,11 @@ pub struct DbUpdateGroup {
 
 impl DbGroup {
     /// Convert to core domain model
+    ///
+    /// The `groups` table stores no owner, LDAP mapping or shared-runner quota,
+    /// so those core fields get neutral defaults: `owner_id` is
+    /// `UNKNOWN_USER_ID`, the optional ones are `None`. `visibility_level`
+    /// mirrors `visibility`.
     pub fn to_core(&self) -> onedev_core::models::group::Group {
         onedev_core::models::group::Group {
             id: self.id,
@@ -93,28 +168,22 @@ impl DbGroup {
             name: self.name.clone(),
             path: self.path.clone(),
             description: self.description.clone(),
+            visibility: self.visibility.into(),
             parent_id: self.parent_id,
+            owner_id: onedev_core::models::user::UNKNOWN_USER_ID,
             avatar_url: self.avatar_url.clone(),
-            visibility: match self.visibility {
-                DbGroupVisibility::Private => onedev_core::models::group::GroupVisibility::Private,
-                DbGroupVisibility::Internal => onedev_core::models::group::GroupVisibility::Internal,
-                DbGroupVisibility::Public => onedev_core::models::group::GroupVisibility::Public,
-            },
+            require_two_factor: self.require_two_factor,
+            two_factor_grace_period: u32::try_from(self.two_factor_grace_period).unwrap_or(0),
+            project_creation_level: self.project_creation_level.into(),
+            subgroup_creation_level: self.subgroup_creation_level.into(),
+            visibility_level: self.visibility.into(),
+            shared_runners_minutes: None,
+            extra_shared_runners_minutes: None,
+            ldap_cn: None,
+            ldap_access: None,
             created_at: self.created_at,
             updated_at: self.updated_at,
             deleted_at: self.deleted_at,
-            require_two_factor: self.require_two_factor,
-            two_factor_grace_period: self.two_factor_grace_period,
-            project_creation_level: match self.project_creation_level {
-                DbProjectCreationLevel::Noone => onedev_core::models::group::ProjectCreationLevel::Noone,
-                DbProjectCreationLevel::Maintainer => onedev_core::models::group::ProjectCreationLevel::Maintainer,
-                DbProjectCreationLevel::Developer => onedev_core::models::group::ProjectCreationLevel::Developer,
-                DbProjectCreationLevel::Owner => onedev_core::models::group::ProjectCreationLevel::Owner,
-            },
-            subgroup_creation_level: match self.subgroup_creation_level {
-                DbSubgroupCreationLevel::Noone => onedev_core::models::group::SubgroupCreationLevel::Noone,
-                DbSubgroupCreationLevel::Owner => onedev_core::models::group::SubgroupCreationLevel::Owner,
-            },
         }
     }
 }

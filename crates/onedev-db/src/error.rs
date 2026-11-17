@@ -33,12 +33,14 @@ pub enum DbError {
 
     #[error("Invalid input: {0}")]
     InvalidInput(String),
+
+    #[error("Configuration error: {0}")]
+    Config(#[from] config::ConfigError),
 }
 
 pub type DbResult<T> = Result<T, DbError>;
 
-impl From<DbError> for anyhow::Error {
-    fn from(err: DbError) -> Self {
-        anyhow::anyhow!(err)
-    }
-}
+// No manual `impl From<DbError> for anyhow::Error`: `DbError` implements
+// `std::error::Error + Send + Sync + 'static`, so anyhow's blanket
+// `impl<E> From<E> for anyhow::Error` already covers it (a manual impl would
+// conflict, E0119).

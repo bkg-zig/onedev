@@ -6,7 +6,7 @@ use crate::{
     DbPool, DbResult,
 };
 use async_trait::async_trait;
-use sqlx::Row;
+use sqlx::{FromRow, Row};
 
 pub struct UserRepository;
 
@@ -68,7 +68,7 @@ impl UserRepository {
             UPDATE users SET
                 two_factor_enabled = $2,
                 two_factor_secret = $3,
-                backup_codes = $4,
+                backup_codes = COALESCE($4, '[]'::jsonb),
                 updated_at = NOW()
             WHERE id = $1
             "#,
@@ -205,8 +205,6 @@ impl Repository<DbUser, DbCreateUser, DbUpdateUser> for UserRepository {
         let uuid = uuid::Uuid::new_v4();
         let now = chrono::Utc::now();
 
-        let backup_codes_json = serde_json::to_value(&create.backup_codes)?;
-
         let id: i64 = sqlx::query_scalar(UserQueryBuilder::insert())
             .bind(uuid)
             .bind(&create.name)
@@ -218,7 +216,7 @@ impl Repository<DbUser, DbCreateUser, DbUpdateUser> for UserRepository {
             .bind(&create.avatar_url)
             .bind(false) // two_factor_enabled
             .bind(Option::<String>::None) // two_factor_secret
-            .bind(Vec::<String>::new()) // backup_codes
+            .bind(sqlx::types::Json(Vec::<String>::new())) // backup_codes (JSONB)
             .bind(now)
             .bind(now)
             .bind(create.notify_own_events)
@@ -271,7 +269,7 @@ impl Repository<DbUser, DbCreateUser, DbUpdateUser> for UserRepository {
             .fetch_one(pool)
             .await?;
 
-        DbUser::from_row(&row)
+        Ok(DbUser::from_row(&row)?)
     }
 
     async fn delete(&self, pool: &DbPool, id: i64) -> DbResult<()> {

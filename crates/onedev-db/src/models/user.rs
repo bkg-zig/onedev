@@ -38,7 +38,7 @@ impl From<onedev_core::models::user::UserType> for DbUserType {
 
 /// User status in the database
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
-#[sqlx(type_name = "user_status", rename_all = "lowercase")]
+#[sqlx(type_name = "user_status", rename_all = "snake_case")] // 'pending_verification'
 pub enum DbUserStatus {
     Active,
     Disabled,
@@ -82,7 +82,8 @@ pub struct DbUser {
     pub avatar_url: Option<String>,
     pub two_factor_enabled: bool,
     pub two_factor_secret: Option<String>, // Encrypted
-    pub backup_codes: Vec<String>, // Hashed backup codes stored as JSON array
+    #[sqlx(json)] // JSONB column holding an array of hashed backup codes
+    pub backup_codes: Vec<String>,
     pub last_login_at: Option<DateTime<Utc>>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,

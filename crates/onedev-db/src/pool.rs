@@ -2,14 +2,21 @@
 
 use crate::{DbError, DbResult};
 use deadpool_postgres::{Config, Pool, Runtime};
-use sqlx::postgres::PgPoolOptions;
+use serde::Deserialize;
+use sqlx::postgres::{PgConnectOptions, PgPoolOptions};
 use sqlx::{Pool as SqlxPool, Postgres};
+use std::fmt;
 use std::time::Duration;
 use tokio_postgres::NoTls;
-use tracing::{info, warn};
+use tracing::info;
 
 /// Database configuration
-#[derive(Debug, Clone)]
+///
+/// Can be built from the environment ([`DbConfig::from_env`]) or loaded from a
+/// TOML file ([`DbConfig::from_file`]). Durations are given in whole seconds in
+/// the file; missing keys fall back to [`DbConfig::default`].
+#[derive(Clone, Deserialize)]
+#[serde(default)]
 pub struct DbConfig {
     pub host: String,
     pub port: u16,
@@ -18,9 +25,38 @@ pub struct DbConfig {
     pub database: String,
     pub max_connections: u32,
     pub min_connections: u32,
+    #[serde(deserialize_with = "deserialize_secs")]
     pub acquire_timeout: Duration,
+    #[serde(deserialize_with = "deserialize_secs")]
     pub idle_timeout: Duration,
+    #[serde(deserialize_with = "deserialize_secs")]
     pub max_lifetime: Duration,
+}
+
+/// Deserialize a `Duration` from a whole number of seconds
+fn deserialize_secs<'de, D>(deserializer: D) -> Result<Duration, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    u64::deserialize(deserializer).map(Duration::from_secs)
+}
+
+// Manual `Debug` so that the password never ends up in logs.
+impl fmt::Debug for DbConfig {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("DbConfig")
+            .field("host", &self.host)
+            .field("port", &self.port)
+            .field("username", &self.username)
+            .field("password", &"<redacted>")
+            .field("database", &self.database)
+            .field("max_connections", &self.max_connections)
+            .field("min_connections", &self.min_connections)
+            .field("acquire_timeout", &self.acquire_timeout)
+            .field("idle_timeout", &self.idle_timeout)
+            .field("max_lifetime", &self.max_lifetime)
+            .finish()
+    }
 }
 
 impl Default for DbConfig {
@@ -65,14 +101,18 @@ impl DbConfig {
         })
     }
 
-    /// Load configuration from file (for production)
+    /// Load configuration from a TOML file (for production)
     pub fn from_file(path: &str) -> DbResult<Self> {
-        let content = std::fs::read_to_string(path)?;
-        let config: DbConfig = toml::from_str(&content)?;
-        Ok(config)
+        let settings = config::Config::builder()
+            .add_source(config::File::new(path, config::FileFormat::Toml))
+            .build()?;
+        Ok(settings.try_deserialize()?)
     }
 
     /// Get connection string for sqlx
+    ///
+    /// Note: credentials are not percent-encoded; prefer
+    /// [`DbConfig::sqlx_connect_options`] when they may contain special characters.
     pub fn sqlx_connection_string(&self) -> String {
         format!(
             "postgres://{}:{}@{}:{}/{}",
@@ -80,7 +120,17 @@ impl DbConfig {
         )
     }
 
-    /// Get connection string for deadpool
+    /// Get typed connect options for sqlx (no URL encoding of credentials needed)
+    pub fn sqlx_connect_options(&self) -> PgConnectOptions {
+        PgConnectOptions::new()
+            .host(&self.host)
+            .port(self.port)
+            .username(&self.username)
+            .password(&self.password)
+            .database(&self.database)
+    }
+
+    /// Get connection configuration for deadpool
     pub fn deadpool_config(&self) -> Config {
         let mut cfg = Config::new();
         cfg.host = Some(self.host.clone());
@@ -100,7 +150,7 @@ pub async fn create_sqlx_pool(config: &DbConfig) -> DbResult<SqlxPool<Postgres>>
         .acquire_timeout(config.acquire_timeout)
         .idle_timeout(config.idle_timeout)
         .max_lifetime(config.max_lifetime)
-        .connect(&config.sqlx_connection_string())
+        .connect_with(config.sqlx_connect_options())
         .await
         .map_err(DbError::Connection)?;
 
@@ -131,19 +181,7 @@ pub async fn create_deadpool_pool(config: &DbConfig) -> DbResult<Pool> {
 /// Type alias for SQLx pool
 pub type DbPool = SqlxPool<Postgres>;
 
-/// Run database migrations
-pub async fn run_migrations(pool: &DbPool) -> DbResult<()> {
-    info!("Running database migrations...");
-
-    // Run SQLx migrations
-    sqlx::migrate!("./migrations")
-        .run(pool)
-        .await
-        .map_err(DbError::Migration)?;
-
-    info!("Database migrations completed successfully");
-    Ok(())
-}
+// Migrations live in `crate::migrations` (`run_migrations`, `run_embedded_migrations`, ...).
 
 /// Check database health
 pub async fn check_health(pool: &DbPool) -> DbResult<()> {
@@ -154,9 +192,24 @@ pub async fn check_health(pool: &DbPool) -> DbResult<()> {
     Ok(())
 }
 
+/// Snapshot of the SQLx pool state
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct DbPoolStats {
+    /// Open connections (idle + in use)
+    pub size: u32,
+    /// Idle connections
+    pub idle: usize,
+    /// Configured maximum number of connections
+    pub max_connections: u32,
+}
+
 /// Get pool statistics
-pub fn pool_stats(pool: &DbPool) -> sqlx::pool::PoolStats {
-    pool.stats()
+pub fn pool_stats(pool: &DbPool) -> DbPoolStats {
+    DbPoolStats {
+        size: pool.size(),
+        idle: pool.num_idle(),
+        max_connections: pool.options().get_max_connections(),
+    }
 }
 
 /// Close pool gracefully

@@ -13,7 +13,7 @@ CREATE TYPE project_status AS ENUM ('active', 'archived', 'maintenance', 'delete
 CREATE TYPE owner_type AS ENUM ('user', 'group');
 CREATE TYPE group_visibility AS ENUM ('private', 'internal', 'public');
 CREATE TYPE project_creation_level AS ENUM ('noone', 'maintainer', 'developer', 'owner');
-CREATE TYPE subgroup_creation_level AS ENUM ('noone', 'owner');
+CREATE TYPE subgroup_creation_level AS ENUM ('owner', 'maintainer');
 CREATE TYPE issue_state AS ENUM ('open', 'closed');
 CREATE TYPE pull_request_state AS ENUM ('open', 'merged', 'closed', 'abandoned');
 CREATE TYPE merge_strategy AS ENUM ('merge_commit', 'squash', 'fast_forward', 'rebase');
@@ -81,7 +81,7 @@ CREATE TABLE email_addresses (
     user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     value VARCHAR(255) NOT NULL,
     verified BOOLEAN NOT NULL DEFAULT FALSE,
-    primary BOOLEAN NOT NULL DEFAULT FALSE,
+    "primary" BOOLEAN NOT NULL DEFAULT FALSE,
     verification_code VARCHAR(100),
     verification_sent_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -90,7 +90,7 @@ CREATE TABLE email_addresses (
 
 CREATE INDEX idx_email_addresses_user_id ON email_addresses(user_id);
 CREATE INDEX idx_email_addresses_value ON email_addresses(value);
-CREATE UNIQUE INDEX idx_email_addresses_user_primary ON email_addresses(user_id) WHERE primary = TRUE;
+CREATE UNIQUE INDEX idx_email_addresses_user_primary ON email_addresses(user_id) WHERE "primary" = TRUE;
 
 -- SSH keys table
 CREATE TABLE ssh_keys (
@@ -872,6 +872,8 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Apply updated_at triggers
+-- (only for tables that have an updated_at column: role_permissions and
+-- dashboard_shares have none, the trigger function would fail on UPDATE there)
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_email_addresses_updated_at BEFORE UPDATE ON email_addresses FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_ssh_keys_updated_at BEFORE UPDATE ON ssh_keys FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
@@ -885,13 +887,11 @@ CREATE TRIGGER update_issues_updated_at BEFORE UPDATE ON issues FOR EACH ROW EXE
 CREATE TRIGGER update_pull_requests_updated_at BEFORE UPDATE ON pull_requests FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_user_authorizations_updated_at BEFORE UPDATE ON user_authorizations FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_roles_updated_at BEFORE UPDATE ON roles FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_role_permissions_updated_at BEFORE UPDATE ON role_permissions FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_system_settings_updated_at BEFORE UPDATE ON system_settings FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_project_settings_updated_at BEFORE UPDATE ON project_settings FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_user_settings_updated_at BEFORE UPDATE ON user_settings FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_webhooks_updated_at BEFORE UPDATE ON webhooks FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_dashboards_updated_at BEFORE UPDATE ON dashboards FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_dashboard_shares_updated_at BEFORE UPDATE ON dashboard_shares FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_code_comments_updated_at BEFORE UPDATE ON code_comments FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_packs_updated_at BEFORE UPDATE ON packs FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_workspaces_updated_at BEFORE UPDATE ON workspaces FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
