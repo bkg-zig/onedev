@@ -5,12 +5,16 @@ pub mod services;
 pub mod handlers;
 pub mod errors;
 pub mod utils;
+pub mod middleware;
+pub mod extractors;
 
 pub use models::*;
 pub use services::*;
 pub use handlers::*;
 pub use errors::*;
 pub use utils::*;
+pub use middleware::*;
+pub use extractors::*;
 
 /// Re-export commonly used types
 pub use uuid::Uuid;
