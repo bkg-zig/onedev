@@ -1,0 +1,29 @@
+crates/onedev-db/src/repositories/label.rs
+  s_529267afb46f04::t_12916bd4ab7399 82
+crates/onedev-db/src/repositories/issue.rs
+  s_529267afb46f04::t_8cd136220a151b 177
+crates/onedev-db/src/repositories/code_comment.rs
+  s_529267afb46f04::t_f8fc8435453db3 107
+crates/onedev-db/src/repositories/project.rs
+  s_529267afb46f04::t_57f1b108d8694a 345
+crates/onedev-db/src/repositories/pull_request.rs
+  s_529267afb46f04::t_331763156d8488 180
+crates/onedev-db/src/repositories/webhook.rs
+  s_529267afb46f04::t_6afddc30aa0249 99
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "de6b6423f3dbe3bf1cc96d7df8b54cbc638b0904",
+  "prompts": {},
+  "sessions": {
+    "s_529267afb46f04": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "934bb580-5ad8-4123-80f4-d8e72c4207b5",
+        "model": "unknown"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}
