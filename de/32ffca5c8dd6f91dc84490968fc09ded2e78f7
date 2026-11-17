@@ -1,0 +1,29 @@
+crates/onedev-db/src/repositories/build.rs
+  s_fc4968d509c3df::t_fb0726d4102df6 1-395
+crates/onedev-db/src/repositories/authorization.rs
+  s_fc4968d509c3df::t_d5ebacd23a6c98 1-243
+crates/onedev-db/src/repositories/watch.rs
+  s_fc4968d509c3df::t_ed29b35f52f510 1-239
+crates/onedev-db/src/repositories/agent.rs
+  s_fc4968d509c3df::t_7424cb6ce763d6 1-150
+crates/onedev-db/src/repositories/pipeline.rs
+  s_fc4968d509c3df::t_a65502f1721e7f 1-257
+crates/onedev-db/src/repositories/role.rs
+  s_fc4968d509c3df::t_5f932c06bef8e3 1-255
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "de32ffca5c8dd6f91dc84490968fc09ded2e78f7",
+  "prompts": {},
+  "sessions": {
+    "s_fc4968d509c3df": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e152e6bc4ffejPRtPDKqejzaSv",
+        "model": "combo/best-free"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}
