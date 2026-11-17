@@ -30,26 +30,48 @@ pub enum DbGroupRole {
     Owner,
 }
 
-impl From<DbGroupRole> for onedev_core::models::role::GroupRole {
+// onedev-core models a group role as `group::AccessLevel` (there is no `GroupRole` type)
+impl From<DbGroupRole> for onedev_core::models::group::AccessLevel {
     fn from(r: DbGroupRole) -> Self {
         match r {
-            DbGroupRole::Guest => onedev_core::models::role::GroupRole::Guest,
-            DbGroupRole::Reporter => onedev_core::models::role::GroupRole::Reporter,
-            DbGroupRole::Developer => onedev_core::models::role::GroupRole::Developer,
-            DbGroupRole::Maintainer => onedev_core::models::role::GroupRole::Maintainer,
-            DbGroupRole::Owner => onedev_core::models::role::GroupRole::Owner,
+            DbGroupRole::Guest => Self::Guest,
+            DbGroupRole::Reporter => Self::Reporter,
+            DbGroupRole::Developer => Self::Developer,
+            DbGroupRole::Maintainer => Self::Maintainer,
+            DbGroupRole::Owner => Self::Owner,
         }
     }
 }
 
-impl From<onedev_core::models::role::GroupRole> for DbGroupRole {
-    fn from(r: onedev_core::models::role::GroupRole) -> Self {
-        match r {
-            onedev_core::models::role::GroupRole::Guest => DbGroupRole::Guest,
-            onedev_core::models::role::GroupRole::Reporter => DbGroupRole::Reporter,
-            onedev_core::models::role::GroupRole::Developer => DbGroupRole::Developer,
-            onedev_core::models::role::GroupRole::Maintainer => DbGroupRole::Maintainer,
-            onedev_core::models::role::GroupRole::Owner => DbGroupRole::Owner,
+impl From<onedev_core::models::group::AccessLevel> for DbGroupRole {
+    fn from(l: onedev_core::models::group::AccessLevel) -> Self {
+        match l {
+            onedev_core::models::group::AccessLevel::Guest => Self::Guest,
+            onedev_core::models::group::AccessLevel::Reporter => Self::Reporter,
+            onedev_core::models::group::AccessLevel::Developer => Self::Developer,
+            onedev_core::models::group::AccessLevel::Maintainer => Self::Maintainer,
+            onedev_core::models::group::AccessLevel::Owner => Self::Owner,
+        }
+    }
+}
+
+impl DbMembership {
+    /// Convert to core domain model
+    ///
+    /// The `memberships` table stores neither an expiry nor the creator, so
+    /// `expires_at` is `None`, `created_by_id` is `UNKNOWN_USER_ID` and the
+    /// `user` relation is not loaded.
+    pub fn to_core(&self) -> onedev_core::models::group::GroupMember {
+        onedev_core::models::group::GroupMember {
+            id: self.id,
+            uuid: self.uuid,
+            group_id: self.group_id,
+            user_id: self.user_id,
+            access_level: self.role.into(),
+            expires_at: None,
+            created_at: self.created_at,
+            created_by_id: onedev_core::models::user::UNKNOWN_USER_ID,
+            user: None,
         }
     }
 }
