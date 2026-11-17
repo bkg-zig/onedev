@@ -1,0 +1,37 @@
+.gitignore
+  h_76ea00ebfa3ec3 32-35
+crates/onedev-auth/src/models/password.rs
+  s_529267afb46f04::t_69c15b471665f6 114-115,117-118,120-121
+crates/onedev-auth/src/handlers/two_factor_handlers.rs
+  s_529267afb46f04::t_7e5834d7b7862d 11
+docs/plan.md
+  s_529267afb46f04::t_0b1ba9b58cf956 65-87
+  s_529267afb46f04::t_6711c16575f1e8 99-100,103-104
+docs/roadmap.md
+  s_529267afb46f04::t_c5fa9a83c3d52c 3
+crates/onedev-auth/src/handlers/auth_handlers.rs
+  h_76ea00ebfa3ec3 14,203-204
+crates/onedev-auth/tests/utils_test.rs
+  h_76ea00ebfa3ec3 1-27
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "94f284518b528bb6f1caa0c2d882ca300906ee16",
+  "prompts": {},
+  "humans": {
+    "h_76ea00ebfa3ec3": {
+      "author": "bkg <bkg@skill.eysho.info>"
+    }
+  },
+  "sessions": {
+    "s_529267afb46f04": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "934bb580-5ad8-4123-80f4-d8e72c4207b5",
+        "model": "grok-4.7-build"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}
