@@ -7,7 +7,7 @@ Dieses Dokument definiert die verbindlichen Regeln für den **kompletten Rust-Re
 ## 1. Repository-Struktur & Branch-Regeln
 
 ### 1.1 Arbeitsverzeichnis
-- **Arbeitsverzeichnis:** `/srv/bkg/services/bkg-core-admin/infra/onedev` (Root des Rust-Projekts)
+- **Arbeitsverzeichnis:** `onedev` (Root des Rust-Projekts)
 - **Branch:** `mango` (Custom-Änderungen, **niemals** Upstream-PRs)
 - **Keine Arbeit außerhalb** dieses Verzeichnisses.
 
@@ -42,8 +42,7 @@ Dieses Dokument definiert die verbindlichen Regeln für den **kompletten Rust-Re
 ├── infra/config/                 # Config-Templates (ports.env, db.env)
 ├── scripts/                      # Build/Deploy/Scripts
 ├── vendor/                       # Read-only Referenzen
-│   ├── bkg-core-dev/             # Original Java OneDev (Read-only)
-│   └── old-onedev-mango/         # Archiv alter Struktur
+│   └──vanilla-onedev/         # Archiv alter Struktur
 ├── docs/                         # Dokumentation (dieses File, plan.md, progress.md, task.md)
 └── .gitignore, .gitmodules, AGENTS.md
 ```
