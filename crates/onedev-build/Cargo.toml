@@ -31,7 +31,7 @@ dashmap.workspace = true
 parking_lot.workspace = true
 indexmap.workspace = true
 smallvec.workspace = true
-bollard = { version = "0.17", features = ["tokio", "stream", "stdin", "container", "image", "network", "volume", "secret", "system", "build", "exec", "logs", "stats", "wait"] }
+bollard = { version = "0.17", features = ["default"] }
 docker_credential = "1.4"
 async-compression.workspace = true
 tar.workspace = true

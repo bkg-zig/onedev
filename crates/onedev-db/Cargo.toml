@@ -10,7 +10,6 @@ description = "OneDev Database Layer - SQLx Postgres Repositories & Migrations"
 [dependencies]
 onedev-core = { path = "../onedev-core" }
 sqlx.workspace = true
-sqlx-core.workspace = true
 deadpool.workspace = true
 tokio.workspace = true
 anyhow.workspace = true

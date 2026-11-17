@@ -20,6 +20,13 @@ pub mod dashboard;
 pub mod code_comment;
 pub mod webhook;
 
+// Re-export commonly used types for submodules
+pub use uuid::Uuid;
+pub use chrono::{DateTime, Utc, NaiveDateTime};
+pub use serde::{Serialize, Deserialize};
+pub use anyhow::Result;
+pub use thiserror::Error;
+
 pub use user::*;
 pub use project::*;
 pub use issue::*;

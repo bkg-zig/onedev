@@ -17,10 +17,12 @@ thiserror.workspace = true
 bytes.workspace = true
 url.workspace = true
 regex.workspace = true
+rand.workspace = true
+parking_lot.workspace = true
 indexmap = { version = "2.2", features = ["serde"] }
 smallvec = { version = "1.13", features = ["serde"] }
 bitflags = { version = "2.6", features = ["serde"] }
-strum = { version = "0.26", features = ["serde", "derive"] }
+strum = { version = "0.26", features = ["derive"] }
 rust_decimal = { version = "1.35", features = ["serde"] }
 semver = { version = "1.0", features = ["serde"] }
 # Types shared across crates

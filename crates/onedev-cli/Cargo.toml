@@ -32,5 +32,5 @@ config.workspace = true
 figment.workspace = true
 flume.workspace = true
 async-channel.workspace = true
-bollard = { version = "0.17", features = ["tokio", "container", "image", "network", "volume", "system", "logs", "stats", "wait"] }
+bollard = { version = "0.17", features = ["default"] }
 compose = "0.1"

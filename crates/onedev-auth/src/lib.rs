@@ -7,6 +7,7 @@ pub mod errors;
 pub mod utils;
 pub mod middleware;
 pub mod extractors;
+pub mod router;
 
 pub use models::*;
 pub use services::*;
@@ -15,6 +16,7 @@ pub use errors::*;
 pub use utils::*;
 pub use middleware::*;
 pub use extractors::*;
+pub use router::*;
 
 /// Re-export commonly used types
 pub use uuid::Uuid;
