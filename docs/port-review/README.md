@@ -7,7 +7,7 @@ Stand: 2026-11-17, Branch `mango`. Referenz: `vendor/vanilla-onedev` (Submodul, 
 | Bereich | Vanilla | Rust heute | Deckung | Bericht |
 |---|---|---|---|---|
 | Web-UI (Wicket) | 1502 Java-Klassen, 552 HTML, 400 JS, 267 CSS | `onedev-web`: Stub (19 Zeilen) | ~0 % | `01-web-ui.md` |
-| Domain + Persistenz + Services | 103 `@Entity`, 252 Service-Interfaces, 33 Persistenz-Klassen | `onedev-core` 5,9k Z., `onedev-db` 10k Z. (kompiliert nicht) | Modelle ~25 %, Logik ~0 % | `02-model-persistence.md` |
+| Domain + Persistenz + Services | 104 `@Entity`, 92 Service-Interfaces, 33 Persistenz-Klassen | `onedev-core` 5,9k Z., `onedev-db` 10k Z. (kompiliert nicht) | Modelle ~25 %, Logik ~0 % | `02-model-persistence.md` |
 | Security, Rollen, Auth | 57 Security-Klassen, ~40 Permission-Klassen | `onedev-auth` 4,3k Z., `permissions/` | Mechanik teilweise, **Modell falsch** | `03-security-roles-auth.md` |
 | Git + Zusammenarbeit | git 84, search 333, ssh 7, markdown 17, ... | `onedev-git`: Stub; Issue/PR-Modelle GitLab-artig | ~5 % | `04-git-collaboration.md` |
 | CI/CD, Pakete, Workspaces | buildspec 158, job 16, ~66 Plugin-Module | `onedev-build`: Stub; Modelle GitLab-CI-artig | ~5 % | `05-cicd-packages-workspaces.md` |

@@ -8,6 +8,13 @@
 
 ## [Unreleased] – 2026-11-17
 
+### Analyse
+- **Gap-Analyse gegen Vanilla v17.2.1** (`docs/port-review/`): sechs Bereichsberichte plus Übersicht. Kernbefunde: Web-UI, REST, Git-Server und CI sind in Rust Stubs; die vorhandenen Domain-Modelle folgen an mehreren Stellen GitLab statt OneDev (feste Rollen statt Privilegien-Modell, `MergeRequest`/`Pipeline`/`Runner` existieren in OneDev nicht). Drei offene Grundsatzentscheidungen blockieren die weitere Arbeit: Rollenmodell, UI-Strategie, CI-Modell. Details in `docs/port-review/README.md`.
+- **`onedev-db` kompiliert nicht** (zuletzt 268 Fehler). Ein Fix-Lauf wurde durch ein API-Rate-Limit unterbrochen; bisher nur Teiländerungen in `migrations`, `pool`, `error`, `user`, `group`.
+- **Build-Blocker behoben:** ungenutztes `simd-json` aus Workspace-`Cargo.toml` und `crates/onedev-api` entfernt (kompilierte nur mit SIMD-fähiger CPU).
+
+## [Unreleased] – 2026-11-17 (früher)
+
 ### Added
 - **Plan-Dokumentation** (`docs/plan.md`): Master-Plan mit 6 Phasen, Meilensteinen, Non-Goals, Risiken, DoD.
 - **Progress-Log** (diese Datei): Changelog für Fortschritt.
