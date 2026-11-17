@@ -29,3 +29,7 @@ infra/oci/bundles/
 
 # Vendor-Quellen bleiben vor Ort, werden aber nicht Teil des neuen Repos
 .agents/*
+.eden/.tbh-sandbox-mountpoint.27120
+.hg/.tbh-sandbox-mountpoint.27120
+.sl/.tbh-sandbox-mountpoint.27120
+.muse/.tbh-sandbox-mountpoint.27120

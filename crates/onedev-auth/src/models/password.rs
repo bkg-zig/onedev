@@ -111,22 +111,14 @@ pub fn needs_rehash(hash: &str) -> bool {
             {
                 let params = &parsed.params;
                 // Check memory cost
-                if let Some(m) = params.get("m") {
-                    if m != &ARGON2_MEMORY_COST.to_string() {
-                        return true;
-                    }
+                if params.get("m").map(|v| v.to_string()) != Some(ARGON2_MEMORY_COST.to_string()) {
+                    return true;
                 }
-                // Check time cost
-                if let Some(t) = params.get("t") {
-                    if t != &ARGON2_TIME_COST.to_string() {
-                        return true;
-                    }
+                if params.get("t").map(|v| v.to_string()) != Some(ARGON2_TIME_COST.to_string()) {
+                    return true;
                 }
-                // Check parallelism
-                if let Some(p) = params.get("p") {
-                    if p != &ARGON2_PARALLELISM.to_string() {
-                        return true;
-                    }
+                if params.get("p").map(|v| v.to_string()) != Some(ARGON2_PARALLELISM.to_string()) {
+                    return true;
                 }
                 return false;
             }

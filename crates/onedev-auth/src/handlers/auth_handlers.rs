@@ -11,6 +11,7 @@ use crate::models::subject::Subject;
 use crate::models::token::TokenPair;
 use crate::models::two_factor::TwoFactorSetup;
 use crate::errors::{AuthError, ProblemDetails};
+use onedev_db::repositories::Repository;
 use std::sync::Arc;
 
 /// Login request
@@ -199,7 +200,8 @@ pub async fn refresh_token(
     
     // Get user to verify still active
     let user = auth_service.user_repo.find_by_id(&auth_service.db_pool, user_id).await?
-        .ok_or(AuthError::UserNotFound)?;
+        .ok_or(AuthError::UserNotFound)?
+        .to_core();
     
     if !matches!(user.status, onedev_core::models::user::UserStatus::Active) {
         return Err(AuthError::UserDisabled);

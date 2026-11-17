@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 use crate::services::TwoFactorService;
 use crate::models::two_factor::TwoFactorSetup;
 use crate::errors::AuthError;
+use onedev_db::repositories::Repository;
 use std::sync::Arc;
 
 /// 2FA setup response

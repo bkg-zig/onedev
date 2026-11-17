@@ -62,6 +62,29 @@ Sechs Crates sind Stubs: `onedev-api`, `onedev-server`, `onedev-web`, `onedev-gi
 - Fehler: `anyhow`, `thiserror`
 - Utils: `uuid`, `chrono`, `hex`
 
+## Offene Grundsatzentscheidungen
+Status: OFFEN. Empfehlungen aus `docs/port-review/`.
+
+1. **Rollenmodell 1:1 übernehmen**
+   - Empfehlung: ja. Vanilla hat frei definierbare Rollen mit Privilegien-Flags, keine festen GitLab-Rollen. Referenz: `docs/port-review/03-security-roles-auth.md` Abschnitt 4.
+   - Status: OFFEN
+
+2. **Web-UI-Strategie**
+   - Option A: vorhandene HTML/JS/CSS weiterverwenden für Parität.
+   - Option C: Tera+Tailwind neu bauen.
+   - Empfehlung: A für Parität, C nur bei bewusstem MVP-Verzicht.
+   - Status: OFFEN
+
+3. **CI-Modell**
+   - Entscheidung zwischen Build-Spec/Job/Step/Trigger (Vanilla) vs GitLab-Pipeline/Stage/Runner (aktuell Rust).
+   - Empfehlung: Build-Spec, Pipeline-Strukturen entfernen.
+   - Status: OFFEN
+
+4. **Clustering (Hazelcast, server/cluster)**
+   - In Gap-Analyse als Nicht-Port empfohlen.
+   - Empfehlung: als Non-Goal behandeln.
+   - Status: OFFEN
+
 ---
 
 ## 3. Phasen & Meilensteine
@@ -73,10 +96,12 @@ Sechs Crates sind Stubs: `onedev-api`, `onedev-server`, `onedev-web`, `onedev-gi
 - [ ] Compose-Datei für `bkg-core-admin` (DB, Core, Gateway-Profil) erstellen
 
 ### Phase 1 – Domain & Persistence (Woche 1–2)
+Hinweis: Phase 1 ist vorhanden, aber semantisch zu korrigieren (Naming-Drift MergeRequest→PullRequest, GitLab-Rollen → Vanilla-Privilegien, Migration-Schema).
+
 | Crate | Inhalt | Done-Kriterium |
 |-------|--------|----------------|
-| `onedev-core` | Alle Entities (User, Project, Issue, PR, Build, Workspace, Pack, AccessToken, Group, Role, Setting, …), Enums, Value Objects, Permissions, Search-Criteria | `cargo test --quiet` grün, 100% Domain-Coverage |
-| `onedev-db` | sqlx Models, Repository-Traits + Postgres-Impl, Migrationen (init + inkrementell), Connection-Pool, Transaktions-Helfer | `sqlx migrate run` sauber, Repo-Tests gegen Test-DB grün |
+| `onedev-core` | Vorhandene Entities semantisch an Vanilla angleichen, Lücken schließen (User, Project, Issue, PR, Build, Workspace, Pack, AccessToken, Group, Role, Setting, …), Enums, Value Objects, Permissions, Search-Criteria | `cargo test --quiet` grün, semantische Parität zu Vanilla |
+| `onedev-db` | sqlx Models, Repository-Traits + Postgres-Impl, Migrationen (init + inkrementell, Schema `<zahl>_<name>.sql`), Connection-Pool, Transaktions-Helfer | `sqlx migrate run` sauber, Repo-Tests gegen Test-DB grün, Kompilierung ohne Fehler |
 
 ### Phase 2 – Auth & Security (Woche 2–3)
 | Komponente | Details |
