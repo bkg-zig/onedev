@@ -6,6 +6,7 @@ use crate::{
     DbPool, DbResult,
 };
 use async_trait::async_trait;
+use sqlx::FromRow;
 
 pub struct MembershipRepository;
 
@@ -96,7 +97,7 @@ impl Repository<DbMembership, DbCreateMembership, DbUpdateMembership> for Member
             .fetch_one(pool)
             .await?;
 
-        DbMembership::from_row(&row)
+        Ok(DbMembership::from_row(&row)?)
     }
 
     async fn delete(&self, pool: &DbPool, id: i64) -> DbResult<()> {

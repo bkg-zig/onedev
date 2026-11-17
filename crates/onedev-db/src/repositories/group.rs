@@ -6,6 +6,7 @@ use crate::{
     DbPool, DbResult,
 };
 use async_trait::async_trait;
+use sqlx::FromRow;
 
 pub struct GroupRepository;
 
@@ -155,7 +156,7 @@ impl Repository<DbGroup, DbCreateGroup, DbUpdateGroup> for GroupRepository {
             .fetch_one(pool)
             .await?;
 
-        DbGroup::from_row(&row)
+        Ok(DbGroup::from_row(&row)?)
     }
 
     async fn delete(&self, pool: &DbPool, id: i64) -> DbResult<()> {

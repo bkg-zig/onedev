@@ -6,6 +6,7 @@ use crate::{
     DbPool, DbResult,
 };
 use async_trait::async_trait;
+use sqlx::FromRow;
 
 pub struct UserAuthorizationRepository;
 
@@ -111,7 +112,7 @@ impl Repository<DbUserAuthorization, DbCreateUserAuthorization, DbUpdateUserAuth
             .fetch_one(pool)
             .await?;
 
-        DbUserAuthorization::from_row(&row)
+        Ok(DbUserAuthorization::from_row(&row)?)
     }
 
     async fn delete(&self, pool: &DbPool, id: i64) -> DbResult<()> {
@@ -212,7 +213,7 @@ impl Repository<DbIssueAuthorization, DbIssueAuthorization, DbIssueAuthorization
         .fetch_one(pool)
         .await?;
 
-        DbIssueAuthorization::from_row(&row)
+        Ok(DbIssueAuthorization::from_row(&row)?)
     }
 
     async fn delete(&self, pool: &DbPool, id: i64) -> DbResult<()> {

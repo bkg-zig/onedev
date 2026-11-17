@@ -133,6 +133,7 @@ pub struct DbCreateGroup {
     pub path: String,
     pub description: Option<String>,
     pub parent_id: Option<i64>,
+    pub avatar_url: Option<String>,
     pub visibility: DbGroupVisibility,
     pub require_two_factor: bool,
     pub two_factor_grace_period: i32,

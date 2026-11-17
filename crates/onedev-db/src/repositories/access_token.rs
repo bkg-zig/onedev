@@ -6,6 +6,7 @@ use crate::{
     DbPool, DbResult,
 };
 use async_trait::async_trait;
+use sqlx::FromRow;
 
 pub struct AccessTokenRepository;
 
@@ -107,7 +108,7 @@ impl Repository<DbAccessToken, DbCreateAccessToken, DbUpdateAccessToken> for Acc
             .fetch_one(pool)
             .await?;
 
-        DbAccessToken::from_row(&row)
+        Ok(DbAccessToken::from_row(&row)?)
     }
 
     async fn delete(&self, pool: &DbPool, id: i64) -> DbResult<()> {

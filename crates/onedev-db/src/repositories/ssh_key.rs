@@ -6,6 +6,7 @@ use crate::{
     DbPool, DbResult,
 };
 use async_trait::async_trait;
+use sqlx::FromRow;
 
 pub struct SshKeyRepository;
 
@@ -89,7 +90,7 @@ impl Repository<DbSshKey, DbCreateSshKey, DbUpdateSshKey> for SshKeyRepository {
             .fetch_one(pool)
             .await?;
 
-        DbSshKey::from_row(&row)
+        Ok(DbSshKey::from_row(&row)?)
     }
 
     async fn delete(&self, pool: &DbPool, id: i64) -> DbResult<()> {

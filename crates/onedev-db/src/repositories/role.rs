@@ -6,6 +6,7 @@ use crate::{
     DbPool, DbResult,
 };
 use async_trait::async_trait;
+use sqlx::{FromRow, Row};
 
 pub struct RoleRepository;
 
@@ -91,7 +92,7 @@ impl Repository<DbRole, DbCreateRole, DbUpdateRole> for RoleRepository {
             .fetch_one(pool)
             .await?;
 
-        DbRole::from_row(&row)
+        Ok(DbRole::from_row(&row)?)
     }
 
     async fn delete(&self, pool: &DbPool, id: i64) -> DbResult<()> {
@@ -224,7 +225,7 @@ impl Repository<DbRolePermission, DbRolePermission, DbRolePermission> for RolePe
         .fetch_one(pool)
         .await?;
 
-        DbRolePermission::from_row(&row)
+        Ok(DbRolePermission::from_row(&row)?)
     }
 
     async fn delete(&self, pool: &DbPool, id: i64) -> DbResult<()> {

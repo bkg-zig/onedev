@@ -30,26 +30,27 @@ pub enum DbProjectRole {
     Owner,
 }
 
-impl From<DbProjectRole> for onedev_core::models::role::ProjectRole {
+// onedev-core has no ProjectRole; project access uses the same levels as groups.
+impl From<DbProjectRole> for onedev_core::models::group::AccessLevel {
     fn from(r: DbProjectRole) -> Self {
         match r {
-            DbProjectRole::Guest => onedev_core::models::role::ProjectRole::Guest,
-            DbProjectRole::Reporter => onedev_core::models::role::ProjectRole::Reporter,
-            DbProjectRole::Developer => onedev_core::models::role::ProjectRole::Developer,
-            DbProjectRole::Maintainer => onedev_core::models::role::ProjectRole::Maintainer,
-            DbProjectRole::Owner => onedev_core::models::role::ProjectRole::Owner,
+            DbProjectRole::Guest => Self::Guest,
+            DbProjectRole::Reporter => Self::Reporter,
+            DbProjectRole::Developer => Self::Developer,
+            DbProjectRole::Maintainer => Self::Maintainer,
+            DbProjectRole::Owner => Self::Owner,
         }
     }
 }
 
-impl From<onedev_core::models::role::ProjectRole> for DbProjectRole {
-    fn from(r: onedev_core::models::role::ProjectRole) -> Self {
+impl From<onedev_core::models::group::AccessLevel> for DbProjectRole {
+    fn from(r: onedev_core::models::group::AccessLevel) -> Self {
         match r {
-            onedev_core::models::role::ProjectRole::Guest => DbProjectRole::Guest,
-            onedev_core::models::role::ProjectRole::Reporter => DbProjectRole::Reporter,
-            onedev_core::models::role::ProjectRole::Developer => DbProjectRole::Developer,
-            onedev_core::models::role::ProjectRole::Maintainer => DbProjectRole::Maintainer,
-            onedev_core::models::role::ProjectRole::Owner => DbProjectRole::Owner,
+            onedev_core::models::group::AccessLevel::Guest => Self::Guest,
+            onedev_core::models::group::AccessLevel::Reporter => Self::Reporter,
+            onedev_core::models::group::AccessLevel::Developer => Self::Developer,
+            onedev_core::models::group::AccessLevel::Maintainer => Self::Maintainer,
+            onedev_core::models::group::AccessLevel::Owner => Self::Owner,
         }
     }
 }

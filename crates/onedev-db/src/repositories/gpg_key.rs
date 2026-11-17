@@ -6,6 +6,7 @@ use crate::{
     DbPool, DbResult,
 };
 use async_trait::async_trait;
+use sqlx::FromRow;
 
 pub struct GpgKeyRepository;
 
@@ -77,7 +78,7 @@ impl Repository<DbGpgKey, DbCreateGpgKey, DbUpdateGpgKey> for GpgKeyRepository {
             .fetch_one(pool)
             .await?;
 
-        DbGpgKey::from_row(&row)
+        Ok(DbGpgKey::from_row(&row)?)
     }
 
     async fn delete(&self, pool: &DbPool, id: i64) -> DbResult<()> {
