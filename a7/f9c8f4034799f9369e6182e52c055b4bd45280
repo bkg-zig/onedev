@@ -1,0 +1,19 @@
+crates/onedev-auth/src/services/auth_service.rs
+  s_fc4968d509c3df::t_460cb824ad1d71 1-628
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "a7f9c8f4034799f9369e6182e52c055b4bd45280",
+  "prompts": {},
+  "sessions": {
+    "s_fc4968d509c3df": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e152e6bc4ffejPRtPDKqejzaSv",
+        "model": "combo/best-free"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}
