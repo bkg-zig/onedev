@@ -98,7 +98,7 @@ impl UserRepository {
         let mut conditions = Vec::new();
         let mut param_idx = 1;
 
-        if let Some(term) = term {
+        if let Some(_term) = term {
             conditions.push(format!("(name ILIKE ${} OR full_name ILIKE ${} OR email ILIKE ${})", param_idx, param_idx, param_idx));
             param_idx += 1;
         }
@@ -159,7 +159,7 @@ impl UserRepository {
         let mut conditions = Vec::new();
         let mut param_idx = 1;
 
-        if let Some(term) = term {
+        if let Some(_term) = term {
             conditions.push(format!("(name ILIKE ${} OR full_name ILIKE ${} OR email ILIKE ${})", param_idx, param_idx, param_idx));
             param_idx += 1;
         }

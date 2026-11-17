@@ -106,7 +106,7 @@ impl Repository<DbWatch, DbCreateWatch, DbWatch> for WatchRepository {
         Ok(row.map(|r| DbWatch::from_row(&r)).transpose()?)
     }
 
-    async fn update(&self, pool: &DbPool, id: i64, update: DbWatch) -> DbResult<DbWatch> {
+    async fn update(&self, pool: &DbPool, id: i64, _update: DbWatch) -> DbResult<DbWatch> {
         // Watches are immutable, just return existing
         self.find_by_id(pool, id).await?.ok_or_else(|| crate::DbError::NotFound {
             entity_type: "Watch".to_string(),
@@ -205,7 +205,7 @@ impl Repository<DbQuerySubscription, DbQuerySubscription, DbQuerySubscription> f
         Ok(row.map(|r| DbQuerySubscription::from_row(&r)).transpose()?)
     }
 
-    async fn update(&self, pool: &DbPool, id: i64, update: DbQuerySubscription) -> DbResult<DbQuerySubscription> {
+    async fn update(&self, pool: &DbPool, id: i64, _update: DbQuerySubscription) -> DbResult<DbQuerySubscription> {
         self.find_by_id(pool, id).await?.ok_or_else(|| crate::DbError::NotFound {
             entity_type: "QuerySubscription".to_string(),
             id: id.to_string(),

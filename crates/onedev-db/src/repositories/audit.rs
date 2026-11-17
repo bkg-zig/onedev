@@ -116,7 +116,7 @@ impl Repository<DbAuditLog, DbCreateAuditLog, DbAuditLog> for AuditLogRepository
         Ok(row.map(|r| DbAuditLog::from_row(&r)).transpose()?)
     }
 
-    async fn update(&self, pool: &DbPool, id: i64, update: DbAuditLog) -> DbResult<DbAuditLog> {
+    async fn update(&self, pool: &DbPool, id: i64, _update: DbAuditLog) -> DbResult<DbAuditLog> {
         // Audit logs are immutable
         self.find_by_id(pool, id).await?.ok_or_else(|| crate::DbError::NotFound {
             entity_type: "AuditLog".to_string(),

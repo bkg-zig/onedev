@@ -53,7 +53,7 @@ impl ProjectRepository {
         let mut conditions = Vec::new();
         let mut param_idx = 1;
 
-        if let Some(term) = term {
+        if let Some(_term) = term {
             conditions.push(format!("(name ILIKE ${} OR path ILIKE ${} OR description ILIKE ${})", param_idx, param_idx, param_idx));
             param_idx += 1;
         }
@@ -68,7 +68,7 @@ impl ProjectRepository {
             param_idx += 1;
         }
 
-        if let Some(owner_id) = owner_id {
+        if let Some(_owner_id) = owner_id {
             conditions.push(format!("owner_id = ${}", param_idx));
             param_idx += 1;
         }
@@ -124,7 +124,7 @@ impl ProjectRepository {
         let mut conditions = Vec::new();
         let mut param_idx = 1;
 
-        if let Some(term) = term {
+        if let Some(_term) = term {
             conditions.push(format!("(name ILIKE ${} OR path ILIKE ${} OR description ILIKE ${})", param_idx, param_idx, param_idx));
             param_idx += 1;
         }
@@ -139,7 +139,7 @@ impl ProjectRepository {
             param_idx += 1;
         }
 
-        if let Some(owner_id) = owner_id {
+        if let Some(_owner_id) = owner_id {
             conditions.push(format!("owner_id = ${}", param_idx));
             param_idx += 1;
         }

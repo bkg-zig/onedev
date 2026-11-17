@@ -1,10 +1,8 @@
 //! Agent Database Model
 
-use super::*;
-use crate::DbResult;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use sqlx::{FromRow, Postgres, Row};
+use sqlx::{FromRow, Row};
 use uuid::Uuid;
 
 /// Agent row from database
