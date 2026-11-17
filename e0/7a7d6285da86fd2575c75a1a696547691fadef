@@ -1,0 +1,77 @@
+crates/onedev-api/src/models/access_tokens.rs
+  s_fc4968d509c3df::t_5d0d79229a8dd1 1-119
+crates/onedev-db/src/models/authorization.rs
+  s_529267afb46f04::t_fdb9fa84a2c939 33-34,37-41,46-47,49-53
+crates/onedev-db/src/repositories/ssh_key.rs
+  s_529267afb46f04::t_cdcc1456c2cd25 93
+  s_529267afb46f04::t_fdb9fa84a2c939 9
+docs/roadmap.md
+  h_76ea00ebfa3ec3 1-9
+crates/onedev-db/src/repositories/authorization.rs
+  s_529267afb46f04::t_cdcc1456c2cd25 115,216
+  s_529267afb46f04::t_fdb9fa84a2c939 9
+crates/onedev-api/src/openapi/mod.rs
+  s_fc4968d509c3df::t_6a8615c173436f 1-179
+crates/onedev-api/src/handlers/project_handlers.rs
+  s_fc4968d509c3df::t_4cac1f08026cc7 1-129
+crates/onedev-api/src/models/projects.rs
+  s_fc4968d509c3df::t_3790fb8326b61c 1-227
+crates/onedev-db/src/repositories/group.rs
+  s_529267afb46f04::t_fdb9fa84a2c939 9
+  s_529267afb46f04::t_cdcc1456c2cd25 159
+crates/onedev-db/src/repositories/membership.rs
+  s_529267afb46f04::t_fdb9fa84a2c939 9
+  s_529267afb46f04::t_cdcc1456c2cd25 100
+crates/onedev-api/src/handlers/group_handlers.rs
+  s_fc4968d509c3df::t_c7b48d67e29547 1-95
+crates/onedev-db/src/repositories/role.rs
+  s_529267afb46f04::t_fdb9fa84a2c939 9
+  s_529267afb46f04::t_cdcc1456c2cd25 95,228
+crates/onedev-db/src/repositories/access_token.rs
+  s_529267afb46f04::t_cdcc1456c2cd25 111
+  s_529267afb46f04::t_fdb9fa84a2c939 9
+crates/onedev-api/src/handlers/user_handlers.rs
+  s_fc4968d509c3df::t_a751b20a4f8f18 1-101
+crates/onedev-api/src/handlers/mod.rs
+  s_fc4968d509c3df::t_d3d657403998f8 1-23
+crates/onedev-api/src/routes/mod.rs
+  s_fc4968d509c3df::t_aa02276b57543d 1-111
+crates/onedev-api/src/models/groups.rs
+  s_fc4968d509c3df::t_a4539dc76914d1 1-180
+crates/onedev-db/src/models/group.rs
+  s_529267afb46f04::t_fdb9fa84a2c939 136
+crates/onedev-api/src/handlers/auth_handlers.rs
+  s_fc4968d509c3df::t_bd5f6880fbc039 1-102
+crates/onedev-db/src/repositories/gpg_key.rs
+  s_529267afb46f04::t_cdcc1456c2cd25 81
+  s_529267afb46f04::t_fdb9fa84a2c939 9
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "e07a7d6285da86fd2575c75a1a696547691fadef",
+  "prompts": {},
+  "humans": {
+    "h_76ea00ebfa3ec3": {
+      "author": "bkg <bkg@skill.eysho.info>"
+    }
+  },
+  "sessions": {
+    "s_529267afb46f04": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "934bb580-5ad8-4123-80f4-d8e72c4207b5",
+        "model": "grok-4.7-build"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    },
+    "s_fc4968d509c3df": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e152e6bc4ffejPRtPDKqejzaSv",
+        "model": "combo/best-free"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}
