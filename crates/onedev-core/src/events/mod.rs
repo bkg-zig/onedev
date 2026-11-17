@@ -1,14 +1,14 @@
 //! Event System
 
 use crate::models::*;
-use crate::utils::*;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::sync::Arc;
 
 /// Event trait
 pub trait Event: Send + Sync + Serialize + for<'de> Deserialize<'de> + std::fmt::Debug {
-    fn event_type(&self) -> &'static str;
+    fn event_type(&self) -> &str;
     fn aggregate_id(&self) -> Option<String>;
     fn correlation_id(&self) -> Option<String>;
     fn causation_id(&self) -> Option<String>;
@@ -30,7 +30,7 @@ pub struct BaseEvent {
 }
 
 impl Event for BaseEvent {
-    fn event_type(&self) -> &'static str {
+    fn event_type(&self) -> &str {
         &self.event_type
     }
 
@@ -71,7 +71,7 @@ impl BaseEvent {
 }
 
 /// Domain events
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, strum::IntoStaticStr)]
 #[serde(tag = "event_type")]
 pub enum DomainEvent {
     // User events
@@ -164,18 +164,31 @@ pub enum DomainEvent {
     UpgradeCompleted(UpgradeCompleted),
 }
 
+impl DomainEvent {
+    /// Event type name, identical to the serde `event_type` tag.
+    pub fn event_type(&self) -> &'static str {
+        self.into()
+    }
+}
+
 macro_rules! define_event {
+    // Events identified by their own `id` field.
     ($name:ident, $fields:tt) => {
+        define_event!($name, |event| Some(event.id.to_string()), $fields);
+    };
+    // Events without an `id`: `$aggregate` derives the aggregate id from the event.
+    ($name:ident, $aggregate:expr, $fields:tt) => {
         #[derive(Debug, Clone, Serialize, Deserialize)]
         pub struct $name $fields
 
         impl Event for $name {
-            fn event_type(&self) -> &'static str {
+            fn event_type(&self) -> &str {
                 stringify!($name)
             }
 
             fn aggregate_id(&self) -> Option<String> {
-                Some(self.id.to_string())
+                let aggregate: fn(&$name) -> Option<String> = $aggregate;
+                aggregate(self)
             }
 
             fn correlation_id(&self) -> Option<String> {
@@ -255,24 +268,24 @@ define_event!(ReleaseCreated, { pub id: i64, pub uuid: Uuid, pub project_id: i64
 define_event!(ReleaseUpdated, { pub id: i64, pub uuid: Uuid, pub updated_by_id: i64, pub created_at: DateTime<Utc> });
 define_event!(ReleaseDeleted, { pub id: i64, pub uuid: Uuid, pub deleted_by_id: i64, pub created_at: DateTime<Utc> });
 
-define_event!(PushReceived, { pub project_id: i64, pub ref_name: String, pub before_sha: String, pub after_sha: String, pub commits: Vec<CommitInfo>, pub pusher_id: i64, pub created_at: DateTime<Utc> });
-define_event!(TagCreated, { pub project_id: i64, pub tag_name: String, pub target_sha: String, pub created_by_id: i64, pub created_at: DateTime<Utc> });
-define_event!(TagDeleted, { pub project_id: i64, pub tag_name: String, pub deleted_by_id: i64, pub created_at: DateTime<Utc> });
-define_event!(BranchCreated, { pub project_id: i64, pub branch_name: String, pub target_sha: String, pub created_by_id: i64, pub created_at: DateTime<Utc> });
-define_event!(BranchDeleted, { pub project_id: i64, pub branch_name: String, pub deleted_by_id: i64, pub created_at: DateTime<Utc> });
+define_event!(PushReceived, |e| Some(e.project_id.to_string()), { pub project_id: i64, pub ref_name: String, pub before_sha: String, pub after_sha: String, pub commits: Vec<CommitInfo>, pub pusher_id: i64, pub created_at: DateTime<Utc> });
+define_event!(TagCreated, |e| Some(e.project_id.to_string()), { pub project_id: i64, pub tag_name: String, pub target_sha: String, pub created_by_id: i64, pub created_at: DateTime<Utc> });
+define_event!(TagDeleted, |e| Some(e.project_id.to_string()), { pub project_id: i64, pub tag_name: String, pub deleted_by_id: i64, pub created_at: DateTime<Utc> });
+define_event!(BranchCreated, |e| Some(e.project_id.to_string()), { pub project_id: i64, pub branch_name: String, pub target_sha: String, pub created_by_id: i64, pub created_at: DateTime<Utc> });
+define_event!(BranchDeleted, |e| Some(e.project_id.to_string()), { pub project_id: i64, pub branch_name: String, pub deleted_by_id: i64, pub created_at: DateTime<Utc> });
 
-define_event!(MemberAdded, { pub project_id: Option<i64>, pub group_id: Option<i64>, pub user_id: i64, pub access_level: AccessLevel, pub added_by_id: i64, pub created_at: DateTime<Utc> });
-define_event!(MemberRemoved, { pub project_id: Option<i64>, pub group_id: Option<i64>, pub user_id: i64, pub removed_by_id: i64, pub created_at: DateTime<Utc> });
-define_event!(MemberRoleChanged, { pub project_id: Option<i64>, pub group_id: Option<i64>, pub user_id: i64, pub old_level: AccessLevel, pub new_level: AccessLevel, pub changed_by_id: i64, pub created_at: DateTime<Utc> });
+define_event!(MemberAdded, |e| e.project_id.or(e.group_id).map(|id| id.to_string()), { pub project_id: Option<i64>, pub group_id: Option<i64>, pub user_id: i64, pub access_level: AccessLevel, pub added_by_id: i64, pub created_at: DateTime<Utc> });
+define_event!(MemberRemoved, |e| e.project_id.or(e.group_id).map(|id| id.to_string()), { pub project_id: Option<i64>, pub group_id: Option<i64>, pub user_id: i64, pub removed_by_id: i64, pub created_at: DateTime<Utc> });
+define_event!(MemberRoleChanged, |e| e.project_id.or(e.group_id).map(|id| id.to_string()), { pub project_id: Option<i64>, pub group_id: Option<i64>, pub user_id: i64, pub old_level: AccessLevel, pub new_level: AccessLevel, pub changed_by_id: i64, pub created_at: DateTime<Utc> });
 
-define_event!(WebhookTriggered, { pub webhook_id: i64, pub event: WebhookEvent, pub delivery_id: i64, pub created_at: DateTime<Utc> });
-define_event!(WebhookDelivered, { pub webhook_id: i64, pub delivery_id: i64, pub status_code: u16, pub duration_ms: u64, pub created_at: DateTime<Utc> });
-define_event!(WebhookFailed, { pub webhook_id: i64, pub delivery_id: i64, pub error: String, pub attempt: u32, pub created_at: DateTime<Utc> });
+define_event!(WebhookTriggered, |e| Some(e.webhook_id.to_string()), { pub webhook_id: i64, pub event: WebhookEvent, pub delivery_id: i64, pub created_at: DateTime<Utc> });
+define_event!(WebhookDelivered, |e| Some(e.webhook_id.to_string()), { pub webhook_id: i64, pub delivery_id: i64, pub status_code: u16, pub duration_ms: u64, pub created_at: DateTime<Utc> });
+define_event!(WebhookFailed, |e| Some(e.webhook_id.to_string()), { pub webhook_id: i64, pub delivery_id: i64, pub error: String, pub attempt: u32, pub created_at: DateTime<Utc> });
 
-define_event!(SystemSettingChanged, { pub key: String, pub old_value: Option<serde_json::Value>, pub new_value: serde_json::Value, pub changed_by_id: i64, pub created_at: DateTime<Utc> });
-define_event!(BackupCompleted, { pub backup_id: String, pub size: u64, pub duration_ms: u64, pub created_at: DateTime<Utc> });
-define_event!(RestoreCompleted, { pub backup_id: String, pub duration_ms: u64, pub created_at: DateTime<Utc> });
-define_event!(UpgradeCompleted, { pub from_version: String, pub to_version: String, pub duration_ms: u64, pub created_at: DateTime<Utc> });
+define_event!(SystemSettingChanged, |e| Some(e.key.clone()), { pub key: String, pub old_value: Option<serde_json::Value>, pub new_value: serde_json::Value, pub changed_by_id: i64, pub created_at: DateTime<Utc> });
+define_event!(BackupCompleted, |e| Some(e.backup_id.clone()), { pub backup_id: String, pub size: u64, pub duration_ms: u64, pub created_at: DateTime<Utc> });
+define_event!(RestoreCompleted, |e| Some(e.backup_id.clone()), { pub backup_id: String, pub duration_ms: u64, pub created_at: DateTime<Utc> });
+define_event!(UpgradeCompleted, |_| None, { pub from_version: String, pub to_version: String, pub duration_ms: u64, pub created_at: DateTime<Utc> });
 
 /// Event bus trait
 #[async_trait]
@@ -312,7 +325,7 @@ pub trait EventStore: Send + Sync {
 
 /// In-memory event bus for development
 pub struct InMemoryEventBus {
-    handlers: parking_lot::RwLock<HashMap<String, Vec<Box<dyn EventHandler>>>>,
+    handlers: parking_lot::RwLock<HashMap<String, Vec<Arc<dyn EventHandler>>>>,
 }
 
 impl InMemoryEventBus {
@@ -326,18 +339,23 @@ impl InMemoryEventBus {
 #[async_trait]
 impl EventBus for InMemoryEventBus {
     async fn publish(&self, event: DomainEvent) -> Result<(), EventError> {
-        let handlers = self.handlers.read();
-        if let Some(event_handlers) = handlers.get(event.event_type()) {
-            for handler in event_handlers {
-                handler.handle(&event).await?;
-            }
+        // Copy the handler list first: the (non-Send) lock guard must not live across `.await`.
+        let event_handlers: Vec<Arc<dyn EventHandler>> = self
+            .handlers
+            .read()
+            .get(event.event_type())
+            .cloned()
+            .unwrap_or_default();
+
+        for handler in event_handlers {
+            handler.handle(&event).await?;
         }
         Ok(())
     }
 
     async fn subscribe(&self, event_type: &str, handler: Box<dyn EventHandler>) -> Result<(), EventError> {
         let mut handlers = self.handlers.write();
-        handlers.entry(event_type.to_string()).or_default().push(handler);
+        handlers.entry(event_type.to_string()).or_default().push(Arc::from(handler));
         Ok(())
     }
 

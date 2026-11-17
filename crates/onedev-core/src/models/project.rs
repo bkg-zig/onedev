@@ -1,7 +1,6 @@
 //! Project Domain Model
 
 use super::*;
-use crate::utils::*;
 
 /// Project visibility
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]
@@ -170,7 +169,7 @@ pub struct ProjectStats {
 
 impl Project {
     pub fn full_path(&self) -> String {
-        if let Some(parent_id) = self.parent_id {
+        if let Some(_parent_id) = self.parent_id {
             // Would need parent lookup - simplified here
             format!("parent/{}", self.path)
         } else {

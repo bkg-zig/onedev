@@ -1,7 +1,6 @@
 //! Webhook Domain Model
 
 use super::*;
-use crate::utils::*;
 
 /// Webhook entity
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]

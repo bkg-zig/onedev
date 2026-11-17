@@ -1,7 +1,6 @@
 //! Role & Permission Domain Model
 
 use super::*;
-use crate::utils::*;
 
 /// Built-in role names
 pub const ROLE_GUEST: &str = "Guest";

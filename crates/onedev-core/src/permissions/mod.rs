@@ -1,8 +1,6 @@
 //! Permissions System
 
 use crate::models::*;
-use crate::utils::*;
-use std::collections::HashSet;
 
 /// Permission trait - all permissions implement this
 pub trait Permission: Send + Sync + std::fmt::Debug + 'static {
@@ -344,6 +342,7 @@ impl Permission for ProjectPermissionType {
                 | ProjectPermissionType::ViewWorkspace
                 | ProjectPermissionType::ViewCodeReviews
                 | ProjectPermissionType::ViewSecurityDashboard
+                | ProjectPermissionType::ViewConfidentialIssues
                 | ProjectPermissionType::ReadCode
         )
     }
@@ -364,6 +363,9 @@ impl Permission for ProjectPermissionType {
             | ProjectPermissionType::ViewSecurityDashboard
             | ProjectPermissionType::ReadCode => vec!["Guest"],
 
+            // Confidential issues are visible to Reporter and above
+            ProjectPermissionType::ViewConfidentialIssues => vec!["Reporter"],
+
             // Write permissions - Developer
             ProjectPermissionType::CreateIssue
             | ProjectPermissionType::EditIssue
@@ -379,7 +381,8 @@ impl Permission for ProjectPermissionType {
             | ProjectPermissionType::CreateBranch
             | ProjectPermissionType::CreateTag
             | ProjectPermissionType::UploadPackage
-            | ProjectPermissionType::PushContainerImage => vec!["Developer"],
+            | ProjectPermissionType::PushContainerImage
+            | ProjectPermissionType::CreateCodeReview => vec!["Developer"],
 
             // Maintainer permissions
             ProjectPermissionType::ManageProject
@@ -569,18 +572,18 @@ impl Permission for SystemPermission {
 pub struct PermissionChecker;
 
 impl PermissionChecker {
-    pub fn check_user_permissions(user_id: i64, project_id: i64, permissions: &[ProjectPermissionType]) -> bool {
+    pub fn check_user_permissions(_user_id: i64, _project_id: i64, _permissions: &[ProjectPermissionType]) -> bool {
         // Implementation would check user's role in project
         // and verify all permissions are granted
         true // Placeholder
     }
 
-    pub fn check_group_permissions(group_id: i64, project_id: i64, permissions: &[ProjectPermissionType]) -> bool {
+    pub fn check_group_permissions(_group_id: i64, _project_id: i64, _permissions: &[ProjectPermissionType]) -> bool {
         // Implementation would check group's role in project
         true // Placeholder
     }
 
-    pub fn check_system_permissions(user_id: i64, permissions: &[SystemPermission]) -> bool {
+    pub fn check_system_permissions(_user_id: i64, _permissions: &[SystemPermission]) -> bool {
         // Implementation would check if user is admin
         true // Placeholder
     }

@@ -1,7 +1,6 @@
 //! SSH Key Domain Model
 
 use super::*;
-use crate::utils::*;
 
 /// SSH Key type
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]

@@ -1,7 +1,6 @@
 //! Group Domain Model
 
 use super::*;
-use crate::utils::*;
 
 /// Group visibility
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]
@@ -183,7 +182,7 @@ pub struct GroupWithProjects {
 
 impl Group {
     pub fn full_path(&self) -> String {
-        if let Some(parent_id) = self.parent_id {
+        if let Some(_parent_id) = self.parent_id {
             // Would need parent lookup
             format!("parent/{}", self.path)
         } else {

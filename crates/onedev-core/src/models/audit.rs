@@ -1,7 +1,6 @@
 //! Audit Log Domain Model
 
 use super::*;
-use crate::utils::*;
 
 /// Audit event entity
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]

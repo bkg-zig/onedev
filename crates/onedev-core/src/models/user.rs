@@ -1,7 +1,6 @@
 //! User Domain Model
 
 use super::*;
-use crate::utils::*;
 
 /// User types in the system
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, strum::EnumString, strum::Display)]

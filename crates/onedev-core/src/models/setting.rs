@@ -1,7 +1,6 @@
 //! Settings Domain Model
 
 use super::*;
-use crate::utils::*;
 
 /// System-wide settings
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]

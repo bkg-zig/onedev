@@ -1,7 +1,6 @@
 //! Pull Request Domain Model
 
 use super::*;
-use crate::utils::*;
 
 /// Merge request state
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]

@@ -1,7 +1,6 @@
 //! Dashboard Domain Model
 
 use super::*;
-use crate::utils::*;
 
 /// Dashboard entity
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]

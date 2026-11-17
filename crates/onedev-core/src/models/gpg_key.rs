@@ -1,7 +1,6 @@
 //! GPG Key Domain Model
 
 use super::*;
-use crate::utils::*;
 
 /// GPG Key entity
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]

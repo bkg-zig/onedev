@@ -1,7 +1,6 @@
 //! OAuth / SSO Domain Model
 
 use super::*;
-use crate::utils::*;
 
 /// OAuth Provider type
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]

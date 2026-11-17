@@ -1,7 +1,6 @@
 //! Access Token Domain Model
 
 use super::*;
-use crate::utils::*;
 
 /// Access token type
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]

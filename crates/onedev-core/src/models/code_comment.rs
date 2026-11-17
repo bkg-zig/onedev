@@ -1,7 +1,6 @@
 //! Code Comment Domain Model
 
 use super::*;
-use crate::utils::*;
 
 /// Code comment entity
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]

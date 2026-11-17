@@ -1,7 +1,6 @@
 //! Search & Query System
 
 use crate::models::*;
-use crate::utils::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
