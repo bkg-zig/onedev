@@ -1,0 +1,124 @@
+crates/onedev-core/src/models/access_token.rs
+  s_529267afb46f04::t_812c8747fcae57 6
+crates/onedev-auth/src/handlers/token_handlers.rs
+  s_529267afb46f04::t_dcefd7da70568a 106,140,158,181,216
+  s_529267afb46f04::t_476bdf946dc113 203-207
+  s_529267afb46f04::t_b44f2e412683da 234
+  s_529267afb46f04::t_b1989337f0304f 166,190,224
+crates/onedev-auth/src/models/two_factor.rs
+  s_529267afb46f04::t_2dd93fbcfb3126 228
+  s_529267afb46f04::t_3e84c009222672 3
+  s_529267afb46f04::t_1ff3588e64d07b 242
+  s_529267afb46f04::t_1ec4663dbc0959 227
+  s_529267afb46f04::t_357eab57cbddbc 240
+  s_529267afb46f04::t_5c1d2b1ada2acc 229
+  s_529267afb46f04::t_c79d48aad80c19 293-295
+  s_529267afb46f04::t_a45c85d8d15596 241
+.gitignore
+  h_76ea00ebfa3ec3 31
+crates/onedev-auth/src/handlers/two_factor_handlers.rs
+  s_529267afb46f04::t_8ef2434e7004bf 108,130
+  s_529267afb46f04::t_ae7d887f8b1619 70,87
+  s_529267afb46f04::t_e219839a4208a4 159
+crates/onedev-auth/src/models/password.rs
+  s_529267afb46f04::t_1a6bb646574f05 4,7,9
+  s_529267afb46f04::t_babc01afb7bb6d 60
+  s_529267afb46f04::t_1a3376cfe9bde9 110-112
+  s_b07d9bd1ec22a6::t_aadfdbfb891da3 152,177
+crates/onedev-auth/src/models/token.rs
+  s_529267afb46f04::t_3223d5d224cd4d 86-87
+  s_529267afb46f04::t_fc105236b59488 311
+crates/onedev-auth/src/models/principal.rs
+  s_529267afb46f04::t_d3edcc871f770c 80-83
+  s_529267afb46f04::t_f71e279858f49a 26-29
+crates/onedev-auth/src/handlers/password_handlers.rs
+  s_529267afb46f04::t_d2480e5b36e39d 40,55,68
+crates/onedev-auth/src/services/two_factor_service.rs
+  s_529267afb46f04::t_bbfefc11639b8c 112-115
+  s_529267afb46f04::t_c0b8dd2ceb509d 4-5
+  s_529267afb46f04::t_9b4365695cbdd6 140
+  s_529267afb46f04::t_90f5d8a71386ac 50,141
+  s_529267afb46f04::t_20aa433677701f 57-62,84-89,144-149
+crates/onedev-auth/src/middleware/mod.rs
+  s_529267afb46f04::t_2464fdd6057e3e 122,124
+  s_529267afb46f04::t_6a95c70e48d6b1 29,50
+  s_529267afb46f04::t_e92e95aa3fb0af 9
+crates/onedev-auth/src/handlers/session_handlers.rs
+  s_529267afb46f04::t_3816b514279f5c 56,80,105,131
+  s_529267afb46f04::t_a4b169e322af83 91,116
+docs/plan.md
+  s_529267afb46f04::t_e96fa26e69c9bc 5
+  s_529267afb46f04::t_e81db081fca822 42-43,45-53
+  s_529267afb46f04::t_7c00dd43a77c87 70
+  s_529267afb46f04::t_d2e43b5f8b96ca 7-20
+  s_529267afb46f04::t_075461c7d72550 6
+crates/onedev-auth/src/models/subject.rs
+  s_529267afb46f04::t_779bceae1e97dc 145-146
+  s_529267afb46f04::t_011012bfa8570f 8,10-11
+  s_529267afb46f04::t_ecb380ab764a41 121-131
+crates/onedev-auth/src/services/token_service.rs
+  s_529267afb46f04::t_1d1b0b990f61df 6
+crates/onedev-auth/src/services/authorization_service.rs
+  s_fc4968d509c3df::t_62aed69ff02c66 10
+  s_fc4968d509c3df::t_441f0d89ddd2f4 180-183,186-187,190
+  s_529267afb46f04::t_0ff670e61effe4 239-275
+Cargo.toml
+  s_fc4968d509c3df::t_d8ecb9a55f124b 65
+  s_529267afb46f04::t_c6ec16d32551dd 71
+crates/onedev-auth/src/errors/mod.rs
+  s_529267afb46f04::t_f6ebe14fad1721 163-193
+crates/onedev-auth/src/handlers/auth_handlers.rs
+  s_529267afb46f04::t_1887a1b2282e8e 65,98,125,187
+crates/onedev-auth/src/router.rs
+  s_fc4968d509c3df::t_7ad2339714f6a0 11-17,21
+  s_fc4968d509c3df::t_037fb9273f5cbb 55
+  s_fc4968d509c3df::t_b3328e1fd60a39 59,67,71,90
+crates/onedev-auth/Cargo.toml
+  s_fc4968d509c3df::t_f4468da159658f 35
+crates/onedev-auth/src/services/auth_service.rs
+  s_529267afb46f04::t_619bb80fcca038 313
+  s_fc4968d509c3df::t_17de94b987711f 14
+  s_fc4968d509c3df::t_92eee04ff777ec 569-570
+  s_fc4968d509c3df::t_773ec55e834f46 514
+  s_529267afb46f04::t_58cdf042e82702 118
+  s_529267afb46f04::t_54c0bac6078d40 123
+Cargo.lock
+  s_529267afb46f04::t_cf1f09ebab380d 962,964,5794
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "32ab39743cb33b9cfd195fc185961c9873f06296",
+  "prompts": {},
+  "humans": {
+    "h_76ea00ebfa3ec3": {
+      "author": "bkg <bkg@skill.eysho.info>"
+    }
+  },
+  "sessions": {
+    "s_529267afb46f04": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "934bb580-5ad8-4123-80f4-d8e72c4207b5",
+        "model": "grok-4.7-build"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    },
+    "s_b07d9bd1ec22a6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "agent-ab86b558a49e0c344",
+        "model": "unknown"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    },
+    "s_fc4968d509c3df": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e152e6bc4ffejPRtPDKqejzaSv",
+        "model": "combo/best-free"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}
