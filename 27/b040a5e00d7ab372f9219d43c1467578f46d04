@@ -1,0 +1,30 @@
+crates/onedev-auth/src/models/two_factor.rs
+  s_fc4968d509c3df::t_e73d1ba872c57e 1-277
+crates/onedev-auth/src/services/mod.rs
+  s_fc4968d509c3df::t_314462d4003654 1-13
+docs/rust-rules.md
+  h_76ea00ebfa3ec3 10,45
+crates/onedev-auth/src/models/password.rs
+  s_fc4968d509c3df::t_36f87eb97751a7 1-176
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "27b040a5e00d7ab372f9219d43c1467578f46d04",
+  "prompts": {},
+  "humans": {
+    "h_76ea00ebfa3ec3": {
+      "author": "bkg <bkg@skill.eysho.info>"
+    }
+  },
+  "sessions": {
+    "s_fc4968d509c3df": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e152e6bc4ffejPRtPDKqejzaSv",
+        "model": "combo/best-free"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}
