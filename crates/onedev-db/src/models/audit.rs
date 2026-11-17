@@ -21,7 +21,7 @@ pub struct DbAuditLog {
     pub new_value: Option<serde_json::Value>,
     pub ip_address: Option<String>,
     pub user_agent: Option<String>,
-    pub request_id: Option<String>,
+    pub request_id: Option<Uuid>, // UUID column (core's AuditEvent keeps it as a string)
     pub created_at: DateTime<Utc>,
 }
 
@@ -37,7 +37,7 @@ pub struct DbCreateAuditLog {
     pub new_value: Option<serde_json::Value>,
     pub ip_address: Option<String>,
     pub user_agent: Option<String>,
-    pub request_id: Option<String>,
+    pub request_id: Option<Uuid>,
 }
 
 /// Database query builder for audit logs

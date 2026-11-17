@@ -15,6 +15,8 @@ pub struct DbWebhook {
     pub project_id: Option<i64>, // None for system webhooks
     pub url: String,
     pub secret: Option<String>,
+    /// Subscribed event names, stored in the JSONB `scopes` column
+    #[sqlx(rename = "scopes", json)]
     pub events: Vec<String>,
     pub branch_filter: Option<String>,
     pub tag_filter: Option<String>,
@@ -56,7 +58,7 @@ pub struct WebhookQueryBuilder;
 impl WebhookQueryBuilder {
     pub fn select_all() -> &'static str {
         r#"
-        SELECT id, uuid, project_id, url, secret, events, branch_filter,
+        SELECT id, uuid, project_id, url, secret, scopes, branch_filter,
                tag_filter, ssl_verification, active, last_delivery_at,
                last_delivery_status, created_at, updated_at
         FROM webhooks
@@ -65,7 +67,7 @@ impl WebhookQueryBuilder {
 
     pub fn select_by_id() -> &'static str {
         r#"
-        SELECT id, uuid, project_id, url, secret, events, branch_filter,
+        SELECT id, uuid, project_id, url, secret, scopes, branch_filter,
                tag_filter, ssl_verification, active, last_delivery_at,
                last_delivery_status, created_at, updated_at
         FROM webhooks WHERE id = $1
@@ -74,7 +76,7 @@ impl WebhookQueryBuilder {
 
     pub fn select_by_project_id() -> &'static str {
         r#"
-        SELECT id, uuid, project_id, url, secret, events, branch_filter,
+        SELECT id, uuid, project_id, url, secret, scopes, branch_filter,
                tag_filter, ssl_verification, active, last_delivery_at,
                last_delivery_status, created_at, updated_at
         FROM webhooks WHERE project_id = $1
@@ -84,7 +86,7 @@ impl WebhookQueryBuilder {
 
     pub fn select_system_webhooks() -> &'static str {
         r#"
-        SELECT id, uuid, project_id, url, secret, events, branch_filter,
+        SELECT id, uuid, project_id, url, secret, scopes, branch_filter,
                tag_filter, ssl_verification, active, last_delivery_at,
                last_delivery_status, created_at, updated_at
         FROM webhooks WHERE project_id IS NULL
@@ -94,7 +96,7 @@ impl WebhookQueryBuilder {
 
     pub fn insert() -> &'static str {
         r#"
-        INSERT INTO webhooks (uuid, project_id, url, secret, events,
+        INSERT INTO webhooks (uuid, project_id, url, secret, scopes,
                               branch_filter, tag_filter, ssl_verification,
                               active, created_at, updated_at)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
@@ -107,14 +109,14 @@ impl WebhookQueryBuilder {
         UPDATE webhooks SET
             url = COALESCE($2, url),
             secret = COALESCE($3, secret),
-            events = COALESCE($4, events),
+            scopes = COALESCE($4, scopes),
             branch_filter = COALESCE($5, branch_filter),
             tag_filter = COALESCE($6, tag_filter),
             ssl_verification = COALESCE($7, ssl_verification),
             active = COALESCE($8, active),
             updated_at = NOW()
         WHERE id = $1
-        RETURNING id, uuid, project_id, url, secret, events, branch_filter,
+        RETURNING id, uuid, project_id, url, secret, scopes, branch_filter,
                   tag_filter, ssl_verification, active, last_delivery_at,
                   last_delivery_status, created_at, updated_at
         "#
