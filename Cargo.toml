@@ -117,7 +117,9 @@ dialoguer = "0.11"
 
 # Utilities
 anyhow = "1.0"
+async-trait = "0.1"
 thiserror = "2.0"
+validator = { version = "0.19", features = ["derive"] }
 eyre = "0.6"
 chrono = { version = "0.4", features = ["serde"] }
 chrono-tz = "0.9"

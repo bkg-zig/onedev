@@ -5849,6 +5849,8 @@ dependencies = [
 name = "onedev-core"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
+ "async-trait",
  "bitflags 2.13.2",
  "bytes",
  "chrono",
@@ -5860,12 +5862,14 @@ dependencies = [
  "semver",
  "serde",
  "serde_json",
+ "sha2 0.10.9",
  "smallvec",
  "strum",
  "thiserror 2.0.21",
  "ulid",
  "url",
  "uuid 1.29.3",
+ "validator",
 ]
 
 [[package]]

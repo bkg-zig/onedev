@@ -22,32 +22,33 @@ pub enum AccessTokenType {
     ServiceAccount,
 }
 
-/// Access token scope
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, bitflags::Flags)]
-#[bitflags(flags_type = "u64")]
-pub struct TokenScope {
-    const API                  = 1 << 0;
-    const READ_REPOSITORY      = 1 << 1;
-    const WRITE_REPOSITORY     = 1 << 2;
-    const READ_REGISTRY        = 1 << 3;
-    const WRITE_REGISTRY       = 1 << 4;
-    const READ_PACKAGE         = 1 << 5;
-    const WRITE_PACKAGE        = 1 << 6;
-    const READ_USER            = 1 << 7;
-    const WRITE_USER           = 1 << 8;
-    const ADMIN_USER           = 1 << 9;
-    const ADMIN_PROJECT        = 1 << 10;
-    const ADMIN_GROUP          = 1 << 11;
-    const ADMIN_SYSTEM         = 1 << 12;
-    const RUN_BUILDS           = 1 << 13;
-    const MANAGE_BUILDS        = 1 << 14;
-    const MANAGE_RUNNERS       = 1 << 15;
-    const MANAGE_WEBHOOKS      = 1 << 16;
-    const MANAGE_HOOKS         = 1 << 17;
-    const READ_AUDIT_LOG       = 1 << 18;
-    const MANAGE_CLUSTER       = 1 << 19;
-    const MANAGE_KUBERNETES    = 1 << 20,
-    const SUDO                 = 1 << 21,
+bitflags::bitflags! {
+    /// Access token scope
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+    pub struct TokenScope: u64 {
+        const API                  = 1 << 0;
+        const READ_REPOSITORY      = 1 << 1;
+        const WRITE_REPOSITORY     = 1 << 2;
+        const READ_REGISTRY        = 1 << 3;
+        const WRITE_REGISTRY       = 1 << 4;
+        const READ_PACKAGE         = 1 << 5;
+        const WRITE_PACKAGE        = 1 << 6;
+        const READ_USER            = 1 << 7;
+        const WRITE_USER           = 1 << 8;
+        const ADMIN_USER           = 1 << 9;
+        const ADMIN_PROJECT        = 1 << 10;
+        const ADMIN_GROUP          = 1 << 11;
+        const ADMIN_SYSTEM         = 1 << 12;
+        const RUN_BUILDS           = 1 << 13;
+        const MANAGE_BUILDS        = 1 << 14;
+        const MANAGE_RUNNERS       = 1 << 15;
+        const MANAGE_WEBHOOKS      = 1 << 16;
+        const MANAGE_HOOKS         = 1 << 17;
+        const READ_AUDIT_LOG       = 1 << 18;
+        const MANAGE_CLUSTER       = 1 << 19;
+        const MANAGE_KUBERNETES    = 1 << 20;
+        const SUDO                 = 1 << 21;
+    }
 }
 
 /// Core Access Token entity

@@ -10,6 +10,8 @@ pub trait Permission: Send + Sync + std::fmt::Debug + 'static {
     fn implies(&self, other: &dyn Permission) -> bool;
     fn is_write(&self) -> bool;
     fn required_roles(&self) -> Vec<&'static str>;
+    /// Needed to downcast `&dyn Permission` inside `implies`.
+    fn as_any(&self) -> &dyn std::any::Any;
 }
 
 /// Base permission for project-level access
@@ -20,6 +22,10 @@ pub struct ProjectPermission<P: Permission> {
 }
 
 impl<P: Permission> Permission for ProjectPermission<P> {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+
     fn name(&self) -> &'static str {
         self.permission.name()
     }
@@ -48,13 +54,17 @@ impl<P: Permission> ProjectPermission<P> {
 }
 
 /// Job-specific permission
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct JobPermission<P: Permission> {
     pub job_name: String,
     pub permission: P,
 }
 
 impl<P: Permission> Permission for JobPermission<P> {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+
     fn name(&self) -> &'static str {
         self.permission.name()
     }
@@ -76,17 +86,6 @@ impl<P: Permission> Permission for JobPermission<P> {
     }
 }
 
-/// Trait for downcasting
-pub trait PermissionExt: Permission {
-    fn as_any(&self) -> &dyn std::any::Any;
-}
-
-impl<T: Permission + 'static> PermissionExt for T {
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
-    }
-}
-
 /// Base permissions (read/write)
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum BasePermission {
@@ -96,6 +95,10 @@ pub enum BasePermission {
 }
 
 impl Permission for BasePermission {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+
     fn name(&self) -> &'static str {
         match self {
             BasePermission::Read => "read",
@@ -233,6 +236,10 @@ pub enum ProjectPermissionType {
 }
 
 impl Permission for ProjectPermissionType {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+
     fn name(&self) -> &'static str {
         match self {
             ProjectPermissionType::ViewProject => "view_project",
@@ -495,7 +502,7 @@ impl ProjectPermissionType {
             (ManageVulnerabilities, ViewSecurityDashboard) => true,
             (ManagePolicies, ViewSecurityDashboard) => true,
             // Self
-            (a, b) if a == b => true,
+            (a, b) if *a == b => true,
             _ => false,
         }
     }
@@ -519,6 +526,10 @@ pub enum SystemPermission {
 }
 
 impl Permission for SystemPermission {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+
     fn name(&self) -> &'static str {
         match self {
             SystemPermission::AdminSystem => "admin_system",
@@ -538,14 +549,8 @@ impl Permission for SystemPermission {
 
     fn implies(&self, other: &dyn Permission) -> bool {
         if let Some(other_sys) = other.as_any().downcast_ref::<SystemPermission>() {
-            matches!(
-                (self, other_sys),
-                (SystemPermission::AdminSystem, _)
-                    | (SystemPermission::AdminUsers, SystemPermission::AdminUsers)
-                    | (SystemPermission::AdminGroups, SystemPermission::AdminGroups)
-                    | (SystemPermission::AdminSettings, SystemPermission::AdminSettings)
-                    | (a, b) if a == b
-            )
+            // AdminSystem implies every system permission, all others only themselves
+            matches!(self, SystemPermission::AdminSystem) || self == other_sys
         } else {
             false
         }

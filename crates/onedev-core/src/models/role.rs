@@ -32,91 +32,92 @@ pub struct Role {
     pub updated_at: DateTime<Utc>,
 }
 
-/// Permission set as bitflags
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default, bitflags::Flags)]
-#[bitflags(flags_type = "u64")]
-pub struct PermissionSet {
-    // Project permissions
-    const VIEW_PROJECT           = 1 << 0;
-    const READ_CODE              = 1 << 1;
-    const WRITE_CODE             = 1 << 2;
-    const MANAGE_PROJECT         = 1 << 3;
-    const ADMIN_PROJECT          = 1 << 4;
-    const CREATE_PROJECT         = 1 << 5;
-    const DELETE_PROJECT         = 1 << 6;
-    const RENAME_PROJECT         = 1 << 7;
-    const TRANSFER_PROJECT       = 1 << 8;
-    const MANAGE_MEMBERS         = 1 << 9;
-    const MANAGE_HOOKS           = 1 << 10;
-    const MANAGE_DEPLOY_KEYS     = 1 << 11;
-    const MANAGE_PROTECTED_BRANCHES = 1 << 12;
-    const MANAGE_PROTECTED_TAGS  = 1 << 13;
-    const MANAGE_PAGES           = 1 << 14;
-    const MANAGE_WIKI            = 1 << 15;
-    const MANAGE_SNIPPETS        = 1 << 16;
+bitflags::bitflags! {
+    /// Permission set as bitflags
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+    pub struct PermissionSet: u64 {
+        // Project permissions
+        const VIEW_PROJECT           = 1 << 0;
+        const READ_CODE              = 1 << 1;
+        const WRITE_CODE             = 1 << 2;
+        const MANAGE_PROJECT         = 1 << 3;
+        const ADMIN_PROJECT          = 1 << 4;
+        const CREATE_PROJECT         = 1 << 5;
+        const DELETE_PROJECT         = 1 << 6;
+        const RENAME_PROJECT         = 1 << 7;
+        const TRANSFER_PROJECT       = 1 << 8;
+        const MANAGE_MEMBERS         = 1 << 9;
+        const MANAGE_HOOKS           = 1 << 10;
+        const MANAGE_DEPLOY_KEYS     = 1 << 11;
+        const MANAGE_PROTECTED_BRANCHES = 1 << 12;
+        const MANAGE_PROTECTED_TAGS  = 1 << 13;
+        const MANAGE_PAGES           = 1 << 14;
+        const MANAGE_WIKI            = 1 << 15;
+        const MANAGE_SNIPPETS        = 1 << 16;
 
-    // Issue permissions
-    const VIEW_ISSUES            = 1 << 17;
-    const CREATE_ISSUE           = 1 << 18;
-    const EDIT_ISSUE             = 1 << 19;
-    const CLOSE_ISSUE            = 1 << 20;
-    const REOPEN_ISSUE           = 1 << 21;
-    const DELETE_ISSUE           = 1 << 22;
-    const MANAGE_ISSUE_LABELS    = 1 << 23;
-    const MANAGE_ISSUE_BOARD     = 1 << 24;
-    const SET_ISSUE_CONFIDENTIAL = 1 << 25;
-    const VIEW_CONFIDENTIAL_ISSUES = 1 << 26;
+        // Issue permissions
+        const VIEW_ISSUES            = 1 << 17;
+        const CREATE_ISSUE           = 1 << 18;
+        const EDIT_ISSUE             = 1 << 19;
+        const CLOSE_ISSUE            = 1 << 20;
+        const REOPEN_ISSUE           = 1 << 21;
+        const DELETE_ISSUE           = 1 << 22;
+        const MANAGE_ISSUE_LABELS    = 1 << 23;
+        const MANAGE_ISSUE_BOARD     = 1 << 24;
+        const SET_ISSUE_CONFIDENTIAL = 1 << 25;
+        const VIEW_CONFIDENTIAL_ISSUES = 1 << 26;
 
-    // Merge Request permissions
-    const VIEW_MERGE_REQUESTS    = 1 << 27;
-    const CREATE_MERGE_REQUEST   = 1 << 28;
-    const EDIT_MERGE_REQUEST     = 1 << 29;
-    const MERGE_MERGE_REQUEST    = 1 << 30;
-    const CLOSE_MERGE_REQUEST    = 1 << 31;
-    const REOPEN_MERGE_REQUEST   = 1 << 32;
-    const APPROVE_MERGE_REQUEST  = 1 << 33;
-    const MANAGE_MERGE_REQUEST_REVIEWERS = 1 << 34;
+        // Merge Request permissions
+        const VIEW_MERGE_REQUESTS    = 1 << 27;
+        const CREATE_MERGE_REQUEST   = 1 << 28;
+        const EDIT_MERGE_REQUEST     = 1 << 29;
+        const MERGE_MERGE_REQUEST    = 1 << 30;
+        const CLOSE_MERGE_REQUEST    = 1 << 31;
+        const REOPEN_MERGE_REQUEST   = 1 << 32;
+        const APPROVE_MERGE_REQUEST  = 1 << 33;
+        const MANAGE_MERGE_REQUEST_REVIEWERS = 1 << 34;
 
-    // Build/CI permissions
-    const VIEW_BUILDS            = 1 << 35;
-    const TRIGGER_BUILD          = 1 << 36;
-    const CANCEL_BUILD           = 1 << 37;
-    const RETRY_BUILD            = 1 << 38;
-    const ERASE_BUILD            = 1 << 39;
-    const VIEW_BUILD_LOGS        = 1 << 40;
-    const DOWNLOAD_ARTIFACTS     = 1 << 41;
-    const MANAGE_BUILD_VARIABLES = 1 << 42;
-    const MANAGE_BUILD_SCHEDULES = 1 << 43;
-    const MANAGE_RUNNERS         = 1 << 44;
+        // Build/CI permissions
+        const VIEW_BUILDS            = 1 << 35;
+        const TRIGGER_BUILD          = 1 << 36;
+        const CANCEL_BUILD           = 1 << 37;
+        const RETRY_BUILD            = 1 << 38;
+        const ERASE_BUILD            = 1 << 39;
+        const VIEW_BUILD_LOGS        = 1 << 40;
+        const DOWNLOAD_ARTIFACTS     = 1 << 41;
+        const MANAGE_BUILD_VARIABLES = 1 << 42;
+        const MANAGE_BUILD_SCHEDULES = 1 << 43;
+        const MANAGE_RUNNERS         = 1 << 44;
 
-    // Package permissions
-    const VIEW_PACKAGES          = 1 << 45;
-    const UPLOAD_PACKAGE         = 1 << 46;
-    const DELETE_PACKAGE         = 1 << 47;
+        // Package permissions
+        const VIEW_PACKAGES          = 1 << 45;
+        const UPLOAD_PACKAGE         = 1 << 46;
+        const DELETE_PACKAGE         = 1 << 47;
 
-    // Container Registry permissions
-    const VIEW_CONTAINER_IMAGES  = 1 << 48;
-    const PUSH_CONTAINER_IMAGE   = 1 << 49;
-    const DELETE_CONTAINER_IMAGE = 1 << 50;
+        // Container Registry permissions
+        const VIEW_CONTAINER_IMAGES  = 1 << 48;
+        const PUSH_CONTAINER_IMAGE   = 1 << 49;
+        const DELETE_CONTAINER_IMAGE = 1 << 50;
 
-    // Workspace permissions
-    const CREATE_WORKSPACE       = 1 << 51;
-    const VIEW_WORKSPACE         = 1 << 52;
-    const MANAGE_WORKSPACE       = 1 << 53;
-    const DELETE_WORKSPACE       = 1 << 54;
+        // Workspace permissions
+        const CREATE_WORKSPACE       = 1 << 51;
+        const VIEW_WORKSPACE         = 1 << 52;
+        const MANAGE_WORKSPACE       = 1 << 53;
+        const DELETE_WORKSPACE       = 1 << 54;
 
-    // Code Review permissions
-    const VIEW_CODE_REVIEWS      = 1 << 55;
-    const CREATE_CODE_REVIEW     = 1 << 56;
-    const MANAGE_CODE_REVIEWS    = 1 << 57;
+        // Code Review permissions
+        const VIEW_CODE_REVIEWS      = 1 << 55;
+        const CREATE_CODE_REVIEW     = 1 << 56;
+        const MANAGE_CODE_REVIEWS    = 1 << 57;
 
-    // Admin permissions
-    const ADMIN_SYSTEM           = 1 << 58;
-    const ADMIN_USERS            = 1 << 59;
-    const ADMIN_GROUPS           = 1 << 60;
-    const ADMIN_SETTINGS         = 1 << 61;
-    const VIEW_AUDIT_LOG         = 1 << 62;
-    const MANAGE_LICENSE         = 1 << 63;
+        // Admin permissions
+        const ADMIN_SYSTEM           = 1 << 58;
+        const ADMIN_USERS            = 1 << 59;
+        const ADMIN_GROUPS           = 1 << 60;
+        const ADMIN_SETTINGS         = 1 << 61;
+        const VIEW_AUDIT_LOG         = 1 << 62;
+        const MANAGE_LICENSE         = 1 << 63;
+    }
 }
 
 /// Base authorization (for default roles)

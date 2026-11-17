@@ -29,7 +29,7 @@ pub struct AuditEvent {
 }
 
 /// Entity types for audit
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum EntityType {
@@ -71,7 +71,6 @@ pub enum EntityType {
     RunnerRegistrationToken,
     DeployToken,
     PersonalAccessToken,
-    DeployKey,
     MirrorRepository,
     ImportExport,
     Backup,
@@ -81,7 +80,7 @@ pub enum EntityType {
 }
 
 /// Audit actions
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum AuditAction {
@@ -135,7 +134,6 @@ pub enum AuditAction {
     Imported,
     Exported,
     BackedUp,
-    Restored,
     Upgraded,
     Configured,
     LoggedIn,

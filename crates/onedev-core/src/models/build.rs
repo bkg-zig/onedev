@@ -439,6 +439,12 @@ pub struct EnvironmentSpec {
     pub deployment_tier: Option<String>,
 }
 
+/// Kubernetes environment specification
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct KubernetesEnvironmentSpec {
+    pub namespace: Option<String>,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
@@ -481,7 +487,8 @@ pub enum DeployStrategy {
 pub struct ReleaseSpec {
     pub tag_name: String,
     pub description: Option<String>,
-    pub ref: String,
+    #[serde(rename = "ref")]
+    pub ref_name: String,
     pub assets: Vec<ReleaseAssetSpec>,
 }
 
