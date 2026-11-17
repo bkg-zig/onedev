@@ -1,0 +1,56 @@
+crates/onedev-core/src/models/role.rs
+  s_529267afb46f04::t_05e9f3b9687744 35-38
+  s_529267afb46f04::t_7450cc6b260513 39-56,58-68,70-78,80-90,92-95,97-100,102-106,108-111,113-119
+  s_529267afb46f04::t_35ac89400d2334 120
+crates/onedev-core/src/models/access_token.rs
+  s_529267afb46f04::t_7450cc6b260513 29-50
+  s_529267afb46f04::t_e9d6fc1689c260 51
+  s_529267afb46f04::t_548ccf1938fa49 25-28
+crates/onedev-core/src/models/webhook.rs
+  s_529267afb46f04::t_2b793ad6499526 36
+crates/onedev-core/src/utils/mod.rs
+  s_529267afb46f04::t_9f56831900e70c 1-3
+crates/onedev-core/src/models/build.rs
+  s_529267afb46f04::t_741bb82a128aea 442-447
+  s_529267afb46f04::t_47c84e1d8a79f7 490-491
+crates/onedev-core/src/models/audit.rs
+  s_529267afb46f04::t_5b6e8d02ed8b6f 83
+  s_529267afb46f04::t_22de10bea89e9e 32
+crates/onedev-core/src/errors.rs
+  s_529267afb46f04::t_8a91a4d6315a19 1-37
+crates/onedev-core/src/utils/validation.rs
+  s_529267afb46f04::t_910be3c9797b29 1-47
+Cargo.toml
+  s_529267afb46f04::t_d33bf418784fe0 120,122
+crates/onedev-core/Cargo.toml
+  s_529267afb46f04::t_7135cec6210711 16-17,19-20
+crates/onedev-core/src/permissions/mod.rs
+  s_529267afb46f04::t_1df2a766b4cb1e 505
+  s_529267afb46f04::t_d01a8d03bd5e23 529-532
+  s_529267afb46f04::t_16e308082ba243 13-14
+  s_529267afb46f04::t_8d403bf39ef585 57,64-67
+  s_529267afb46f04::t_ab2c6b0327ca82 98-101
+  s_529267afb46f04::t_d89c672c035271 239-242
+  s_529267afb46f04::t_480ace8e35ae98 552-553
+  s_529267afb46f04::t_13ee44b448dac4 25-28
+crates/onedev-core/src/models/setting.rs
+  s_529267afb46f04::t_2ce7bbe2964d73 272
+Cargo.lock
+  s_529267afb46f04::t_4bc5428b449e76 5852-5853,5865,5872
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "b7cd6c210a48aea936890d7b283f601be4aab488",
+  "prompts": {},
+  "sessions": {
+    "s_529267afb46f04": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "934bb580-5ad8-4123-80f4-d8e72c4207b5",
+        "model": "unknown"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}
