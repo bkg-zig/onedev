@@ -1,0 +1,76 @@
+crates/onedev-auth/src/middleware/mod.rs
+  s_fc4968d509c3df::t_ca757986390ee9 15
+  s_529267afb46f04::t_fa1641ac8733dd 158-163,165-168,170-173
+crates/onedev-auth/src/extractors/mod.rs
+  s_fc4968d509c3df::t_812c21707b0a89 14
+  s_fc4968d509c3df::t_df30b11905551a 109,115,139
+  s_fc4968d509c3df::t_cf225400289d81 187
+crates/onedev-auth/Cargo.toml
+  s_fc4968d509c3df::t_1067c919b42bd0 31-33,46-50
+  s_fc4968d509c3df::t_a67040b35967f8 45
+  s_fc4968d509c3df::t_d10859b6644845 51-53
+crates/onedev-auth/src/services/authorization_service.rs
+  s_fc4968d509c3df::t_3b34a2ad570438 340
+  s_fc4968d509c3df::t_25f6b5feedc895 10
+Cargo.toml
+  s_fc4968d509c3df::t_d62b7bcb6f7b63 136
+  s_fc4968d509c3df::t_ea2b77a57a033d 70
+  s_fc4968d509c3df::t_0c45d285e63409 71
+Cargo.lock
+  s_fc4968d509c3df::t_f312913c5b0d6a 954-959,4727-4738,5339-5348,5794-5795,5803,5811-5812,5815,5817,5822,5827-5828,5830,7256-7270,9612-9617
+crates/onedev-auth/src/services/auth_service.rs
+  s_fc4968d509c3df::t_692a417636a11d 10-15,156-158,221-222,236-239,278-279,286-287,291-292,318-319,337,345-346,401-402,439-441,455-458,504,515-520,527,538-545,552,571-574,592-593,596,600-603,606-608,610-611,617-618
+crates/onedev-auth/src/handlers/token_handlers.rs
+  s_fc4968d509c3df::t_75e7d708b16f74 10
+crates/onedev-auth/src/lib.rs
+  s_fc4968d509c3df::t_93232161a53df3 5
+crates/onedev-auth/src/models/subject.rs
+  s_fc4968d509c3df::t_dbeacd0b79a9d4 70,79
+crates/onedev-auth/src/models/two_factor.rs
+  s_529267afb46f04::t_e7144e1dfbcaba 4,13-58,136,169-170,301
+crates/onedev-auth/src/repositories/mod.rs
+  s_fc4968d509c3df::t_11a803718bd44c 1-8
+crates/onedev-auth/src/repositories/session.rs
+  s_fc4968d509c3df::t_c0102cceaeec8a 1-148
+crates/onedev-auth/src/router.rs
+  s_529267afb46f04::t_78a525bed10996 4,12-42
+crates/onedev-auth/src/services/mod.rs
+  s_fc4968d509c3df::t_90163fb987f59e 6
+crates/onedev-auth/src/services/session_service.rs
+  s_fc4968d509c3df::t_a1515b995a44f5 4
+crates/onedev-auth/src/services/token_mapping.rs
+  s_fc4968d509c3df::t_9b03950980639c 1-55
+crates/onedev-auth/src/services/token_service.rs
+  s_529267afb46f04::t_56bdfd6cc41408 4-5,8,34-35,38,42-45,50,55,60-61,64-66,68-69,72-74,76-77,81-82,85-87,89-90,93-95,97-98,103
+crates/onedev-db/migrations/002__sessions.sql
+  s_fc4968d509c3df::t_e141d52defbb30 1-17
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "949698fee5dbe1357447cce66b104882fd7b5331",
+  "prompts": {},
+  "humans": {
+    "h_76ea00ebfa3ec3": {
+      "author": "bkg <bkg@skill.eysho.info>"
+    }
+  },
+  "sessions": {
+    "s_529267afb46f04": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "934bb580-5ad8-4123-80f4-d8e72c4207b5",
+        "model": "unknown"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    },
+    "s_fc4968d509c3df": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e152e6bc4ffejPRtPDKqejzaSv",
+        "model": "combo/best-free"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}
