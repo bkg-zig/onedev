@@ -5,6 +5,7 @@ use axum::{
     http::StatusCode,
 };
 use serde::{Deserialize, Serialize};
+use crate::models::access_tokens::{AccessTokenWithRawResponse, CreateAccessTokenRequest};
 use crate::models::users::*;
 use crate::models::pagination::{OffsetPagination, PaginatedResponse};
 use crate::errors::AuthError;

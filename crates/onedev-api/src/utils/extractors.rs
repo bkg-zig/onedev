@@ -3,7 +3,6 @@
 use axum::{
     extract::{FromRequestParts, Request},
     http::request::Parts,
-    async_trait,
 };
 use crate::errors::{AuthError, ApiError};
 use onedev_auth::Subject;
@@ -12,7 +11,6 @@ use onedev_auth::Subject;
 #[derive(Debug, Clone)]
 pub struct CurrentSubject(pub Subject);
 
-#[async_trait]
 impl<S> FromRequestParts<S> for CurrentSubject
 where
     S: Send + Sync,
@@ -32,7 +30,6 @@ where
 #[derive(Debug, Clone)]
 pub struct OptionalSubject(pub Option<Subject>);
 
-#[async_trait]
 impl<S> FromRequestParts<S> for OptionalSubject
 where
     S: Send + Sync,
@@ -69,7 +66,6 @@ pub async fn require_admin(
 #[derive(Debug, Clone)]
 pub struct Pagination(pub crate::models::pagination::OffsetPagination);
 
-#[async_trait]
 impl<S> FromRequestParts<S> for Pagination
 where
     S: Send + Sync,

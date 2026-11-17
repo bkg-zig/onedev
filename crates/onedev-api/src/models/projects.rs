@@ -171,15 +171,6 @@ pub struct ProjectQuery {
     pub order: Option<super::pagination::SortOrder>,
 }
 
-/// Sort order
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ToSchema, Default)]
-#[serde(rename_all = "lowercase")]
-pub enum SortOrder {
-    #[default]
-    Asc,
-    Desc,
-}
-
 /// Fork project request
 #[derive(Debug, Clone, Deserialize, Validate, ToSchema)]
 pub struct ForkProjectRequest {

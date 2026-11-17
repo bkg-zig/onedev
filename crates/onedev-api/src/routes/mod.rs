@@ -4,16 +4,16 @@ use axum::{
     routing::{get, post, patch, put, delete},
     Router,
 };
+use axum::response::Json;
 use crate::handlers::*;
 use crate::openapi::create_openapi;
-use utoipa_swagger_ui::SwaggerUi;
 use std::sync::Arc;
 
 /// Application state
 #[derive(Clone)]
 pub struct AppState {
-    pub auth_service: Arc<crate::auth::AuthService>,
-    pub authorization_service: Arc<crate::authz::AuthorizationService>,
+    pub auth_service: Arc<crate::services::auth::AuthService>,
+    pub authorization_service: Arc<crate::services::authz::AuthorizationService>,
     pub user_service: Arc<crate::services::UserService>,
     pub project_service: Arc<crate::services::ProjectService>,
     pub group_service: Arc<crate::services::GroupService>,
@@ -28,9 +28,8 @@ pub struct AppState {
 /// Create the main API router
 pub fn create_router(state: AppState) -> Router {
     Router::new()
-        // Swagger UI
-        .merge(SwaggerUi::new("/docs")
-            .url("/api-docs/openapi.json", create_openapi()))
+        // OpenAPI document (Swagger UI crate is incompatible with utoipa 5)
+        .route("/api-docs/openapi.json", get(|| async { Json(create_openapi()) }))
         // Health & readiness
         .route("/health", get(system_handlers::health))
         .route("/ready", get(system_handlers::ready))

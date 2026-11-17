@@ -1,10 +1,7 @@
 //! Authentication Service Wrapper
 
-use onedev_auth::{
-    AuthService as InnerAuthService,
-    AuthConfig,
-    AuthError as InnerAuthError,
-    AuthResult,
+use onedev_auth::services::auth_service::{
+    AuthConfig, AuthError as InnerAuthError, AuthService as InnerAuthService,
 };
 use onedev_db::DbPool;
 use std::sync::Arc;
@@ -32,11 +29,6 @@ impl AuthService {
 }
 
 // Re-export types
-pub use onedev_auth::{
-    AuthConfig,
-    AuthError,
-    AuthResult,
-    Subject,
-    UserPrincipal,
-    AccessTokenPrincipal,
-};
+pub use onedev_auth::models::principal::{AccessTokenPrincipal, UserPrincipal};
+pub use onedev_auth::models::subject::Subject;
+pub use onedev_auth::services::auth_service::AuthResult;

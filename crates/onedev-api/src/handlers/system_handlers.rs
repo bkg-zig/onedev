@@ -83,6 +83,6 @@ pub async fn version(
         version: env!("CARGO_PKG_VERSION").to_string(),
         git_commit: option_env!("GIT_COMMIT").map(String::from),
         build_date: option_env!("BUILD_DATE").map(String::from),
-        rust_version: env!("RUSTC_VERSION").to_string(),
+        rust_version: option_env!("RUSTC_VERSION").unwrap_or("unknown").to_string(),
     })
 }

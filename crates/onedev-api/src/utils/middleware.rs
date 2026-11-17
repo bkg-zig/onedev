@@ -23,18 +23,10 @@ pub async fn auth_middleware(
     let token = extract_token(&headers, &cookies);
     
     let subject = if let Some(token) = token {
-        // Try JWT first
-        if let Ok(claims) = state.auth_service.inner().jwt_service().validate_access_token(&token) {
-            match state.auth_service.inner().subject_from_claims(&claims).await {
-                Ok(s) => s,
-                Err(_) => Subject::Anonymous,
-            }
-        } else {
-            // Try as access token (PAT)
-            match state.auth_service.inner().authenticate_token(&token).await {
-                Ok(s) => s,
-                Err(_) => Subject::Anonymous,
-            }
+        // authenticate_token tries JWT validation first, then PAT lookup
+        match state.auth_service.inner().authenticate_token(&token).await {
+            Ok(s) => s,
+            Err(_) => Subject::Anonymous,
         }
     } else {
         Subject::Anonymous
@@ -44,9 +36,9 @@ pub async fn auth_middleware(
     request.extensions_mut().insert(subject.clone());
     
     // Also set in task-local for internal use
-    onedev_auth::CURRENT_SUBJECT.scope(subject, async {
+    Ok(onedev_auth::CURRENT_SUBJECT.scope(subject, async {
         next.run(request).await
-    }).await
+    }).await)
 }
 
 /// Extract token from Authorization header or cookie

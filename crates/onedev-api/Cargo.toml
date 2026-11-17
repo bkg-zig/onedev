@@ -20,8 +20,7 @@ serde.workspace = true
 serde_json.workspace = true
 serde_yaml.workspace = true
 utoipa ={ version = "5.4", features = ["axum_extras", "chrono", "uuid", "decimal", "url"] }
-utoipa-swagger-ui = { version = "7.0", features = ["axum"] }
-utoipa-axum = { version = "0.3" }
+bitflags = { version = "2", features = ["serde"] }
 schemars = { version = "0.8", features = ["chrono", "uuid"] }
 validator = { version = "0.19", features = ["derive"] }
 anyhow.workspace = true

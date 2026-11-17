@@ -1,10 +1,10 @@
 //! Git Smart HTTP Handlers
 
 use axum::{
-    extract::{State, Path, Query, RawBody},
+    extract::{State, Path, Query},
     http::{HeaderMap, StatusCode, header},
     response::{IntoResponse, Response},
-    body::Body,
+    body::{Body, Bytes},
 };
 use crate::errors::AuthError;
 use crate::AppState;
@@ -28,11 +28,11 @@ pub enum GitHttpError {
 impl IntoResponse for GitHttpError {
     fn into_response(self) -> Response {
         let (status, message) = match self {
-            GitHttpError::NotFound => (StatusCode::NOT_FOUND, "Repository not found"),
-            GitHttpError::Unauthorized => (StatusCode::UNAUTHORIZED, "Authentication required"),
-            GitHttpError::Forbidden(msg) => (StatusCode::FORBIDDEN, Box::leak(msg.into_boxed_str())),
-            GitHttpError::BadRequest(msg) => (StatusCode::BAD_REQUEST, Box::leak(msg.into_boxed_str())),
-            GitHttpError::Internal(msg) => (StatusCode::INTERNAL_SERVER_ERROR, Box::leak(msg.into_boxed_str())),
+            GitHttpError::NotFound => (StatusCode::NOT_FOUND, "Repository not found".to_string()),
+            GitHttpError::Unauthorized => (StatusCode::UNAUTHORIZED, "Authentication required".to_string()),
+            GitHttpError::Forbidden(msg) => (StatusCode::FORBIDDEN, msg),
+            GitHttpError::BadRequest(msg) => (StatusCode::BAD_REQUEST, msg),
+            GitHttpError::Internal(msg) => (StatusCode::INTERNAL_SERVER_ERROR, msg),
         };
         
         let mut response = Response::builder()
@@ -71,7 +71,7 @@ pub async fn git_upload_pack(
     State(_state): State<crate::AppState>,
     Path(_project_path): Path<String>,
     headers: HeaderMap,
-    body: RawBody,
+    body: axum::body::Bytes,
 ) -> Result<Response, GitHttpError> {
     // TODO: Implement Git Smart HTTP upload-pack
     Err(GitHttpError::Internal("Not implemented".to_string()))
@@ -84,7 +84,7 @@ pub async fn git_receive_pack(
     State(_state): State<crate::AppState>,
     Path(_project_path): Path<String>,
     headers: HeaderMap,
-    body: RawBody,
+    body: axum::body::Bytes,
 ) -> Result<Response, GitHttpError> {
     // TODO: Implement Git Smart HTTP receive-pack
     Err(GitHttpError::Internal("Not implemented".to_string()))

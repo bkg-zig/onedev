@@ -1,7 +1,7 @@
 //! Git LFS HTTP Handlers
 
 use axum::{
-    extract::{State, Path, Query, Json, RawBody, Multipart},
+    extract::{State, Path, Query, Json, Multipart},
     http::{HeaderMap, StatusCode, header},
     response::{IntoResponse, Response},
     body::Body,
@@ -28,11 +28,11 @@ pub enum LfsError {
 impl IntoResponse for LfsError {
     fn into_response(self) -> Response {
         let (status, message) = match self {
-            LfsError::NotFound => (StatusCode::NOT_FOUND, "Object not found"),
-            LfsError::Unauthorized => (StatusCode::UNAUTHORIZED, "Authentication required"),
-            LfsError::Forbidden(msg) => (StatusCode::FORBIDDEN, Box::leak(msg.into_boxed_str())),
-            LfsError::BadRequest(msg) => (StatusCode::BAD_REQUEST, Box::leak(msg.into_boxed_str())),
-            LfsError::Internal(msg) => (StatusCode::INTERNAL_SERVER_ERROR, Box::leak(msg.into_boxed_str())),
+            LfsError::NotFound => (StatusCode::NOT_FOUND, "Object not found".to_string()),
+            LfsError::Unauthorized => (StatusCode::UNAUTHORIZED, "Authentication required".to_string()),
+            LfsError::Forbidden(msg) => (StatusCode::FORBIDDEN, msg),
+            LfsError::BadRequest(msg) => (StatusCode::BAD_REQUEST, msg),
+            LfsError::Internal(msg) => (StatusCode::INTERNAL_SERVER_ERROR, msg),
         };
         
         let mut response = Response::builder()
@@ -122,7 +122,7 @@ pub async fn lfs_download(
 pub async fn lfs_upload(
     State(_state): State<crate::AppState>,
     Path((_project_path, _oid)): Path<(String, String)>,
-    body: RawBody,
+    body: axum::body::Bytes,
 ) -> Result<StatusCode, LfsError> {
     Err(LfsError::Internal("Not implemented".to_string()))
 }

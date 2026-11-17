@@ -1,7 +1,7 @@
 //! Access Token API models
 
 use serde::{Deserialize, Serialize};
-use utoipa::ToSchema;
+use utoipa::{PartialSchema, ToSchema};
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
 use validator::Validate;
@@ -21,7 +21,7 @@ pub enum AccessTokenType {
 
 /// Token scopes (bitflags)
 bitflags! {
-    #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
     pub struct TokenScope: u64 {
         const API                  = 1 << 0;
         const READ_REPOSITORY      = 1 << 1;
@@ -47,6 +47,14 @@ bitflags! {
         const SUDO                 = 1 << 21;
     }
 }
+
+impl utoipa::PartialSchema for TokenScope {
+    fn schema() -> utoipa::openapi::RefOr<utoipa::openapi::schema::Schema> {
+        u64::schema()
+    }
+}
+
+impl utoipa::ToSchema for TokenScope {}
 
 /// Access token with raw token (only on creation)
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]

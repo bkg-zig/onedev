@@ -1,8 +1,10 @@
 //! OpenAPI Documentation Setup
 
+use utoipa::openapi::path::{HttpMethod, Operation, PathItemBuilder, PathsBuilder};
 use utoipa::openapi::security::{ApiKey, ApiKeyValue, SecurityScheme};
-use utoipa::Modify;
 use utoipa::openapi::OpenApi;
+use utoipa::{Modify, PartialSchema};
+use std::collections::BTreeMap;
 
 /// Add Bearer token security scheme to OpenAPI
 pub struct SecurityAddon;
@@ -14,7 +16,7 @@ impl Modify for SecurityAddon {
                 "bearer_auth",
                 SecurityScheme::ApiKey(ApiKey::Header(ApiKeyValue::new("Authorization"))),
             );
-            
+
             components.add_security_scheme(
                 "cookie_auth",
                 SecurityScheme::ApiKey(ApiKey::Cookie(ApiKeyValue::new("access_token"))),
@@ -23,11 +25,91 @@ impl Modify for SecurityAddon {
     }
 }
 
+fn build_paths() -> utoipa::openapi::Paths {
+    // (path, method) pairs mirroring `routes::create_router`
+    let routes: &[(&str, HttpMethod)] = &[
+        ("/auth/login", HttpMethod::Post),
+        ("/auth/verify-2fa", HttpMethod::Post),
+        ("/auth/logout", HttpMethod::Post),
+        ("/auth/me", HttpMethod::Get),
+        ("/auth/refresh", HttpMethod::Post),
+        ("/users", HttpMethod::Get),
+        ("/users", HttpMethod::Post),
+        ("/users/{id}", HttpMethod::Get),
+        ("/users/{id}", HttpMethod::Patch),
+        ("/users/{id}", HttpMethod::Delete),
+        ("/users/{id}/emails", HttpMethod::Get),
+        ("/users/{id}/ssh-keys", HttpMethod::Get),
+        ("/users/{id}/gpg-keys", HttpMethod::Get),
+        ("/users/{id}/tokens", HttpMethod::Get),
+        ("/users/{id}/tokens", HttpMethod::Post),
+        ("/projects", HttpMethod::Get),
+        ("/projects", HttpMethod::Post),
+        ("/projects/{id}", HttpMethod::Get),
+        ("/projects/{id}", HttpMethod::Patch),
+        ("/projects/{id}", HttpMethod::Delete),
+        ("/projects/{id}/fork", HttpMethod::Post),
+        ("/projects/{id}/transfer", HttpMethod::Post),
+        ("/projects/{id}/star", HttpMethod::Post),
+        ("/projects/{id}/unstar", HttpMethod::Post),
+        ("/projects/{id}/members", HttpMethod::Get),
+        ("/projects/{id}/members", HttpMethod::Post),
+        ("/projects/{id}/members/{user_id}", HttpMethod::Get),
+        ("/projects/{id}/members/{user_id}", HttpMethod::Patch),
+        ("/projects/{id}/members/{user_id}", HttpMethod::Delete),
+        ("/groups", HttpMethod::Get),
+        ("/groups", HttpMethod::Post),
+        ("/groups/{id}", HttpMethod::Get),
+        ("/groups/{id}", HttpMethod::Patch),
+        ("/groups/{id}", HttpMethod::Delete),
+        ("/groups/{id}/members", HttpMethod::Get),
+        ("/groups/{id}/members", HttpMethod::Post),
+        ("/groups/{id}/members/{user_id}", HttpMethod::Get),
+        ("/groups/{id}/members/{user_id}", HttpMethod::Patch),
+        ("/groups/{id}/members/{user_id}", HttpMethod::Delete),
+        ("/projects/{project_id}/issues", HttpMethod::Get),
+        ("/projects/{project_id}/issues", HttpMethod::Post),
+        ("/projects/{project_id}/issues/{id}", HttpMethod::Get),
+        ("/projects/{project_id}/issues/{id}", HttpMethod::Patch),
+        ("/projects/{project_id}/issues/{id}", HttpMethod::Delete),
+        ("/projects/{project_id}/merge-requests", HttpMethod::Get),
+        ("/projects/{project_id}/merge-requests", HttpMethod::Post),
+        ("/projects/{project_id}/merge-requests/{id}", HttpMethod::Get),
+        ("/projects/{project_id}/merge-requests/{id}", HttpMethod::Patch),
+        ("/projects/{project_id}/merge-requests/{id}", HttpMethod::Delete),
+        ("/projects/{project_id}/builds", HttpMethod::Get),
+        ("/projects/{project_id}/builds", HttpMethod::Post),
+        ("/projects/{project_id}/builds/{id}", HttpMethod::Get),
+        ("/git/{project_path}/info/refs", HttpMethod::Get),
+        ("/git/{project_path}/git-upload-pack", HttpMethod::Post),
+        ("/git/{project_path}/git-receive-pack", HttpMethod::Post),
+        ("/git/{project_path}/info/lfs/objects/batch", HttpMethod::Post),
+        ("/git/{project_path}/info/lfs/objects/{oid}", HttpMethod::Get),
+        ("/git/{project_path}/info/lfs/objects/{oid}", HttpMethod::Put),
+        ("/git/{project_path}/info/lfs/locks", HttpMethod::Get),
+        ("/git/{project_path}/info/lfs/locks", HttpMethod::Post),
+        ("/git/{project_path}/info/lfs/locks/{id}", HttpMethod::Delete),
+        ("/health", HttpMethod::Get),
+        ("/ready", HttpMethod::Get),
+        ("/version", HttpMethod::Get),
+    ];
+
+    let mut by_path: BTreeMap<&str, PathItemBuilder> = BTreeMap::new();
+    for (path, method) in routes {
+        let builder = by_path.entry(path).or_default();
+        *builder = std::mem::take(builder).operation(method.clone(), Operation::default());
+    }
+
+    let mut paths = PathsBuilder::new();
+    for (path, item) in by_path {
+        paths = paths.path(path, item.build());
+    }
+    paths.build()
+}
+
 /// Create OpenAPI documentation
 pub fn create_openapi() -> utoipa::openapi::OpenApi {
-    use crate::handlers::*;
-    
-    utoipa::openapi::OpenApiBuilder::new()
+    let mut api = utoipa::openapi::OpenApiBuilder::new()
         .info(
             utoipa::openapi::InfoBuilder::new()
                 .title("OneDev API")
@@ -43,137 +125,57 @@ pub fn create_openapi() -> utoipa::openapi::OpenApi {
                     .build()))
                 .build(),
         )
-        .servers(vec![
+        .servers(Some(vec![
             utoipa::openapi::ServerBuilder::new()
                 .url("/api")
-                .description("API Server")
+                .description(Some("API Server"))
                 .build(),
-        ])
-        .paths(
-            utoipa::openapi::path::PathBuilder::new()
-                // Auth endpoints
-                .path("/auth/login", post(auth_handlers::login))
-                .path("/auth/verify-2fa", post(auth_handlers::verify_two_factor))
-                .path("/auth/logout", post(auth_handlers::logout))
-                .path("/auth/me", get(auth_handlers::current_user))
-                .path("/auth/refresh", post(auth_handlers::refresh_token))
-                // User endpoints
-                .path("/users", get(user_handlers::list_users))
-                .path("/users/{id}", get(user_handlers::get_user))
-                .path("/users", post(user_handlers::create_user))
-                .path("/users/{id}", patch(user_handlers::update_user))
-                .path("/users/{id}", delete(user_handlers::delete_user))
-                .path("/users/{id}/emails", get(user_handlers::list_emails))
-                .path("/users/{id}/ssh-keys", get(user_handlers::list_ssh_keys))
-                .path("/users/{id}/gpg-keys", get(user_handlers::list_gpg_keys))
-                .path("/users/{id}/tokens", get(user_handlers::list_tokens))
-                .path("/users/{id}/tokens", post(user_handlers::create_token))
-                // Project endpoints
-                .path("/projects", get(project_handlers::list_projects))
-                .path("/projects/{id}", get(project_handlers::get_project))
-                .path("/projects", post(project_handlers::create_project))
-                .path("/projects/{id}", patch(project_handlers::update_project))
-                .path("/projects/{id}", delete(project_handlers::delete_project))
-                .path("/projects/{id}/fork", post(project_handlers::fork_project))
-                .path("/projects/{id}/transfer", post(project_handlers::transfer_project))
-                .path("/projects/{id}/star", post(project_handlers::star_project))
-                .path("/projects/{id}/unstar", post(project_handlers::unstar_project))
-                .path("/projects/{id}/members", get(project_handlers::list_members))
-                .path("/projects/{id}/members", post(project_handlers::add_member))
-                .path("/projects/{id}/members/{user_id}", get(project_handlers::get_member))
-                .path("/projects/{id}/members/{user_id}", patch(project_handlers::update_member))
-                .path("/projects/{id}/members/{user_id}", delete(project_handlers::remove_member))
-                // Group endpoints
-                .path("/groups", get(group_handlers::list_groups))
-                .path("/groups/{id}", get(group_handlers::get_group))
-                .path("/groups", post(group_handlers::create_group))
-                .path("/groups/{id}", patch(group_handlers::update_group))
-                .path("/groups/{id}", delete(group_handlers::delete_group))
-                .path("/groups/{id}/members", get(group_handlers::list_group_members))
-                .path("/groups/{id}/members", post(group_handlers::add_group_member))
-                .path("/groups/{id}/members/{user_id}", get(group_handlers::get_group_member))
-                .path("/groups/{id}/members/{user_id}", patch(group_handlers::update_group_member))
-                .path("/groups/{id}/members/{user_id}", delete(group_handlers::remove_group_member))
-                // Issue endpoints
-                .path("/projects/{project_id}/issues", get(issue_handlers::list_issues))
-                .path("/projects/{project_id}/issues/{id}", get(issue_handlers::get_issue))
-                .path("/projects/{project_id}/issues", post(issue_handlers::create_issue))
-                .path("/projects/{project_id}/issues/{id}", patch(issue_handlers::update_issue))
-                .path("/projects/{project_id}/issues/{id}", delete(issue_handlers::delete_issue))
-                // Merge request endpoints
-                .path("/projects/{project_id}/merge-requests", get(mr_handlers::list_merge_requests))
-                .path("/projects/{project_id}/merge-requests/{id}", get(mr_handlers::get_merge_request))
-                .path("/projects/{project_id}/merge-requests", post(mr_handlers::create_merge_request))
-                .path("/projects/{project_id}/merge-requests/{id}", patch(mr_handlers::update_merge_request))
-                .path("/projects/{project_id}/merge-requests/{id}", delete(mr_handlers::delete_merge_request))
-                // Build endpoints
-                .path("/projects/{project_id}/builds", get(build_handlers::list_builds))
-                .path("/projects/{project_id}/builds/{id}", get(build_handlers::get_build))
-                .path("/projects/{project_id}/builds", post(build_handlers::trigger_build))
-                // Git Smart HTTP endpoints
-                .path("/git/{project_path}/info/refs", get(git_handlers::info_refs))
-                .path("/git/{project_path}/git-upload-pack", post(git_handlers::git_upload_pack))
-                .path("/git/{project_path}/git-receive-pack", post(git_handlers::git_receive_pack))
-                // LFS endpoints
-                .path("/git/{project_path}/info/lfs/objects/batch", post(lfs_handlers::lfs_batch))
-                .path("/git/{project_path}/info/lfs/objects/{oid}", get(lfs_handlers::lfs_download))
-                .path("/git/{project_path}/info/lfs/objects/{oid}", put(lfs_handlers::lfs_upload))
-                .path("/git/{project_path}/info/lfs/locks", get(lfs_handlers::lfs_locks))
-                .path("/git/{project_path}/info/lfs/locks", post(lfs_handlers::lfs_create_lock))
-                .path("/git/{project_path}/info/lfs/locks/{id}", delete(lfs_handlers::lfs_unlock))
-                // System endpoints
-                .path("/health", get(system_handlers::health))
-                .path("/ready", get(system_handlers::ready))
-                .path("/version", get(system_handlers::version))
-                .build(),
-        )
+        ]))
+        .paths(build_paths())
         .components(Some(
             utoipa::openapi::ComponentsBuilder::new()
                 .schemas_from_iter([
-                    // Auth
-                    crate::models::users::UserRef::schema(),
-                    crate::models::users::UserResponse::schema(),
-                    crate::models::users::UserListItem::schema(),
-                    crate::models::users::CreateUserRequest::schema(),
-                    crate::models::users::UpdateUserRequest::schema(),
-                    crate::models::users::ChangePasswordRequest::schema(),
-                    crate::models::users::UserQuery::schema(),
-                    // Projects
-                    crate::models::projects::ProjectRef::schema(),
-                    crate::models::projects::ProjectResponse::schema(),
-                    crate::models::projects::ProjectListItem::schema(),
-                    crate::models::projects::CreateProjectRequest::schema(),
-                    crate::models::projects::UpdateProjectRequest::schema(),
-                    crate::models::projects::ProjectQuery::schema(),
-                    crate::models::projects::ForkProjectRequest::schema(),
-                    crate::models::projects::TransferProjectRequest::schema(),
-                    // Groups
-                    crate::models::groups::GroupRef::schema(),
-                    crate::models::groups::GroupResponse::schema(),
-                    crate::models::groups::GroupListItem::schema(),
-                    crate::models::groups::CreateGroupRequest::schema(),
-                    crate::models::groups::UpdateGroupRequest::schema(),
-                    crate::models::groups::GroupQuery::schema(),
-                    // Access tokens
-                    crate::models::access_tokens::AccessTokenWithRawResponse::schema(),
-                    crate::models::access_tokens::CreateAccessTokenRequest::schema(),
-                    crate::models::access_tokens::UpdateAccessTokenRequest::schema(),
-                    crate::models::access_tokens::AccessTokenQuery::schema(),
-                    // Pagination
-                    crate::models::pagination::CursorPagination::schema(),
-                    crate::models::pagination::OffsetPagination::schema(),
-                    crate::models::pagination::PaginationMeta::schema(),
-                    crate::models::pagination::PaginatedResponse::<crate::models::users::UserRef>::schema(),
-                    // Problem details
-                    crate::errors::ProblemDetails::schema(),
+                    ("UserRef", crate::models::users::UserRef::schema()),
+                    ("UserResponse", crate::models::users::UserResponse::schema()),
+                    ("UserListItem", crate::models::users::UserListItem::schema()),
+                    ("CreateUserRequest", crate::models::users::CreateUserRequest::schema()),
+                    ("UpdateUserRequest", crate::models::users::UpdateUserRequest::schema()),
+                    ("ChangePasswordRequest", crate::models::users::ChangePasswordRequest::schema()),
+                    ("UserQuery", crate::models::users::UserQuery::schema()),
+                    ("ProjectRef", crate::models::projects::ProjectRef::schema()),
+                    ("ProjectResponse", crate::models::projects::ProjectResponse::schema()),
+                    ("ProjectListItem", crate::models::projects::ProjectListItem::schema()),
+                    ("CreateProjectRequest", crate::models::projects::CreateProjectRequest::schema()),
+                    ("UpdateProjectRequest", crate::models::projects::UpdateProjectRequest::schema()),
+                    ("ProjectQuery", crate::models::projects::ProjectQuery::schema()),
+                    ("ForkProjectRequest", crate::models::projects::ForkProjectRequest::schema()),
+                    ("TransferProjectRequest", crate::models::projects::TransferProjectRequest::schema()),
+                    ("GroupRef", crate::models::groups::GroupRef::schema()),
+                    ("GroupResponse", crate::models::groups::GroupResponse::schema()),
+                    ("GroupListItem", crate::models::groups::GroupListItem::schema()),
+                    ("CreateGroupRequest", crate::models::groups::CreateGroupRequest::schema()),
+                    ("UpdateGroupRequest", crate::models::groups::UpdateGroupRequest::schema()),
+                    ("GroupQuery", crate::models::groups::GroupQuery::schema()),
+                    ("AccessTokenWithRawResponse", crate::models::access_tokens::AccessTokenWithRawResponse::schema()),
+                    ("CreateAccessTokenRequest", crate::models::access_tokens::CreateAccessTokenRequest::schema()),
+                    ("UpdateAccessTokenRequest", crate::models::access_tokens::UpdateAccessTokenRequest::schema()),
+                    ("AccessTokenQuery", crate::models::access_tokens::AccessTokenQuery::schema()),
+                    ("CursorPagination", crate::models::pagination::CursorPagination::schema()),
+                    ("OffsetPagination", crate::models::pagination::OffsetPagination::schema()),
+                    ("PaginationMeta", crate::models::pagination::PaginationMeta::schema()),
+                    ("PaginatedResponse", crate::models::pagination::PaginatedResponse::<crate::models::users::UserRef>::schema()),
+                    ("ProblemDetails", crate::errors::ProblemDetails::schema()),
                 ])
                 .build()
         ))
-        .security(vec![
-            utoipa::openapi::security::SecurityScheme::ApiKey(
-                utoipa::openapi::security::ApiKey::Header(utoipa::openapi::security::ApiKeyValue::new("Authorization"))
+        .security(Some(vec![
+            utoipa::openapi::security::SecurityRequirement::new(
+                "bearer_auth",
+                Vec::<String>::new(),
             )
-        ])
-        .modifier(&SecurityAddon)
-        .build()
+        ]))
+        .build();
+
+    SecurityAddon.modify(&mut api);
+    api
 }

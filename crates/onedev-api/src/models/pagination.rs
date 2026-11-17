@@ -57,9 +57,36 @@ pub struct PaginatedResponse<T> {
 
 impl<T> PaginatedResponse<T> {
     pub fn new(items: Vec<T>, total: u64, pagination: impl Into<PaginationMeta>) -> Self {
+        let mut meta = pagination.into();
+        meta.total = total;
+        if let (Some(page), per_page) = (meta.page, meta.per_page) {
+            if per_page > 0 {
+                let total_pages = ((total + per_page as u64 - 1) / per_page as u64) as u32;
+                meta.total_pages = Some(total_pages);
+                meta.has_more = page + 1 < total_pages;
+            }
+        }
         Self {
             items,
-            pagination: pagination.into(),
+            pagination: meta,
+        }
+    }
+}
+
+/// Sort order for list queries
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ToSchema, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum SortOrder {
+    #[default]
+    Asc,
+    Desc,
+}
+
+impl Default for OffsetPagination {
+    fn default() -> Self {
+        Self {
+            page: 0,
+            per_page: default_limit(),
         }
     }
 }
@@ -70,19 +97,15 @@ fn default_limit() -> u32 {
 
 impl From<OffsetPagination> for PaginationMeta {
     fn from(p: OffsetPagination) -> Self {
-        let total_pages = if p.per_page > 0 {
-            Some((p.total + p.per_page as u64 - 1) / p.per_page as u64)
-        } else {
-            None
-        };
+        // Total is unknown at this point; `PaginatedResponse::new` fills it in.
         Self {
-            total: p.total,
+            total: 0,
             page: Some(p.page),
             per_page: p.per_page,
-            total_pages: total_pages.map(|v| v as u32),
+            total_pages: None,
             next_cursor: None,
             prev_cursor: None,
-            has_more: total_pages.map(|tp| p.page + 1 < tp).unwrap_or(false),
+            has_more: false,
         }
     }
 }

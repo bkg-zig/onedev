@@ -1,13 +1,11 @@
 //! Authorization Service Wrapper
 
-use onedev_auth::{
-    AuthorizationService as InnerAuthzService,
-    AuthzError as InnerAuthzError,
-    PermissionCheck,
+use onedev_auth::services::authorization_service::{
+    AuthorizationService as InnerAuthzService, AuthzError as InnerAuthzError, PermissionCheck,
 };
+use onedev_core::permissions::{ProjectPermissionType, SystemPermission};
 use onedev_db::DbPool;
 use std::sync::Arc;
-use onedev_auth::models::principal::ProjectPermissionType;
 
 /// Wrapper around onedev-auth's AuthorizationService
 pub struct AuthorizationService {
@@ -43,15 +41,8 @@ impl AuthorizationService {
     pub async fn check_system_permission(
         &self,
         subject: &onedev_auth::Subject,
-        permission: onedev_auth::models::principal::SystemPermission,
+        permission: SystemPermission,
     ) -> Result<PermissionCheck, InnerAuthzError> {
         self.inner.check_system_permission(subject, permission).await
     }
 }
-
-// Re-export types
-pub use onedev_auth::{
-    AuthorizationService as InnerAuthorizationService,
-    AuthzError,
-    PermissionCheck,
-};
