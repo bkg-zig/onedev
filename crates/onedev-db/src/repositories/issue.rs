@@ -174,7 +174,7 @@ impl Repository<DbIssue, DbCreateIssue, DbUpdateIssue> for IssueRepository {
             .fetch_one(pool)
             .await?;
 
-        DbIssue::from_row(&row)
+        Ok(DbIssue::from_row(&row)?)
     }
 
     async fn delete(&self, pool: &DbPool, id: i64) -> DbResult<()> {

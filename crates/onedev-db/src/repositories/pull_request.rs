@@ -177,7 +177,7 @@ impl Repository<DbPullRequest, DbCreatePullRequest, DbUpdatePullRequest> for Pul
             .fetch_one(pool)
             .await?;
 
-        DbPullRequest::from_row(&row)
+        Ok(DbPullRequest::from_row(&row)?)
     }
 
     async fn delete(&self, pool: &DbPool, id: i64) -> DbResult<()> {

@@ -96,7 +96,7 @@ impl Repository<DbWebhook, DbCreateWebhook, DbUpdateWebhook> for WebhookReposito
             .fetch_one(pool)
             .await?;
 
-        DbWebhook::from_row(&row)
+        Ok(DbWebhook::from_row(&row)?)
     }
 
     async fn delete(&self, pool: &DbPool, id: i64) -> DbResult<()> {

@@ -342,7 +342,7 @@ impl Repository<DbProject, DbCreateProject, DbUpdateProject> for ProjectReposito
             .fetch_one(pool)
             .await?;
 
-        DbProject::from_row(&row)
+        Ok(DbProject::from_row(&row)?)
     }
 
     async fn delete(&self, pool: &DbPool, id: i64) -> DbResult<()> {

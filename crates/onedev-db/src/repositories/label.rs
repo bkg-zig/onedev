@@ -79,7 +79,7 @@ impl Repository<DbLabel, DbCreateLabel, DbUpdateLabel> for LabelRepository {
             .fetch_one(pool)
             .await?;
 
-        DbLabel::from_row(&row)
+        Ok(DbLabel::from_row(&row)?)
     }
 
     async fn delete(&self, pool: &DbPool, id: i64) -> DbResult<()> {

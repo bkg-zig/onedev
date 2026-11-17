@@ -104,7 +104,7 @@ impl Repository<DbCodeComment, DbCreateCodeComment, DbUpdateCodeComment> for Cod
             .fetch_one(pool)
             .await?;
 
-        DbCodeComment::from_row(&row)
+        Ok(DbCodeComment::from_row(&row)?)
     }
 
     async fn delete(&self, pool: &DbPool, id: i64) -> DbResult<()> {
