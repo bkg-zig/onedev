@@ -1,0 +1,41 @@
+[package]
+name = "onedev-auth"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "OneDev Authentication & Authorization - Subject, Permissions, Sessions, Tokens"
+
+[dependencies]
+onedev-core = { path = "../onedev-core" }
+onedev-db = { path = "../onedev-db" }
+argon2.workspace = true
+ring.workspace = true
+sha2.workspace = true
+hmac.workspace = true
+pbkdf2.workspace = true
+aes-gcm.workspace = true
+x25519-dalek.workspace = true
+ed25519-dalek.workspace = true
+rand.workspace = true
+rand_core.workspace = true
+subtle.workspace = true
+zeroize.workspace = true
+secrecy.workspace = true
+jsonwebtoken.workspace = true
+oauth2.workspace = true
+totp-lite.workspace = true
+base64.workspace = true
+base64ct.workspace = true
+tokio.workspace = true
+anyhow.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+chrono.workspace = true
+uuid.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+dashmap.workspace = true
+parking_lot.workspace = once_cell.workspace = true
+flume.workspace = true

@@ -1,0 +1,25 @@
+[package]
+name = "onedev-db"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "OneDev Database Layer - SQLx Postgres Repositories & Migrations"
+
+[dependencies]
+onedev-core = { path = "../onedev-core" }
+sqlx.workspace = true
+sqlx-core.workspace = true
+deadpool.workspace = true
+tokio.workspace = true
+anyhow.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+uuid.workspace = true
+chrono.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+config.workspace = true
+once_cell.workspace = true
+parking_lot.workspace = true

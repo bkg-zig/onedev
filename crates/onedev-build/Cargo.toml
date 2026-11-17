@@ -1,0 +1,41 @@
+[package]
+name = "onedev-build"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "OneDev Build System - Pipeline, Jobs, Executors, Cache, Artifacts"
+
+[dependencies]
+onedev-core = { path = "../onedev-core" }
+onedev-db = { path = "../onedev-db" }
+onedev-auth = { path = "../onedev-auth" }
+onedev-git = { path = "../onedev-git" }
+tokio.workspace = true
+tokio-util.workspace = true
+anyhow.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+chrono.workspace = true
+uuid.workspace = true
+ulid.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+serde_yaml.workspace = true
+regex.workspace = true
+flume.workspace = true
+async-channel.workspace = true
+futures.workspace = true
+dashmap.workspace = true
+parking_lot.workspace = true
+indexmap.workspace = true
+smallvec.workspace = true
+bollard = { version = "0.17", features = ["tokio", "stream", "stdin", "container", "image", "network", "volume", "secret", "system", "build", "exec", "logs", "stats", "wait"] }
+docker-credential = "0.5"
+async-compression.workspace = true
+tar.workspace = true
+walkdir.workspace = true
+glob.workspace = true
+tempfile = "3.10"
+which = "6.1"

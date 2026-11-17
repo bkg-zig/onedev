@@ -1,0 +1,36 @@
+[package]
+name = "onedev-cli"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "OneDev CLI - Admin Commands, Stack Control, Dev Tools"
+
+[dependencies]
+onedev-core = { path = "../onedev-core" }
+onedev-db = { path = "../onedev-db" }
+onedev-auth = { path = "../onedev-auth" }
+onedev-server = { path = "../onedev-server" }
+onedev-git = { path = "../onedev-git" }
+onedev-build = { path = "../onedev-build" }
+clap.workspace = true
+clap_complete.workspace = true
+console.workspace = true
+indicatif.workspace = true
+dialoguer.workspace = true
+tokio.workspace = true
+anyhow.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+chrono.workspace = true
+uuid.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+config.workspace = true
+figment.workspace = true
+flume.workspace = true
+async-channel.workspace = true
+bollard = { version = "0.17", features = ["tokio", "container", "image", "network", "volume", "system", "logs", "stats", "wait"] }
+compose = { version = "0.2", features = ["tokio"] }

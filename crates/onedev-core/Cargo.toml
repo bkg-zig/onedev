@@ -1,0 +1,26 @@
+[package]
+name = "onedev-core"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "OneDev Core Domain Models & Shared Types"
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+chrono.workspace = true
+uuid.workspace = true
+ulid.workspace = true
+thiserror.workspace = true
+bytes.workspace = true
+url.workspace = true
+regex.workspace = true
+indexmap = { version = "2.2", features = ["serde"] }
+smallvec = { version = "1.13", features = ["serde"] }
+bitflags = { version = "2.6", features = ["serde"] }
+strum = { version = "0.26", features = ["serde", "derive"] }
+rust_decimal = { version = "1.35", features = ["serde"] }
+semver = { version = "1.0", features = ["serde"] }
+# Types shared across crates

@@ -1,0 +1,181 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/onedev-core",
+    "crates/onedev-db",
+    "crates/onedev-auth",
+    "crates/onedev-api",
+    "crates/onedev-server",
+    "crates/onedev-git",
+    "crates/onedev-build",
+    "crates/onedev-web",
+    "crates/onedev-cli",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.89"
+license = "Apache-2.0"
+repository = "https://github.com/bkg-zig/onedev"
+description = "OneDev Rust Rewrite - Complete Git Server with CI/CD, Issue Tracking, Code Review"
+
+[workspace.dependencies]
+# Async runtime
+tokio = { version = "1.49", features = ["full", "tracing"] }
+tokio-util = { version = "0.7", features = ["full"] }
+
+# Web framework
+axum = { version = "0.8", features = ["macros", "json", "multipart", "ws", "cookie"] }
+axum-extra = { version = "0.9", features = ["cookie", "signed-cookie", "private-cookie"] }
+tower = { version = "0.4", features = ["full"] }
+tower-http = { version = "0.6", features = ["cors", "trace", "catch-panic", "compression", "normalize-path", "request-id", "set-header", "timeout"] }
+hyper = { version = "1.3", features = ["full"] }
+http = "1.3"
+http-body = "1.0"
+http-body-util = { version = "0.1", features = ["full"] }
+
+# Serialization
+serde = { version = "1.0", features = ["derive", "rc"] }
+serde_json = "1.0"
+serde_yaml = "0.9"
+simd-json = "0.10"
+
+# Database
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono", "json", "migrate", "offline", "macros"] }
+sqlx-core = { version = "0.8", features = ["postgres"] }
+deadpool = { version = "0.17", features = ["postgres", "runtime-tokio"] }
+
+# Authentication & Security
+argon2 = "0.5"
+ring = "0.17"
+sha2 = "0.10"
+hmac = "0.12"
+pbkdf2 = "0.12"
+aes-gcm = "0.10"
+x25519-dalek = "2.2"
+ed25519-dalek = "2.2"
+rand = { version = "0.9", features = ["std", "getrandom"] }
+rand_core = "0.6"
+getrandom = { version = "0.3", features = ["std"] }
+subtle = "2.6"
+zeroize = { version = "1.8", features = ["pinning"] }
+secrecy = "0.10"
+jsonwebtoken = { version = "9.3", features = ["chrono"] }
+oauth2 = { version = "5.4", features = ["reqwest", "pkce", "async-http-client"] }
+totp-lite = "0.4"
+base64 = { version = "0.22", features = ["std"] }
+base64ct = "1.6"
+
+# Git
+gix = { version = "0.72", features = ["async", "ssh-client", "http-client", "tempfile", "parallel", "max-performance"] }
+gix-features = "0.41"
+gix-object = "0.47"
+gix-pack = "0.55"
+gix-transport = { version = "0.47", features = ["ssh-client", "http-client", "rustls-tls", "native-tls", "blocking-client"] }
+gix-protocol = "0.47"
+gix-ref = "0.47"
+gix-index = "0.37"
+gix-worktree = "0.38"
+gix-config = "0.41"
+gix-url = "0.30"
+gix-credentials = "0.28"
+gix-sec = "0.14"
+gix-hash = "0.16"
+gix-date = "0.10"
+gix-trace = "0.3"
+gix-features = "0.41"
+gix-chunk = "0.5"
+gix-packetline = "0.19"
+
+# Templates
+tera = { version = "1.20", features = ["humansize"] }
+askama = { version = "0.13", features = ["tera-compatible"] }
+markdown = { version = "1.0", features = ["pulldown-cmark", "syntect"] }
+pulldown-cmark = { version = "0.13", features = ["simd", "footer"] }
+syntect = { version = "5.3", features = ["default", "parsing", "dumps", "html"] }
+
+# Observability
+tracing = { version = "0.1", features = ["std", "log", "valuable"] }
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "json", "registry", "tokio"] }
+tracing-appender = { version = "0.2", features = ["non-blocking"] }
+opentelemetry = { version = "0.29", features = ["trace", "metrics", "logs"] }
+opentelemetry-otlp = { version = "0.29", features = ["tonic", "http", "metrics", "logs", "trace"] }
+opentelemetry-sdk = { version = "0.29", features = ["trace", "metrics", "logs", "resource"] }
+metrics = "0.23"
+metrics-exporter-prometheus = "0.16"
+
+# Config
+config = { version = "0.14", features = ["yaml", "json", "toml", "env"] }
+figment = { version = "0.10", features = ["yaml", "json", "toml", "env", "serde"] }
+
+# CLI
+clap = { version = "4.5", features = ["derive", "env", "yaml", "wrap_help", "color", "suggestions", "cargo"] }
+clap_complete = "4.5"
+console = "0.15"
+indicatif = { version = "0.17", features = ["rayon", "terminal-size"] }
+dialoguer = { version = "0.11", features = ["console"] }
+
+# Utilities
+anyhow = "1.0"
+thiserror = "2.0"
+eyre = "0.6"
+chrono = { version = "0.4", features = ["serde", "tz", "clock"] }
+uuid = { version = "1.21", features = ["serde", "v4", "v7", "fast-rng"] }
+ulid = "1.3"
+bytes = { version = "1.9", features = ["serde"] }
+mime = "0.3"
+mime_guess = "2.0"
+percent-encoding = "2.3"
+url = { version = "2.5", features = ["serde"] }
+pathdiff = "0.2"
+walkdir = "2.5"
+ignore = "0.13"
+glob = "0.3"
+regex = { version = "1.10", features = ["unicode", "std", "perf", "perf-dfa", "perf-literal", "perf-cache"] }
+lazy_static = "1.4"
+once_cell = { version = "1.19", features = ["race"] }
+parking_lot = { version = "0.12", features = ["arc_lock", "deadlock_detection"] }
+dashmap = { version = "6.1", features = ["rayon"] }
+crossbeam = "0.8"
+flume = "0.11"
+async-channel = "2.3"
+futures = { version = "0.3", features = ["std", "async-await", "channel", "sink", "io", "macro"] }
+pin-project = { version = "1.1", features = ["unsafe-pinned-drop-projection"] }
+scopeguard = "1.2"
+
+# Testing
+testcontainers = { version = "0.20", features = ["tokio", "postgres", "redis"] }
+mockall = { version = "0.13", features = ["nightly"] }
+wiremock = { version = "0.5", features = ["actix", "tokio", "tls"] }
+proptest = "1.4"
+pretty_assertions = "1.4"
+insta = { version = "1.37", features = ["json", "ron", "yaml", "csv"] }
+
+# Compression
+flate2 = "1.0"
+zstd = { version = "0.13", features = ["multithreading"] }
+bzip2 = "0.4"
+tar = "0.4"
+
+# Async file I/O
+tokio-fs = "1.0"
+async-compression = { version = "0.4", features = ["tokio", "gzip", "zstd", "brotli"] }
+
+# Email
+lettre = { version = "0.11", features = ["tokio1", "native-tls", "smtp", "file-transport", "async-std1"] }
+lettre_email = "0.11"
+
+# WebSockets
+tokio-tungstenite = { version = "0.23", features = ["native-tls", "rustls-tls"] }
+tungstenite = { version = "0.23", features = ["native-tls", "rustls-tls"] }
+
+# Rate limiting
+governor = { version = "0.7", features = ["std", "clock"] }
+
+# Sentry
+sentry = { version = "0.38", features = ["tokio", "tracing", "anyhow", "eyre", "backtrace"] }
+sentry-tracing = "0.38"
+
+# LSP/IDE
+rust-analyzer = { version = "0.1", optional = true }

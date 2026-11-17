@@ -1,0 +1,50 @@
+[package]
+name = "onedev-git"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "OneDev Git Operations - Repository Management, Smart HTTP, LFS, Hooks"
+
+[dependencies]
+onedev-core = { path = "../onedev-core" }
+onedev-db = { path = "../onedev-db" }
+onedev-auth = { path = "../onedev-auth" }
+gix.workspace = true
+gix-features.workspace = true
+gix-object.workspace = true
+gix-pack.workspace = true
+gix-transport.workspace = true
+gix-protocol.workspace = true
+gix-ref.workspace = true
+gix-index.workspace = true
+gix-worktree.workspace = true
+gix-config.workspace = true
+gix-url.workspace = true
+gix-credentials.workspace = true
+gix-sec.workspace = true
+gix-hash.workspace = true
+gix-date.workspace = true
+gix-chunk.workspace = true
+gix-packetline.workspace = true
+tokio.workspace = true
+tokio-util.workspace = true
+anyhow.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+chrono.workspace = true
+uuid.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+bytes.workspace = true
+flume.workspace = true
+async-compression.workspace = true
+tar.workspace = true
+walkdir.workspace = true
+ignore.workspace = true
+regex.workspace = true
+percent-encoding.workspace = true
+url.workspace = true
+base64.workspace = true
+sha2.workspace = true

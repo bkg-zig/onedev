@@ -1,0 +1,19 @@
+[package]
+name = "onedev-core"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Framework-independent domain model of the Rust OneDev rewrite"
+
+[dependencies]
+argon2.workspace = true
+chrono.workspace = true
+rand_core.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+subtle.workspace = true
+thiserror.workspace = true
+uuid.workspace = true
