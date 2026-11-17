@@ -1,0 +1,33 @@
+crates/onedev-db/src/models/membership.rs
+  s_529267afb46f04::t_ba42c70011c194 33-34,37-41,46-74
+crates/onedev-api/src/models/pagination.rs
+  s_fc4968d509c3df::t_94c078774c2e47 1-88
+crates/onedev-api/src/models/mod.rs
+  s_fc4968d509c3df::t_c955c5e4d8db52 1-51
+crates/onedev-api/src/models/users.rs
+  s_fc4968d509c3df::t_ab2ca4d5e73fc4 1-202
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "49d6db59fda06785da8583a2f27c6e0cc8674e72",
+  "prompts": {},
+  "sessions": {
+    "s_529267afb46f04": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "934bb580-5ad8-4123-80f4-d8e72c4207b5",
+        "model": "grok-4.7-build"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    },
+    "s_fc4968d509c3df": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e152e6bc4ffejPRtPDKqejzaSv",
+        "model": "combo/best-free"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}
