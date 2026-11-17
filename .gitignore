@@ -1,0 +1,32 @@
+# Geheimnisse – niemals versionieren
+.env
+.env.*
+!.env.example
+.admin-password
+.multidb/
+tenants/*/.env
+tenants/*/.env.*
+**/*.bak
+**/*.bak-*
+
+# Laufdaten
+infra/nginx/conf.d/*
+!infra/nginx/conf.d/.gitkeep
+secrets/
+backups/
+
+# Build-Artefakte
+target/
+node_modules/
+.next/
+dist/
+*.log
+
+# Laufdaten der youki-OCI-Bundles (aus Images extrahierte rootfs, ~1,5 GB).
+# Die Bundles werden von der App zur Laufzeit gebaut, nicht versioniert.
+infra/oci/bundles/
+
+
+# Vendor-Quellen bleiben vor Ort, werden aber nicht Teil des neuen Repos
+vendor/bkg-core-mail/vendor/
+vendor/clawgitserve/
