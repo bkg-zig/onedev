@@ -6,6 +6,7 @@ use crate::{
     DbPool, DbResult,
 };
 use async_trait::async_trait;
+use sqlx::FromRow;
 
 pub struct EmailAddressRepository;
 
@@ -50,13 +51,13 @@ impl EmailAddressRepository {
         let mut tx = pool.begin().await?;
 
         // Unset current primary
-        sqlx::query("UPDATE email_addresses SET primary = FALSE, updated_at = NOW() WHERE user_id = $1 AND primary = TRUE")
+        sqlx::query(r#"UPDATE email_addresses SET "primary" = FALSE, updated_at = NOW() WHERE user_id = $1 AND "primary" = TRUE"#)
             .bind(user_id)
             .execute(&mut *tx)
             .await?;
 
         // Set new primary
-        sqlx::query("UPDATE email_addresses SET primary = TRUE, updated_at = NOW() WHERE id = $1 AND user_id = $2")
+        sqlx::query(r#"UPDATE email_addresses SET "primary" = TRUE, updated_at = NOW() WHERE id = $1 AND user_id = $2"#)
             .bind(email_id)
             .bind(user_id)
             .execute(&mut *tx)
@@ -120,7 +121,7 @@ impl Repository<DbEmailAddress, DbCreateEmailAddress, DbUpdateEmailAddress> for 
             .fetch_one(pool)
             .await?;
 
-        DbEmailAddress::from_row(&row)
+        Ok(DbEmailAddress::from_row(&row)?)
     }
 
     async fn delete(&self, pool: &DbPool, id: i64) -> DbResult<()> {

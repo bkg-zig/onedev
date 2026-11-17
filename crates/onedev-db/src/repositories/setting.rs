@@ -6,6 +6,7 @@ use crate::{
     DbPool, DbResult,
 };
 use async_trait::async_trait;
+use sqlx::FromRow;
 
 pub struct SystemSettingRepository;
 
@@ -24,21 +25,22 @@ impl SystemSettingRepository {
         Ok(row.map(|r| DbSystemSetting::from_row(&r)).transpose()?)
     }
 
-    /// Get value by key
-    pub async fn get_value<T: for<'r> sqlx::Decode<'r, sqlx::Postgres> + Send>(
+    /// Get value by key (the `value` column is JSONB, so it is deserialized via serde)
+    pub async fn get_value<T: serde::de::DeserializeOwned>(
         &self,
         pool: &DbPool,
         key: &str,
     ) -> DbResult<Option<T>> {
-        let value: Option<T> = sqlx::query_scalar("SELECT value FROM system_settings WHERE key = $1")
-            .bind(key)
-            .fetch_optional(pool)
-            .await?;
-        Ok(value)
+        let value: Option<serde_json::Value> =
+            sqlx::query_scalar("SELECT value FROM system_settings WHERE key = $1")
+                .bind(key)
+                .fetch_optional(pool)
+                .await?;
+        Ok(value.map(serde_json::from_value).transpose()?)
     }
 
-    /// Set value by key
-    pub async fn set_value<T: sqlx::Encode<'_, sqlx::Postgres> + sqlx::Type<sqlx::Postgres> + Send>(
+    /// Set value by key (the `value` column is JSONB, so it is serialized via serde)
+    pub async fn set_value<T: serde::Serialize + Send>(
         &self,
         pool: &DbPool,
         key: &str,
@@ -55,7 +57,7 @@ impl SystemSettingRepository {
         )
         .bind(uuid::Uuid::new_v4())
         .bind(key)
-        .bind(value)
+        .bind(sqlx::types::Json(value))
         .execute(pool)
         .await?;
         Ok(())
@@ -104,7 +106,7 @@ impl Repository<DbSystemSetting, DbCreateSetting, DbUpdateSetting> for SystemSet
             .fetch_one(pool)
             .await?;
 
-        DbSystemSetting::from_row(&row)
+        Ok(DbSystemSetting::from_row(&row)?)
     }
 
     async fn delete(&self, pool: &DbPool, id: i64) -> DbResult<()> {

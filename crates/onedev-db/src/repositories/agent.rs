@@ -6,6 +6,7 @@ use crate::{
     DbPool, DbResult,
 };
 use async_trait::async_trait;
+use sqlx::FromRow;
 
 pub struct AgentRepository;
 
@@ -76,10 +77,10 @@ impl Repository<DbAgent, DbCreateAgent, DbUpdateAgent> for AgentRepository {
             .bind(&create.token_hash)
             .bind(crate::models::agent::DbAgentStatus::Offline)
             .bind(create.executor_type)
-            .bind(create.executor_config.map(serde_json::to_value).transpose()?)
-            .bind(&create.labels)
+            .bind(create.executor_config)
+            .bind(sqlx::types::Json(&create.labels))
             .bind(create.max_concurrent_jobs)
-            .bind(0) // current_jobs
+            .bind(0_i32) // current_jobs
             .bind(now)
             .bind(now)
             .fetch_one(pool)
@@ -105,8 +106,8 @@ impl Repository<DbAgent, DbCreateAgent, DbUpdateAgent> for AgentRepository {
             .bind(id)
             .bind(&update.name)
             .bind(update.status)
-            .bind(update.executor_config.map(serde_json::to_value).transpose()?)
-            .bind(update.labels.as_ref().map(|v| v.as_slice()))
+            .bind(update.executor_config)
+            .bind(update.labels.as_ref().map(sqlx::types::Json))
             .bind(update.max_concurrent_jobs)
             .bind(update.current_jobs)
             .bind(update.last_seen_at)
@@ -117,7 +118,7 @@ impl Repository<DbAgent, DbCreateAgent, DbUpdateAgent> for AgentRepository {
             .fetch_one(pool)
             .await?;
 
-        DbAgent::from_row(&row)
+        Ok(DbAgent::from_row(&row)?)
     }
 
     async fn delete(&self, pool: &DbPool, id: i64) -> DbResult<()> {

@@ -6,6 +6,7 @@ use crate::{
     DbPool, DbResult,
 };
 use async_trait::async_trait;
+use sqlx::FromRow;
 
 pub struct WorkspaceRepository;
 
@@ -101,7 +102,7 @@ impl Repository<DbWorkspace, DbCreateWorkspace, DbUpdateWorkspace> for Workspace
             .fetch_one(pool)
             .await?;
 
-        DbWorkspace::from_row(&row)
+        Ok(DbWorkspace::from_row(&row)?)
     }
 
     async fn delete(&self, pool: &DbPool, id: i64) -> DbResult<()> {

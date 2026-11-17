@@ -1,12 +1,12 @@
 //! Project Repository
 
 use crate::{
-    models::project::{DbProject, DbCreateProject, DbUpdateProject, ProjectQueryBuilder},
+    models::project::{DbProject, DbProjectStats, DbCreateProject, DbUpdateProject, ProjectQueryBuilder},
     repositories::Repository,
     DbPool, DbResult,
 };
 use async_trait::async_trait;
-use sqlx::Row;
+use sqlx::{FromRow, Row};
 
 pub struct ProjectRepository;
 
@@ -182,17 +182,18 @@ impl ProjectRepository {
     }
 
     /// Get project with stats
-    pub async fn find_with_stats(&self, pool: &DbPool, id: i64) -> DbResult<Option<(DbProject, crate::models::project::ProjectStats)>> {
+    ///
+    /// Storage/repository/wiki/package sizes and fork/star counters are not
+    /// persisted in the schema (the git layer owns them), so they are reported as 0.
+    pub async fn find_with_stats(&self, pool: &DbPool, id: i64) -> DbResult<Option<(DbProject, DbProjectStats)>> {
         let row = sqlx::query(
             r#"
-            SELECT p.*, 
+            SELECT p.*,
                    COALESCE(i.open_count, 0) as open_issues_count,
                    COALESCE(i.total_count, 0) as issues_count,
                    COALESCE(mr.open_count, 0) as open_merge_requests_count,
                    COALESCE(mr.total_count, 0) as merge_requests_count,
-                   COALESCE(b.count, 0) as builds_count,
-                   COALESCE(s.size, 0) as storage_size,
-                   COALESCE(rs.size, 0) as repository_size
+                   COALESCE(b.count, 0) as builds_count
             FROM projects p
             LEFT JOIN (
                 SELECT project_id, COUNT(*) as total_count, COUNT(*) FILTER (WHERE state = 'open') as open_count
@@ -205,12 +206,6 @@ impl ProjectRepository {
             LEFT JOIN (
                 SELECT project_id, COUNT(*) as count FROM builds GROUP BY project_id
             ) b ON p.id = b.project_id
-            LEFT JOIN (
-                SELECT project_id, SUM(size) as size FROM project_storage GROUP BY project_id
-            ) s ON p.id = s.project_id
-            LEFT JOIN (
-                SELECT project_id, SUM(size) as size FROM repository_sizes GROUP BY project_id
-            ) rs ON p.id = rs.project_id
             WHERE p.id = $1
             "#,
         )
@@ -220,14 +215,14 @@ impl ProjectRepository {
 
         if let Some(row) = row {
             let project = DbProject::from_row(&row)?;
-            let stats = crate::models::project::ProjectStats {
-                issues_count: row.get("issues_count"),
-                open_issues_count: row.get("open_issues_count"),
-                merge_requests_count: row.get("merge_requests_count"),
-                open_merge_requests_count: row.get("open_merge_requests_count"),
-                builds_count: row.get("builds_count"),
-                storage_size: row.get("storage_size"),
-                repository_size: row.get("repository_size"),
+            let stats = DbProjectStats {
+                issues_count: row.try_get("issues_count")?,
+                open_issues_count: row.try_get("open_issues_count")?,
+                merge_requests_count: row.try_get("merge_requests_count")?,
+                open_merge_requests_count: row.try_get("open_merge_requests_count")?,
+                builds_count: row.try_get("builds_count")?,
+                storage_size: 0,
+                repository_size: 0,
                 wiki_size: 0,
                 packages_size: 0,
                 forks_count: 0,
@@ -334,16 +329,16 @@ impl Repository<DbProject, DbCreateProject, DbUpdateProject> for ProjectReposito
             .bind(&update.squash_merge_template)
             .bind(update.build_timeout)
             .bind(&update.build_coverage_regex)
-            .bind(update.issue_setting.map(serde_json::to_value).transpose()?)
-            .bind(update.pull_request_setting.map(serde_json::to_value).transpose()?)
-            .bind(update.build_setting.map(serde_json::to_value).transpose()?)
-            .bind(update.pack_setting.map(serde_json::to_value).transpose()?)
-            .bind(update.workspace_setting.map(serde_json::to_value).transpose()?)
-            .bind(update.code_indexing_setting.map(serde_json::to_value).transpose()?)
-            .bind(update.wiki_setting.map(serde_json::to_value).transpose()?)
-            .bind(update.webhooks.map(serde_json::to_value).transpose()?)
-            .bind(update.branch_protections.map(serde_json::to_value).transpose()?)
-            .bind(update.tag_protections.map(serde_json::to_value).transpose()?)
+            .bind(&update.issue_setting)
+            .bind(&update.pull_request_setting)
+            .bind(&update.build_setting)
+            .bind(&update.pack_setting)
+            .bind(&update.workspace_setting)
+            .bind(&update.code_indexing_setting)
+            .bind(&update.wiki_setting)
+            .bind(&update.webhooks)
+            .bind(&update.branch_protections)
+            .bind(&update.tag_protections)
             .fetch_one(pool)
             .await?;
 

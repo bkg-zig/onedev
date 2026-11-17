@@ -17,8 +17,10 @@ pub struct DbOAuthApplication {
     pub name: String,
     pub client_id: String,
     pub client_secret_hash: String,
-    pub redirect_uris: Vec<String>,
-    pub scopes: Vec<String>,
+    /// Stored as JSONB array in the `redirect_uris` column
+    pub redirect_uris: sqlx::types::Json<Vec<String>>,
+    /// Stored as JSONB array in the `scopes` column
+    pub scopes: sqlx::types::Json<Vec<String>>,
     pub confidential: bool,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -61,7 +63,8 @@ pub struct DbOAuthGrant {
     pub uuid: Uuid,
     pub application_id: i64,
     pub user_id: i64,
-    pub scopes: Vec<String>,
+    /// Stored as JSONB array in the `scopes` column
+    pub scopes: sqlx::types::Json<Vec<String>>,
     pub redirect_uri: String,
     pub code: Option<String>,
     pub code_hash: Option<String>,

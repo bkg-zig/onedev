@@ -129,6 +129,13 @@ impl DashboardQueryBuilder {
 pub struct DashboardShareQueryBuilder;
 
 impl DashboardShareQueryBuilder {
+    pub fn select_by_id() -> &'static str {
+        r#"
+        SELECT id, uuid, dashboard_id, user_id, permission, created_at
+        FROM dashboard_shares WHERE id = $1
+        "#
+    }
+
     pub fn select_by_dashboard_id() -> &'static str {
         r#"
         SELECT id, uuid, dashboard_id, user_id, permission, created_at

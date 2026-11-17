@@ -11,6 +11,8 @@ description = "OneDev Database Layer - SQLx Postgres Repositories & Migrations"
 onedev-core = { path = "../onedev-core" }
 sqlx.workspace = true
 deadpool.workspace = true
+deadpool-postgres.workspace = true
+tokio-postgres.workspace = true
 tokio.workspace = true
 anyhow.workspace = true
 thiserror.workspace = true
@@ -22,3 +24,4 @@ serde_json.workspace = true
 config.workspace = true
 once_cell.workspace = true
 parking_lot.workspace = true
+async-trait.workspace = true

@@ -28,7 +28,10 @@ impl From<onedev_core::models::issue::IssueState> for DbIssueState {
     fn from(s: onedev_core::models::issue::IssueState) -> Self {
         match s {
             onedev_core::models::issue::IssueState::Open => DbIssueState::Open,
-            onedev_core::models::issue::IssueState::Closed => DbIssueState::Closed,
+            onedev_core::models::issue::IssueState::Closed
+            | onedev_core::models::issue::IssueState::Resolved
+            | onedev_core::models::issue::IssueState::Duplicate
+            | onedev_core::models::issue::IssueState::WontFix => DbIssueState::Closed,
         }
     }
 }
@@ -89,33 +92,76 @@ pub struct DbUpdateIssue {
     pub spent_duration: Option<i32>,
     pub due_date: Option<DateTime<Utc>>,
     pub label_ids: Option<Vec<i64>>,
+    pub watcher_ids: Option<Vec<i64>>,
+    pub voter_ids: Option<Vec<i64>>,
 }
 
 impl DbIssue {
-    /// Convert to core domain model
+    /// Map the numeric DB priority (0 = lowest .. 5 = critical) to the core enum.
+    /// Out-of-range values are clamped.
+    pub fn priority_from_i32(value: i32) -> onedev_core::models::issue::IssuePriority {
+        use onedev_core::models::issue::IssuePriority;
+        match value {
+            i32::MIN..=0 => IssuePriority::Lowest,
+            1 => IssuePriority::Low,
+            2 => IssuePriority::Medium,
+            3 => IssuePriority::High,
+            4 => IssuePriority::Highest,
+            _ => IssuePriority::Critical,
+        }
+    }
+
+    /// Map the core priority enum to the numeric DB priority (inverse of `priority_from_i32`)
+    pub fn priority_to_i32(priority: onedev_core::models::issue::IssuePriority) -> i32 {
+        use onedev_core::models::issue::IssuePriority;
+        match priority {
+            IssuePriority::Lowest => 0,
+            IssuePriority::Low => 1,
+            IssuePriority::Medium => 2,
+            IssuePriority::High => 3,
+            IssuePriority::Highest => 4,
+            IssuePriority::Critical => 5,
+        }
+    }
+
+    /// Convert to core domain model.
+    ///
+    /// The core `Issue` carries fields the schema does not persist (issue type,
+    /// confidentiality, custom field values, git refs, start/completion
+    /// timestamps, weight, parent/epic links); they get neutral defaults.
+    /// DB-only data (`remaining_duration`, `label_ids`, `watcher_ids`,
+    /// `voter_ids`) is not part of the core model and is dropped here.
     pub fn to_core(&self) -> onedev_core::models::issue::Issue {
+        use onedev_core::models::issue::{ConfidentialityLevel, IssueType};
+
         onedev_core::models::issue::Issue {
             id: self.id,
             uuid: self.uuid,
             project_id: self.project_id,
-            number: self.number,
+            number: i64::from(self.number),
             title: self.title.clone(),
             description: self.description.clone(),
             state: self.state.into(),
+            issue_type: IssueType::Task,
+            priority: Self::priority_from_i32(self.priority),
+            confidentiality: ConfidentialityLevel::Public,
             submitter_id: self.submitter_id,
             assignee_id: self.assignee_id,
-            priority: self.priority,
             milestone_id: self.milestone_id,
-            estimated_duration: self.estimated_duration,
-            remaining_duration: self.remaining_duration,
-            spent_duration: self.spent_duration,
+            field_values: serde_json::Value::Object(serde_json::Map::new()),
+            branch_name: None,
+            commit_sha: None,
             created_at: self.created_at,
             updated_at: self.updated_at,
             closed_at: self.closed_at,
             due_date: self.due_date,
-            label_ids: self.label_ids.clone(),
-            watcher_ids: self.watcher_ids.clone(),
-            voter_ids: self.voter_ids.clone(),
+            started_at: None,
+            completed_at: None,
+            time_estimate: self.estimated_duration.map(i64::from),
+            time_spent: Some(i64::from(self.spent_duration)),
+            weight: None,
+            parent_issue_id: None,
+            epic_id: None,
         }
     }
 }

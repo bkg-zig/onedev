@@ -6,6 +6,7 @@ use crate::{
     DbPool, DbResult,
 };
 use async_trait::async_trait;
+use sqlx::FromRow;
 
 pub struct OAuthApplicationRepository;
 
@@ -50,8 +51,8 @@ impl Repository<DbOAuthApplication, DbCreateOAuthApplication, DbUpdateOAuthAppli
             .bind(&create.name)
             .bind(&create.client_id)
             .bind(&create.client_secret_hash)
-            .bind(&create.redirect_uris)
-            .bind(&create.scopes)
+            .bind(sqlx::types::Json(&create.redirect_uris))
+            .bind(sqlx::types::Json(&create.scopes))
             .bind(create.confidential)
             .bind(now)
             .bind(now)
@@ -77,13 +78,13 @@ impl Repository<DbOAuthApplication, DbCreateOAuthApplication, DbUpdateOAuthAppli
         let row = sqlx::query(OAuthApplicationQueryBuilder::update())
             .bind(id)
             .bind(&update.name)
-            .bind(update.redirect_uris.as_ref().map(|v| v.as_slice()))
-            .bind(update.scopes.as_ref().map(|v| v.as_slice()))
+            .bind(update.redirect_uris.as_ref().map(sqlx::types::Json))
+            .bind(update.scopes.as_ref().map(sqlx::types::Json))
             .bind(update.confidential)
             .fetch_one(pool)
             .await?;
 
-        DbOAuthApplication::from_row(&row)
+        Ok(DbOAuthApplication::from_row(&row)?)
     }
 
     async fn delete(&self, pool: &DbPool, id: i64) -> DbResult<()> {
@@ -185,7 +186,7 @@ impl Repository<DbOAuthGrant, DbCreateOAuthGrant, DbUpdateOAuthGrant> for OAuthG
             .bind(uuid)
             .bind(create.application_id)
             .bind(create.user_id)
-            .bind(&create.scopes)
+            .bind(sqlx::types::Json(&create.scopes))
             .bind(&create.redirect_uri)
             .bind(&create.code_hash)
             .bind(create.code_expires_at)
@@ -220,7 +221,7 @@ impl Repository<DbOAuthGrant, DbCreateOAuthGrant, DbUpdateOAuthGrant> for OAuthG
             .fetch_one(pool)
             .await?;
 
-        DbOAuthGrant::from_row(&row)
+        Ok(DbOAuthGrant::from_row(&row)?)
     }
 
     async fn delete(&self, pool: &DbPool, id: i64) -> DbResult<()> {

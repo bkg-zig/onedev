@@ -6,6 +6,7 @@ use crate::{
     DbPool, DbResult,
 };
 use async_trait::async_trait;
+use sqlx::FromRow;
 
 pub struct BuildRepository;
 
@@ -77,15 +78,9 @@ impl Repository<DbBuild, DbCreateBuild, DbUpdateBuild> for BuildRepository {
             .bind(create.author_id)
             .bind(crate::models::build::DbBuildStatus::Pending)
             .bind(create.trigger)
-            .bind(create.trigger_data.map(serde_json::to_value).transpose()?)
-            .bind(Option::<i64>::None) // agent_id
-            .bind(Option::<chrono::DateTime<chrono::Utc>>::None) // started_at
-            .bind(Option::<chrono::DateTime<chrono::Utc>>::None) // finished_at
-            .bind(Option::<i32>::None) // duration
-            .bind(Option::<String>::None) // error_message
+            .bind(create.trigger_data)
             .bind(create.spec)
-            .bind(create.parameters.map(serde_json::to_value).transpose()?)
-            .bind(Option::<serde_json::Value>::None) // artifacts
+            .bind(create.parameters)
             .bind(now)
             .bind(now)
             .fetch_one(pool)
@@ -115,11 +110,11 @@ impl Repository<DbBuild, DbCreateBuild, DbUpdateBuild> for BuildRepository {
             .bind(update.finished_at)
             .bind(update.duration)
             .bind(&update.error_message)
-            .bind(update.artifacts.map(serde_json::to_value).transpose()?)
+            .bind(update.artifacts)
             .fetch_one(pool)
             .await?;
 
-        DbBuild::from_row(&row)
+        Ok(DbBuild::from_row(&row)?)
     }
 
     async fn delete(&self, pool: &DbPool, id: i64) -> DbResult<()> {
@@ -243,7 +238,7 @@ impl Repository<DbBuildJob, DbBuildJob, DbBuildJob> for BuildJobRepository {
         .fetch_one(pool)
         .await?;
 
-        DbBuildJob::from_row(&row)
+        Ok(DbBuildJob::from_row(&row)?)
     }
 
     async fn delete(&self, pool: &DbPool, id: i64) -> DbResult<()> {
@@ -364,7 +359,7 @@ impl Repository<DbBuildStep, DbBuildStep, DbBuildStep> for BuildStepRepository {
         .fetch_one(pool)
         .await?;
 
-        DbBuildStep::from_row(&row)
+        Ok(DbBuildStep::from_row(&row)?)
     }
 
     async fn delete(&self, pool: &DbPool, id: i64) -> DbResult<()> {

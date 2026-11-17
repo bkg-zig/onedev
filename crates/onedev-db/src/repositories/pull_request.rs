@@ -6,6 +6,7 @@ use crate::{
     DbPool, DbResult,
 };
 use async_trait::async_trait;
+use sqlx::FromRow;
 
 pub struct PullRequestRepository;
 
@@ -159,8 +160,6 @@ impl Repository<DbPullRequest, DbCreatePullRequest, DbUpdatePullRequest> for Pul
     }
 
     async fn update(&self, pool: &DbPool, id: i64, update: DbUpdatePullRequest) -> DbResult<DbPullRequest> {
-        let merge_check_status_json = update.merge_check_status.map(serde_json::to_value).transpose()?;
-
         let row = sqlx::query(PullRequestQueryBuilder::update())
             .bind(id)
             .bind(&update.title)
@@ -170,7 +169,7 @@ impl Repository<DbPullRequest, DbCreatePullRequest, DbUpdatePullRequest> for Pul
             .bind(&update.merge_commit_sha)
             .bind(&update.head_commit_sha)
             .bind(update.mergeable)
-            .bind(merge_check_status_json)
+            .bind(&update.merge_check_status)
             .bind(update.draft)
             .bind(update.label_ids.as_ref().map(|v| v.as_slice()))
             .bind(update.reviewer_ids.as_ref().map(|v| v.as_slice()))

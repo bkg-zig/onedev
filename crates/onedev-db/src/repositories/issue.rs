@@ -6,6 +6,7 @@ use crate::{
     DbPool, DbResult,
 };
 use async_trait::async_trait;
+use sqlx::FromRow;
 
 pub struct IssueRepository;
 
@@ -130,9 +131,8 @@ impl Repository<DbIssue, DbCreateIssue, DbUpdateIssue> for IssueRepository {
             .bind(create.estimated_duration)
             .bind(create.estimated_duration) // remaining_duration
             .bind(0) // spent_duration
-            .bind(now)
-            .bind(now)
-            .bind(Option::<chrono::DateTime<chrono::Utc>>::None)
+            .bind(now) // created_at
+            .bind(now) // updated_at
             .bind(create.due_date)
             .bind(&create.label_ids)
             .bind(&Vec::<i64>::new()) // watcher_ids

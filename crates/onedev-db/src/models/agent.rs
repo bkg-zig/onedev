@@ -17,7 +17,8 @@ pub struct DbAgent {
     pub status: DbAgentStatus,
     pub executor_type: DbExecutorType,
     pub executor_config: Option<serde_json::Value>,
-    pub labels: Vec<String>,
+    /// Stored as JSONB array in the `labels` column
+    pub labels: sqlx::types::Json<Vec<String>>,
     pub max_concurrent_jobs: i32,
     pub current_jobs: i32,
     pub last_seen_at: Option<DateTime<Utc>>,
@@ -69,6 +70,7 @@ pub struct DbUpdateAgent {
     pub executor_config: Option<serde_json::Value>,
     pub labels: Option<Vec<String>>,
     pub max_concurrent_jobs: Option<i32>,
+    pub current_jobs: Option<i32>,
     pub last_seen_at: Option<DateTime<Utc>>,
     pub last_used_at: Option<DateTime<Utc>>,
     pub version: Option<String>,

@@ -6,6 +6,7 @@ use crate::{
     DbPool, DbResult,
 };
 use async_trait::async_trait;
+use sqlx::FromRow;
 
 pub struct PackRepository;
 
@@ -57,8 +58,8 @@ impl Repository<DbPack, DbCreatePack, DbUpdatePack> for PackRepository {
             .bind(create.author_id)
             .bind(create.size)
             .bind(create.file_count)
-            .bind(create.dependencies.map(serde_json::to_value).transpose()?)
-            .bind(create.metadata.map(serde_json::to_value).transpose()?)
+            .bind(create.dependencies)
+            .bind(create.metadata)
             .bind(now)
             .bind(now)
             .fetch_one(pool)
@@ -84,11 +85,11 @@ impl Repository<DbPack, DbCreatePack, DbUpdatePack> for PackRepository {
             .bind(id)
             .bind(&update.description)
             .bind(&update.readme)
-            .bind(update.metadata.map(serde_json::to_value).transpose()?)
+            .bind(update.metadata)
             .fetch_one(pool)
             .await?;
 
-        DbPack::from_row(&row)
+        Ok(DbPack::from_row(&row)?)
     }
 
     async fn delete(&self, pool: &DbPool, id: i64) -> DbResult<()> {

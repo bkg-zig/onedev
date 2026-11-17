@@ -6,6 +6,7 @@ use crate::{
     DbPool, DbResult,
 };
 use async_trait::async_trait;
+use sqlx::FromRow;
 
 pub struct SsoAccountRepository;
 
@@ -53,7 +54,7 @@ impl Repository<DbSsoAccount, DbCreateSsoAccount, DbUpdateSsoAccount> for SsoAcc
             .bind(&create.access_token)
             .bind(&create.refresh_token)
             .bind(create.token_expires_at)
-            .bind(create.raw_data.map(serde_json::to_value).transpose()?)
+            .bind(create.raw_data)
             .bind(now)
             .bind(now)
             .fetch_one(pool)
@@ -82,11 +83,11 @@ impl Repository<DbSsoAccount, DbCreateSsoAccount, DbUpdateSsoAccount> for SsoAcc
             .bind(&update.access_token)
             .bind(&update.refresh_token)
             .bind(update.token_expires_at)
-            .bind(update.raw_data.map(serde_json::to_value).transpose()?)
+            .bind(update.raw_data)
             .fetch_one(pool)
             .await?;
 
-        DbSsoAccount::from_row(&row)
+        Ok(DbSsoAccount::from_row(&row)?)
     }
 
     async fn delete(&self, pool: &DbPool, id: i64) -> DbResult<()> {

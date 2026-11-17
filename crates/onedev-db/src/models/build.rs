@@ -47,7 +47,7 @@ pub enum DbBuildStatus {
 
 /// Build trigger
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
-#[sqlx(type_name = "build_trigger", rename_all = "lowercase")]
+#[sqlx(type_name = "build_trigger", rename_all = "snake_case")]
 pub enum DbBuildTrigger {
     Push,
     PullRequest,
@@ -100,6 +100,7 @@ pub struct DbBuildJob {
     pub error_message: Option<String>,
     pub spec: serde_json::Value,
     pub dependencies: Vec<i64>,
+    #[sqlx(rename = "order_num")]
     pub order: i32,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -120,6 +121,7 @@ pub struct DbBuildStep {
     pub duration: Option<i32>,
     pub error_message: Option<String>,
     pub logs: Option<String>,
+    #[sqlx(rename = "order_num")]
     pub order: i32,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,

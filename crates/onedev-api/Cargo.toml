@@ -19,8 +19,7 @@ http.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 serde_yaml.workspace = true
-simd-json.workspace = true
-utoipa = { version = "5.4", features = ["axum_extras", "chrono", "uuid", "decimal", "url"] }
+utoipa ={ version = "5.4", features = ["axum_extras", "chrono", "uuid", "decimal", "url"] }
 utoipa-swagger-ui = { version = "7.0", features = ["axum"] }
 utoipa-axum = { version = "0.3" }
 schemars = { version = "0.8", features = ["chrono", "uuid"] }

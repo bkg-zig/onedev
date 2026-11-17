@@ -20,7 +20,7 @@ pub struct DbWatch {
 
 /// Watchable type
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
-#[sqlx(type_name = "watchable_type", rename_all = "lowercase")]
+#[sqlx(type_name = "watchable_type", rename_all = "snake_case")]
 pub enum DbWatchableType {
     Project,
     Issue,
@@ -109,7 +109,7 @@ pub struct DbQuerySubscription {
 
 /// Query type
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
-#[sqlx(type_name = "query_type", rename_all = "lowercase")]
+#[sqlx(type_name = "query_type", rename_all = "snake_case")]
 pub enum DbQueryType {
     Issue,
     PullRequest,

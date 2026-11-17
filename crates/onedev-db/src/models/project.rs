@@ -162,6 +162,7 @@ pub struct DbCreateProject {
     pub parent_id: Option<i64>,
     pub forked_from_id: Option<i64>,
     pub default_branch: String,
+    pub avatar_url: Option<String>,
     pub initialize_with_readme: bool,
     pub template_name: Option<String>,
     pub import_url: Option<String>,
@@ -195,6 +196,56 @@ pub struct DbUpdateProject {
     pub squash_merge_template: Option<String>,
     pub build_timeout: Option<i32>,
     pub build_coverage_regex: Option<String>,
+    // Additional settings (JSON)
+    pub issue_setting: Option<serde_json::Value>,
+    pub pull_request_setting: Option<serde_json::Value>,
+    pub build_setting: Option<serde_json::Value>,
+    pub pack_setting: Option<serde_json::Value>,
+    pub workspace_setting: Option<serde_json::Value>,
+    pub code_indexing_setting: Option<serde_json::Value>,
+    pub wiki_setting: Option<serde_json::Value>,
+    pub webhooks: Option<serde_json::Value>,
+    pub branch_protections: Option<serde_json::Value>,
+    pub tag_protections: Option<serde_json::Value>,
+}
+
+/// Aggregated project counters (issues, pull requests, builds, sizes).
+///
+/// Counters are `i64` because PostgreSQL has no unsigned integer types;
+/// `to_core()` converts them to the unsigned core representation.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct DbProjectStats {
+    pub issues_count: i64,
+    pub open_issues_count: i64,
+    pub merge_requests_count: i64,
+    pub open_merge_requests_count: i64,
+    pub builds_count: i64,
+    pub storage_size: i64,
+    pub repository_size: i64,
+    pub wiki_size: i64,
+    pub packages_size: i64,
+    pub forks_count: i64,
+    pub stars_count: i64,
+}
+
+impl DbProjectStats {
+    /// Convert to core domain model (negative counters are clamped to 0)
+    pub fn to_core(&self) -> onedev_core::models::project::ProjectStats {
+        let unsigned = |v: i64| v.max(0) as u64;
+        onedev_core::models::project::ProjectStats {
+            issues_count: unsigned(self.issues_count),
+            open_issues_count: unsigned(self.open_issues_count),
+            merge_requests_count: unsigned(self.merge_requests_count),
+            open_merge_requests_count: unsigned(self.open_merge_requests_count),
+            builds_count: unsigned(self.builds_count),
+            storage_size: unsigned(self.storage_size),
+            repository_size: unsigned(self.repository_size),
+            wiki_size: unsigned(self.wiki_size),
+            packages_size: unsigned(self.packages_size),
+            forks_count: unsigned(self.forks_count),
+            stars_count: unsigned(self.stars_count),
+        }
+    }
 }
 
 impl DbProject {
@@ -279,6 +330,7 @@ impl DbCreateProject {
             parent_id: None,
             forked_from_id: None,
             default_branch: "main".to_string(),
+            avatar_url: None,
             initialize_with_readme: create.initialize_with_readme,
             template_name: create.template_name.clone(),
             import_url: create.import_url.clone(),

@@ -6,6 +6,7 @@ use crate::{
     DbPool, DbResult,
 };
 use async_trait::async_trait;
+use sqlx::FromRow;
 
 pub struct DashboardRepository;
 
@@ -106,7 +107,7 @@ impl Repository<DbDashboard, DbCreateDashboard, DbUpdateDashboard> for Dashboard
             .fetch_one(pool)
             .await?;
 
-        DbDashboard::from_row(&row)
+        Ok(DbDashboard::from_row(&row)?)
     }
 
     async fn delete(&self, pool: &DbPool, id: i64) -> DbResult<()> {
@@ -190,9 +191,8 @@ impl Repository<DbDashboardShare, DbDashboardShare, DbDashboardShare> for Dashbo
     }
 
     async fn find_by_id(&self, pool: &DbPool, id: i64) -> DbResult<Option<DbDashboardShare>> {
-        let row = sqlx::query(DashboardShareQueryBuilder::select_by_dashboard_and_user())
+        let row = sqlx::query(DashboardShareQueryBuilder::select_by_id())
             .bind(id)
-            .bind(0) // placeholder, not used for find_by_id
             .fetch_optional(pool)
             .await?;
 
@@ -206,7 +206,7 @@ impl Repository<DbDashboardShare, DbDashboardShare, DbDashboardShare> for Dashbo
             .fetch_one(pool)
             .await?;
 
-        DbDashboardShare::from_row(&row)
+        Ok(DbDashboardShare::from_row(&row)?)
     }
 
     async fn delete(&self, pool: &DbPool, id: i64) -> DbResult<()> {

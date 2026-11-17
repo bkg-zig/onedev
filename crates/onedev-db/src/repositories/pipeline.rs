@@ -6,6 +6,7 @@ use crate::{
     DbPool, DbResult,
 };
 use async_trait::async_trait;
+use sqlx::FromRow;
 
 pub struct PipelineRepository;
 
@@ -97,13 +98,13 @@ impl Repository<DbPipeline, DbCreatePipeline, DbUpdatePipeline> for PipelineRepo
         let row = sqlx::query(PipelineQueryBuilder::update())
             .bind(id)
             .bind(&update.name)
-            .bind(update.spec.map(serde_json::to_value).transpose()?)
+            .bind(update.spec)
             .bind(update.is_default)
             .bind(update.protected)
             .fetch_one(pool)
             .await?;
 
-        DbPipeline::from_row(&row)
+        Ok(DbPipeline::from_row(&row)?)
     }
 
     async fn delete(&self, pool: &DbPool, id: i64) -> DbResult<()> {
@@ -188,7 +189,7 @@ impl Repository<DbPipelineSchedule, DbPipelineSchedule, DbPipelineSchedule> for 
             .bind(&create.cron_expression)
             .bind(&create.timezone)
             .bind(&create.ref_name)
-            .bind(create.parameters.map(serde_json::to_value).transpose()?)
+            .bind(create.parameters)
             .bind(create.active)
             .bind(create.next_run_at)
             .bind(now)
@@ -217,14 +218,14 @@ impl Repository<DbPipelineSchedule, DbPipelineSchedule, DbPipelineSchedule> for 
             .bind(&update.cron_expression)
             .bind(&update.timezone)
             .bind(&update.ref_name)
-            .bind(update.parameters.map(serde_json::to_value).transpose()?)
+            .bind(update.parameters)
             .bind(update.active)
             .bind(update.next_run_at)
             .bind(update.last_run_at)
             .fetch_one(pool)
             .await?;
 
-        DbPipelineSchedule::from_row(&row)
+        Ok(DbPipelineSchedule::from_row(&row)?)
     }
 
     async fn delete(&self, pool: &DbPool, id: i64) -> DbResult<()> {

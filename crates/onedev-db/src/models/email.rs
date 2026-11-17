@@ -53,7 +53,7 @@ pub struct EmailAddressQueryBuilder;
 impl EmailAddressQueryBuilder {
     pub fn select_all() -> &'static str {
         r#"
-        SELECT id, uuid, user_id, value, verified, primary, verification_code,
+        SELECT id, uuid, user_id, value, verified, "primary", verification_code,
                verification_sent_at, created_at, updated_at
         FROM email_addresses
         "#
@@ -61,7 +61,7 @@ impl EmailAddressQueryBuilder {
 
     pub fn select_by_id() -> &'static str {
         r#"
-        SELECT id, uuid, user_id, value, verified, primary, verification_code,
+        SELECT id, uuid, user_id, value, verified, "primary", verification_code,
                verification_sent_at, created_at, updated_at
         FROM email_addresses WHERE id = $1
         "#
@@ -69,16 +69,16 @@ impl EmailAddressQueryBuilder {
 
     pub fn select_by_user_id() -> &'static str {
         r#"
-        SELECT id, uuid, user_id, value, verified, primary, verification_code,
+        SELECT id, uuid, user_id, value, verified, "primary", verification_code,
                verification_sent_at, created_at, updated_at
         FROM email_addresses WHERE user_id = $1
-        ORDER BY primary DESC, created_at ASC
+        ORDER BY "primary" DESC, created_at ASC
         "#
     }
 
     pub fn select_by_value() -> &'static str {
         r#"
-        SELECT id, uuid, user_id, value, verified, primary, verification_code,
+        SELECT id, uuid, user_id, value, verified, "primary", verification_code,
                verification_sent_at, created_at, updated_at
         FROM email_addresses WHERE value = $1
         "#
@@ -86,16 +86,16 @@ impl EmailAddressQueryBuilder {
 
     pub fn select_primary_by_user_id() -> &'static str {
         r#"
-        SELECT id, uuid, user_id, value, verified, primary, verification_code,
+        SELECT id, uuid, user_id, value, verified, "primary", verification_code,
                verification_sent_at, created_at, updated_at
-        FROM email_addresses WHERE user_id = $1 AND primary = true
+        FROM email_addresses WHERE user_id = $1 AND "primary" = true
         LIMIT 1
         "#
     }
 
     pub fn insert() -> &'static str {
         r#"
-        INSERT INTO email_addresses (uuid, user_id, value, verified, primary,
+        INSERT INTO email_addresses (uuid, user_id, value, verified, "primary",
                                      verification_code, verification_sent_at, created_at, updated_at)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         RETURNING id
@@ -106,12 +106,12 @@ impl EmailAddressQueryBuilder {
         r#"
         UPDATE email_addresses SET
             verified = COALESCE($2, verified),
-            primary = COALESCE($3, primary),
+            "primary" = COALESCE($3, "primary"),
             verification_code = COALESCE($4, verification_code),
             verification_sent_at = COALESCE($5, verification_sent_at),
             updated_at = NOW()
         WHERE id = $1
-        RETURNING id, uuid, user_id, value, verified, primary, verification_code,
+        RETURNING id, uuid, user_id, value, verified, "primary", verification_code,
                   verification_sent_at, created_at, updated_at
         "#
     }
