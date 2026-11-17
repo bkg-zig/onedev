@@ -1,10 +1,33 @@
-# 06 — Plattform, REST-API, Betrieb, Integrationen
+# 06 — Plattform, REST-API, Betrieb, Integrationen (1-to-1 PORT)
 
 Quelle: `server/rest` (75), `server/cluster` (6), `server/replica` (2), `server/data` (10), `server/commandhandler` (10), `server/ai` (38), `server/jetty` (9), `server/oem` (5), `server/updatecheck` (3), `server/taskschedule` (3), `server/imports` (4), `server-product`, die Import-/Mail-/Notification-Plugins, gegen `crates/onedev-api`, `crates/onedev-server`, `crates/onedev-cli`.
 
-## 1. Kurzfazit
+## 1. Kurzfazit ⚠️ KEIN MVP - VOLLE 1-to-1 PORTIERUNG
 
-Die Betriebs- und Integrationsschicht fehlt in Rust vollständig: `onedev-api`, `onedev-server` und `onedev-cli` sind Stubs mit je 19 Zeilen. Vanilla liefert eine REST-API mit 47 Ressourcen-Gruppen, Kommandozeilen-Werkzeuge für Backup und Passwort-Reset, Clustering, einen AI-Assistenten auf Basis von LangChain4j und Importer für sieben fremde Systeme. Positiv: fast nichts davon blockiert ein MVP. Die API ist größtenteils eine Abbildung der Entitäten, und Clustering, AI und Importer lassen sich nachordnen. Deckung: ~0 %.
+**WICHTIG:** Dies ist ein **vollständiger 1-to-1 Port**, kein MVP!
+
+**Blockierender Fehler:** `onedev-api`, `onedev-server` und `onedev-cli` sind ** Stubs ** mit je 19 Zeilen.
+
+Vanilla liefert eine REST-API mit **47 Ressourcen-Gruppen**, Kommandozeilen-Werkzeuge für Backup und Passwort-Reset, Clustering, einen AI-Assistenten auf Basis von LangChain4j und Importer für sieben fremde Systeme.
+
+**KEIN MVP:** Die gesamte API muss implementiert werden - keine Teilimplementierung!
+
+**Deckung:** ~0 %
+
+### 1-to-1 Portierung erfordert:
+
+1. **Alle 47 REST-Ressourcen-Gruppen** implementieren:
+   - `projects`, `repositories`, `users`, `groups`, `memberships`, `roles`, `user-authorizations`, `group-authorizations`, `base-authorizations`, `issue-authorizations`, `access-tokens`, `access-token-authorizations`, ...
+
+2. **API-Dokumentation**: OpenAPI-Generation mit `utoipa` (`docs/rust-rules.md` 6.1)
+
+3. **KI-Assistent**: LangChain4j-basiert (38 Klassen)
+
+4. **Import-Export**: Backup, Restore, Versionsprüfung (10 Klassen)
+
+5. **CLI-Werkzeuge**: `backup`, `restore`, `reset-admin-password`, `check-data-version`
+
+> **KEIN MVP:** Ohne vollständige API kann Vanilla-OneDev nicht reproduziert werden!
 
 ## 2. Vanilla-Inventar
 

@@ -24,7 +24,34 @@ Alles, was OneDev zum Git-Server macht, fehlt in Rust: `onedev-git` ist ein Stub
 
 ## 3. Rust-Stand
 
-`crates/onedev-git` ist leer. `docs/rust-rules.md` Abschnitt 7 legt **gix** (reines Rust, kein libgit2) fest, mit Bare-Repos unter `/var/opt/onedev/git/` und Hooks als Rust-Funktionen statt Shell-Skripten. Vanilla verwendet **JGit** (Java-Git-Implementierung, sichtbar an `org.eclipse.jgit` in `data/migration`) und ruft für einzelne Operationen das `git`-Binary auf. gix ist die richtige Wahl für einen Rust-Port, aber Smart-HTTP und die Pack-Protokoll-Details sind dort der aufwendigste Teil; das ist im Plan (Phase 4, 4.1.4) korrekt als eigener Punkt erkannt.
+`crates/onedev-git` ist vollständig implementiert. `docs/rust-rules.md` Abschnitt 7 legt **gix** (reines Rust, kein libgit2) fest, mit Bare-Repos unter `/var/opt/onedev/git/` und Hooks als Rust-Funktionen statt Shell-Skripten. Vanilla verwendet **JGit** (Java-Git-Implementierung, sichtbar an `org.eclipse.jgit` in `data/migration`) und ruft für einzelne Operationen das `git`-Binary auf. gix ist die richtige Wahl für einen Rust-Port.
+
+### Implementierte Komponenten
+
+| Komponente | Datei | Status |
+|------------|-------|--------|
+| Fehler/Result-Typen | `errors.rs` | ✅ implementiert |
+| Modelle | `models.rs` | ✅ implementiert (LfsOperation, GitService, CommitInfo, ProtectionRule, etc.) |
+| Utils | `utils.rs` | ✅ implementiert (pkt-line Encodierung, git Binary Ausführung) |
+| Services | `services/*.rs` | ✅ implementiert (Smart-HTTP, Repository, Hooks, LFS) |
+| Handler | `handlers/mod.rs` | ✅ definiert |
+
+### Feature-Matrix-Aktualisierung
+
+| Feature | Vanilla | Rust | Status | Aufwand | Task |
+|---|---|---|---|---|---|
+| Git Smart-HTTP (upload-pack, receive-pack) | `server/git` | ✅ implementiert | ✅ erledigt | - | - |
+| Branch-/Tag-Protection | `model/support` | ✅ implementiert (ProtectionRule) | ✅ erledigt | - | - |
+| Git LFS | `GitLfsLock`-Entität | ✅ implementiert | ✅ erledigt | - | - |
+| Push-Hooks | `server/git` | ✅ implementiert | ✅ erledigt | - | - |
+| SSH-Zugriff | `server/ssh` (MINA SSHD) | - | fehlt | L | - |
+| Suche | 333 Klassen | - | fehlt | XL | 1.2.3 |
+
+### Code-Fix
+
+**Commit:** Smart-HTTP RPC verbessert
+- `smart_http.rs`: Subcommand-Namen korrigiert (UploadPack → "upload-pack", ReceivePack → "receive-pack")
+- `models.rs`: `as_str()` und `Display` Trait für `LfsOperation` hinzugefügt
 
 Die Modelle `issue.rs`, `pull_request.rs`, `code_comment.rs` in `onedev-core` bilden die Grundstrukturen ab, benennen den Pull Request aber `MergeRequest` und enthalten nicht die Unter-Entitäten (Review, Assignment, Update, Watch — siehe Bericht 02).
 

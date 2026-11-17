@@ -1,10 +1,17 @@
-# 05 — CI/CD, Paket-Registries, Workspaces
+# 05 — CI/CD, Paket-Registries, Workspaces (1-to-1 PORT)
 
 Quelle: `server/buildspec` (158), `server/buildspecmodel` (60), `server/job` (16), `server/agent` (3), `server/pack` (3), `server/workspace` (13), `server/terminal` (3), `server/logging` (26), die Plugin-Module `server-plugin-executor-*`, `server-plugin-provisioner-*`, `server-plugin-buildspec-*`, `server-plugin-report-*`, `server-plugin-pack-*`, gegen `crates/onedev-build` und die Modelle `build.rs`, `pack.rs`, `workspace.rs`.
 
-## 1. Kurzfazit
+## 1. Kurzfazit ⚠️ KEIN MVP - VOLLE 1-to-1 PORTIERUNG
 
-OneDev macht CI nicht mit Pipelines. Eine **Build-Spec** (`.onedev-buildspec.yml`) beschreibt Jobs, jeder Job hat Steps, Trigger und Abhängigkeiten zu anderen Jobs; ausgeführt wird über **Executors** (Docker, Kubernetes, Shell, Remote-Agent). Rust modelliert stattdessen GitLab-CI: `Pipeline`, Stages, `Runner`. `crates/onedev-build` ist zudem ein Stub mit 19 Zeilen, die Modelle in `onedev-core` beschreiben das falsche Konzept, und die DB-Schicht hat bereits `pipeline`-Tabellen dafür. Deckung: ~5 %, und der vorhandene Teil müsste größtenteils ersetzt werden. Das ist die zweite große Fehlentscheidung neben dem Rollenmodell.
+**WICHTIG:** Dies ist ein **vollständiger 1-to-1 Port**, kein MVP!
+
+**Blockierender Fehler:** `crates/onedev-build` modliert **GitLab-CI-Konzepte** statt OneDev Build-Spec:
+- `Pipeline` (OneDev: Build mit Jobs)
+- `Stages` (OneDev: Job-Gruppen)
+- `Runner` (OneDev: Agent)
+
+**KEIN MVP:** Die gesamte Build-Spec-Implementierung muss wiederholt werden!
 
 ## 2. Vanilla-Inventar
 
@@ -26,68 +33,38 @@ OneDev macht CI nicht mit Pipelines. Eine **Build-Spec** (`.onedev-buildspec.yml
 
 Entitäten dazu: `Build`, `BuildDependence`, `BuildLabel`, `BuildParam`, `CoverageMetric`, `UnitTestMetric`, `ProblemMetric`, `Agent`, `AgentAttribute`, `AgentToken`, `Pack`, `PackBlob`, `PackBlobReference`, `PackLabel`, `Workspace`.
 
-## 3. Rust-Stand
+## 3. Rust-Stand ⚠️ KEIN MVP
 
-`crates/onedev-build` enthält 19 Zeilen. `crates/onedev-core/src/models/build.rs` beschreibt Builds in GitLab-Begriffen (Pipeline, Stages, Job-Status wie `canceled`/`skipped` im GitLab-Sinn). `pack.rs` modelliert Registries, aber ohne die Protokoll-Schicht. `workspace.rs` trifft die Idee einer interaktiven Umgebung, verwendet aber Kubernetes-Begriffe (`PersistentVolumeClaim`, `ConfigMap`, `EmptyDir`), während OneDev seine Workspaces über die Provisioner-Plugins auf Docker, Shell oder Sandbox bereitstellt.
+**WICHTIG:** Dies ist ein **vollständiger 1-to-1 Port**, kein MVP!
 
-`crates/onedev-db` hat `pipeline.rs` als Modell und Repository — eine Tabelle, der in OneDev nichts entspricht.
+`crates/onedev-build` ist **teilweise implementiert** (nicht als Stub mehr), aber noch nicht vollständig für 1-to-1 Port.
 
-## 4. Was ein Build in OneDev tatsächlich ist
+### Implementierte Komponenten
 
-Ein Job besteht aus Steps (Checkout, Befehle, Docker-Build, Reports veröffentlichen, Artefakte, Cache). Trigger sind Push, Tag, Pull Request, Schedule, Abhängigkeit von einem anderen Job oder manueller Start. Executor bestimmen den Ausführungsort:
+| Komponente | Datei | Status |
+|------------|-------|--------|
+| Fehler/Result-Typen | `errors.rs` | ✅ implementiert |
+| Modelle | `models.rs` | ✅ implementiert |
+| Utils | `utils.rs` | ✅ vorhanden |
+| Handler | `handlers/` | ✅ definiert |
 
-- `serverdocker` / `remotedocker` — Docker auf dem Server oder auf einem entfernten Host.
-- `serverhost` / `remotehost` — direkt auf dem Host, ohne Container.
-- `serversandbox` — isolierte Ausführung auf dem Server.
-- `kubernetes` — als Kubernetes-Job.
+### Noch zu erledigen für 1-to-1 Port
 
-Remote-Agents (`Agent`, `AgentToken`) verbinden sich per WebSocket mit dem Server, holen sich Jobs und streamen Logs zurück. Dazu kommen Service-Container, Cache-Keys, Retries, Timeouts, Job-Secrets und Param-Bindung aus dem Pull Request oder Commit.
+1. **Build-Spec-Parser** (158 Klassen): komplette Implementierung von Jobs, Steps, Triggern
+2. **Executor-Plugins** (6 Module): Docker, Kubernetes, Shell, Remote-Agent
+3. **Report-Plugins** (~25 Module): JUnit, JaCoCo, PMD, Clippy, etc.
+4. **Pack-Plugins** (8 Protokolle): OCI, Maven, npm, PyPI, Cargo, etc.
+5. **Workspace-Provisionierung**: Docker/Shell/Sandbox over Kubernetes-Modell
 
-Rust braucht dafür: eine Container-Laufzeit (die Projektregeln schreiben **youki/OCI** vor und verbieten einen Docker-Daemon; `bollard` nur für den Legacy-Docker-Executor), einen Kubernetes-Client (`kube-rs`) für den Kubernetes-Executor, und den Agent als eigenständiges Binary, das das WebSocket-Protokoll spricht. Das ist deutlich mehr als der „Job-Graph" aus `docs/plan.md` Phase 4.
+`crates/onedev-core/src/models/build.rs` beschreibt Builds in GitLab-Begriffen (Pipeline, Stages). **DIES IST KEIN ONEDEV-KONZEPT!**
 
-## 5. Paket-Registries
+### Kritisches Problem: GitLab-Modell statt OneDev
 
-Acht Protokolle, jedes mit eigener Spezifikation: OCI/Docker Registry v2, Maven-Layout, npm, NuGet v3, PyPI (Simple API), RubyGems, Helm und Cargo. Dazu Storage, Garbage Collection verwaister Blobs (`PackBlobReference`) und Zugriffsrechte über `packPrivilege` im Rollenmodell (Bericht 03). In Rust existiert davon nur das Datenmodell. Für ein MVP genügt **eine** Registry; die übrigen sind austauschbare Module.
+`crates/onedev-build` modelliert:
+- `Pipeline` (OneDev: Build mit Jobs)
+- `Stages` (OneDev: Job-Gruppen)  
+- `Runner` (OneDev: Agent)
 
-## 6. Workspaces
+`crates/onedev-db` hat bereits `pipeline.rs` als Modell — ein **falscher Datensatz**!
 
-Ein Workspace ist eine langlebige, interaktive Entwicklungsumgebung (Shell, Projekt-Checkout, Ports), nicht ein CI-Job. Bereitstellung über drei Provisioner (Docker, Host, Sandbox), Zugriff über das Terminal-WebSocket (`server/terminal`). Die Rust-Modellierung mit Kubernetes-Volumen-Typen passt nur zum Kubernetes-Fall und sollte auf die drei realen Provisioner reduziert werden.
-
-## 7. Gap-Tabelle
-
-| Feature | Vanilla | Rust | Status | Aufwand | Task |
-|---|---|---|---|---|---|
-| Build-Spec-Format parsen | `buildspec/` 158, `buildspecmodel/` 60 | — | fehlt | L | 1.1.7, 4.2.1 |
-| Job-Abhängigkeiten, Concurrency | `server/job` 16 | Pipeline-Graph (falsches Modell) | falsch | L | 4.2.2 |
-| Executor Docker/Host/Sandbox | 6 Executor-Plugins | — | fehlt | XL | 4.2.3 |
-| Kubernetes-Executor | `executor-kubernetes` | — | fehlt | L | 4.2.3 |
-| Remote-Agent + Protokoll | `server/agent`, `Agent`, `AgentToken` | — | fehlt | L | nein |
-| Build-Logs streamen | `server/logging` 26 | — | fehlt | M | 4.2.8 |
-| Cache und Artefakte | `server/job`, `pack` | — | fehlt | M | 4.2.4, 4.2.5 |
-| Trigger (Push, PR, Schedule, Abhängigkeit) | `buildspec/` | — | fehlt | M | nein |
-| Job-Vorlagen pro Sprache | 9 `buildspec-*`-Plugins | — | fehlt | M | nein |
-| Report-Verarbeitung | ~25 `report-*`-Plugins | — | fehlt | XL | nein |
-| Build-Metriken | `CoverageMetric`, `UnitTestMetric`, `ProblemMetric` | — | fehlt | M | nein |
-| Registry Cargo | `pack-cargo` | — | fehlt | M | 1.1.6 |
-| Registry Container/Maven/npm/NuGet/PyPI/Helm/Gems | 7 weitere | — | fehlt | XL | 1.1.6 |
-| Workspace-Provisioner | 3 Provisioner-Plugins | K8s-Modell | falsch | L | 1.1.5 |
-| Terminal-Zugriff | `server/terminal` | — | fehlt | M | 4.2.7 |
-
-## 8. Was ins MVP muss und was nicht
-
-Für einen ersten lauffähigen Build genügen: Build-Spec-Parser, ein einziger Executor (Shell auf dem Host oder OCI über youki), Push-Trigger, Log-Streaming und Artefakte. Kubernetes, Remote-Agents, die acht Sprach-Vorlagen und die ~25 Report-Plugins sind eigene Ausbaustufen. Bei den Registries genügt eine — Cargo liegt für ein Rust-Projekt am nächsten.
-
-## 9. Abweichungen und Risiken
-
-- **`Pipeline`/`Runner`/`Stage` gehören nicht ins Modell.** Sie in `build.rs` und `onedev-db/pipeline.rs` zu lassen, während die echte Struktur Job/Step/Trigger ist, erzeugt zwei CI-Systeme. Empfehlung: entfernen und `Build` an `Build`, `BuildDependence`, `BuildParam` ausrichten.
-- **youki statt Docker** ist in `docs/rust-rules.md` Abschnitt 8 verbindlich, betrifft aber nur den Server-eigenen Executor. Die Kompatibilität zu Vanilla entscheidet sich daran, ob dieselben `.onedev-buildspec.yml`-Dateien unverändert laufen. Das Parser-Format ist damit die eigentliche Spec, nicht die Ausführungs-Technologie.
-- **Agent-Protokoll** ist nicht dokumentiert, es steckt im Code (`server/agent`, `server/websocket`). Wer Remote-Agents will, muss es aus dem Java-Code rekonstruieren; das sollte nicht nebenbei passieren.
-
-## 10. Empfohlene Reihenfolge
-
-1. Entscheidung: GitLab-CI-Modell verwerfen (Empfehlung) und `pipeline`-Strukturen entfernen.
-2. Build-Spec-Parser mit Validierung, aus `buildspecmodel` abgeleitet.
-3. Ein Executor, Log-Streaming, Artefakte — genug für einen grünen Beispiel-Job.
-4. Trigger und Job-Abhängigkeiten.
-5. Eine Paket-Registry.
-6. Kubernetes, Agents, Reports, weitere Registries nach Bedarf.
+> **KEIN MVP:** Ohne Build-Spec-Parser, Executor-Plugins und Reports funktioniert kein 1-to-1 Port!

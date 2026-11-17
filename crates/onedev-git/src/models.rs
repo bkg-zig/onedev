@@ -365,12 +365,25 @@ pub enum LfsOperation {
 }
 
 impl LfsOperation {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            LfsOperation::Upload => "upload",
+            LfsOperation::Download => "download",
+        }
+    }
+
     pub fn parse(value: &str) -> GitResult<Self> {
         match value {
             "upload" => Ok(LfsOperation::Upload),
             "download" => Ok(LfsOperation::Download),
             other => Err(GitError::Lfs(format!("unknown LFS operation: {other}"))),
         }
+    }
+}
+
+impl std::fmt::Display for LfsOperation {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
     }
 }
 

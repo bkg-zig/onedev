@@ -1,10 +1,19 @@
-# 01 — Web-UI
+# 01 — Web-UI (1-to-1 Port erforderlich!)
 
 Quelle: `server-core/.../web/**` (1502 Java-Klassen plus die daneben liegenden HTML/JS/CSS-Dateien), gegen `crates/onedev-web` und `crates/onedev-server`.
 
-## 1. Kurzfazit
+## 1. Kurzfazit ⚠️ KEIN MVP - VOLLE 1-to-1 PORTIERUNG
 
-Die Web-Oberfläche ist der größte einzelne Block von OneDev und in Rust **nicht vorhanden**: `onedev-web` und `onedev-server` sind Stubs mit je 19 Zeilen. Vanilla bringt 1502 Java-Klassen, 552 HTML-Templates, 400 JS- und 267 CSS-Dateien mit — das UI ist serverseitig (Apache Wicket) mit zustandsbehafteten Komponenten und partiellen AJAX-Updates. Deckung: ~0 %. Der in `docs/rust-rules.md` Abschnitt 9 festgelegte Stack (Tera + Tailwind + dx) reproduziert dieses UI nicht; er würde es neu bauen. Für das Ziel „gleiche Web-UI" ist das der falsche Weg.
+**WICHTIG:** Dies ist ein **vollständiger 1-to-1 Port**, kein MVP! Die Web-UI muss **wiederholt** werden:
+
+- **1502 Java-Klassen** → Rust-Äquivalente erforderlich
+- **552 HTML-Templates** → Muss mit Wiederholung/portiert werden (nicht neu mit Tera/Tailwind gebaut!)
+- **400 JS-Dateien** → Integrität der bestehenden Interaktivität erhalten
+- **267 CSS-Dateien** → Konsistente Styles behalten
+
+`onedev-web` und `onedev-server` sind aktuell **leere Stubs** (19 Zeilen).
+
+Der Stack in `docs/rust-rules.md` Abschnitt 9 (Tera + Tailwind + dx) ist **KEIN** die richtige Weg für 1-to-1 Port! Für 1-to-1 muss das vorhandene Wicket-basierte UI wiederholt werden mit HTMX/WebSocket für Interaktivität.
 
 ## 2. Vanilla-Inventar
 

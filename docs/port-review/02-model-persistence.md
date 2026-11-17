@@ -1,10 +1,33 @@
-# 02 — Domain-Modell, Persistenz, Service-Schicht
+# 02 — Domain-Modell, Persistenz, Service-Schicht (1-to-1 PORT)
 
 Quelle: `server-core/.../model` (104 `@Entity`-Klassen), `persistence` (33), `service` (92 Interfaces), `data` (Versionierung und Migration), gegen `crates/onedev-core/src/models` und `crates/onedev-db`.
 
-## 1. Kurzfazit
+## 1. Kurzfazit ⚠️ KEIN MVP - VOLLE 1-to-1 PORTIERUNG
 
-Rust hat für die großen Entitäten Datenträger, aber sie beschreiben an mehreren Stellen ein **anderes Produkt**. OneDev kennt 104 persistente Entitäten; `onedev-core` modelliert rund zwei Dutzend davon und führt gleichzeitig Konzepte ein, die es in OneDev nicht gibt (Merge Request, Pipeline, Runner, Snippet, Environment, Feature Flag, Deploy Key). Die Service-Schicht — 92 Interfaces, also die eigentliche Geschäftslogik — existiert in Rust praktisch nicht. `onedev-db` bildet Tabellen und Repositories ab, kompiliert aber derzeit nicht. Deckung: Datenmodell ~25 %, Verhalten ~0 %.
+**WICHTIG:** Dies ist ein **vollständiger 1-to-1 Port**, kein MVP!
+
+**Blockierender Fehler:** Rust hat für die großen Entitäten Datenträger, aber sie beschreiben an mehreren Stellen ein **anderes Produkt** (GitLab statt OneDev Konzepte).
+
+### Kritische Abweichungen
+
+**Namensdrift:**
+- Rust sagt `MergeRequest*` (GitLab) vs OneDev: `PullRequest`
+- `Pipeline` (GitLab) vs OneDev: `Build` mit Job-Abhängigkeiten
+- `Runner` vs OneDev: `Agent`
+- `Snippet`, `Environment`, `FeatureFlag`, `DeployKey` → gibt es in OneDev nicht!
+
+**Service-Schicht:** 92 Interfaces (Geschäftslogik) existieren in Rust **praktisch nicht**.
+
+**Deckung:** Datenmodell ~25 %, Verhalten ~0 %.
+
+### 1-to-1 Portierung erfordert:
+
+1. **Alle 104 Entity-Klassen** exakt nachbilden
+2. **Service-Interfaces** implementieren (Build, Job, Agent, etc.)
+3. **Namensangleichung**: `MergeRequest` → `PullRequest` überall
+4. **GitLab-only Konzepte entfernen** oder als bewusste Abweichung dokumentieren
+
+> **KEIN MVP:** Ein MVP-Teil funktioniert nicht mit Vanilla-OneDev-Datenbank! Ein vollständiger Port ist erforderlich.
 
 ## 2. Vanilla-Inventar
 

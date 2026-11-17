@@ -93,11 +93,15 @@ impl SmartHttpService {
             _ => None,
         };
 
+        let subcommand = match service {
+            GitService::UploadPack => "upload-pack",
+            GitService::ReceivePack => "receive-pack",
+        };
         let repo_arg = repo.display().to_string();
         let out = run_git(
             &self.config.git_binary,
             &repo,
-            &[service.as_str(), "--stateless-rpc", &repo_arg],
+            &[subcommand, "--stateless-rpc", &repo_arg],
             Some(body),
         )?;
 
