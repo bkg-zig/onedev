@@ -1,0 +1,3 @@
+[submodule "vendor/vanilla-onedev"]
+	path = vendor/vanilla-onedev
+	url = https://github.com/theonedev/onedev

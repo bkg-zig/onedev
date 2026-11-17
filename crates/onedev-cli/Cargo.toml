@@ -33,4 +33,4 @@ figment.workspace = true
 flume.workspace = true
 async-channel.workspace = true
 bollard = { version = "0.17", features = ["tokio", "container", "image", "network", "volume", "system", "logs", "stats", "wait"] }
-compose = { version = "0.2", features = ["tokio"] }
+compose = "0.1"

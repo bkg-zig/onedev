@@ -44,7 +44,7 @@ simd-json = "0.10"
 # Database
 sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono", "json", "migrate", "offline", "macros"] }
 sqlx-core = { version = "0.8", features = ["postgres"] }
-deadpool = { version = "0.17", features = ["postgres", "runtime-tokio"] }
+deadpool = { version = "0.13", features = ["managed", "rt_tokio_1"] }
 
 # Authentication & Security
 argon2 = "0.5"
@@ -53,26 +53,26 @@ sha2 = "0.10"
 hmac = "0.12"
 pbkdf2 = "0.12"
 aes-gcm = "0.10"
-x25519-dalek = "2.2"
-ed25519-dalek = "2.2"
+x25519-dalek = "3.0"
+ed25519-dalek = "3.0"
 rand = { version = "0.9", features = ["std", "getrandom"] }
 rand_core = "0.6"
 getrandom = { version = "0.3", features = ["std"] }
 subtle = "2.6"
 zeroize = { version = "1.8", features = ["pinning"] }
 secrecy = "0.10"
-jsonwebtoken = { version = "9.3", features = ["chrono"] }
-oauth2 = { version = "5.4", features = ["reqwest", "pkce", "async-http-client"] }
-totp-lite = "0.4"
+jsonwebtoken = "9.3"
+oauth2 = { version = "5.0", features = ["reqwest", "pkce-plain"] }
+totp-lite = "2.0"
 base64 = { version = "0.22", features = ["std"] }
 base64ct = "1.6"
 
 # Git
-gix = { version = "0.72", features = ["async", "ssh-client", "http-client", "tempfile", "parallel", "max-performance"] }
+gix = { version = "0.72", features = ["blocking-http-transport-reqwest", "parallel", "max-performance"] }
 gix-features = "0.41"
 gix-object = "0.47"
 gix-pack = "0.55"
-gix-transport = { version = "0.47", features = ["ssh-client", "http-client", "rustls-tls", "native-tls", "blocking-client"] }
+gix-transport = { version = "0.47", features = ["http-client-reqwest", "blocking-client"] }
 gix-protocol = "0.47"
 gix-ref = "0.47"
 gix-index = "0.37"
@@ -84,16 +84,15 @@ gix-sec = "0.14"
 gix-hash = "0.16"
 gix-date = "0.10"
 gix-trace = "0.3"
-gix-features = "0.41"
 gix-chunk = "0.5"
 gix-packetline = "0.19"
 
 # Templates
 tera = { version = "1.20", features = ["humansize"] }
 askama = { version = "0.13", features = ["tera-compatible"] }
-markdown = { version = "1.0", features = ["pulldown-cmark", "syntect"] }
+markdown = "1.0"
 pulldown-cmark = { version = "0.13", features = ["simd", "footer"] }
-syntect = { version = "5.3", features = ["default", "parsing", "dumps", "html"] }
+syntect = { version = "5.3", features = ["default", "parsing", "dump-create", "dump-load", "html"] }
 
 # Observability
 tracing = { version = "0.1", features = ["std", "log", "valuable"] }
@@ -101,12 +100,12 @@ tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "json",
 tracing-appender = { version = "0.2", features = ["non-blocking"] }
 opentelemetry = { version = "0.29", features = ["trace", "metrics", "logs"] }
 opentelemetry-otlp = { version = "0.29", features = ["tonic", "http", "metrics", "logs", "trace"] }
-opentelemetry-sdk = { version = "0.29", features = ["trace", "metrics", "logs", "resource"] }
+opentelemetry_sdk = { version = "0.29", features = ["trace", "metrics", "logs"] }
 metrics = "0.23"
 metrics-exporter-prometheus = "0.16"
 
 # Config
-config = { version = "0.14", features = ["yaml", "json", "toml", "env"] }
+config = { version = "0.14", features = ["yaml", "json", "toml"] }
 figment = { version = "0.10", features = ["yaml", "json", "toml", "env", "serde"] }
 
 # CLI
@@ -114,7 +113,7 @@ clap = { version = "4.5", features = ["derive", "env", "yaml", "wrap_help", "col
 clap_complete = "4.5"
 console = "0.15"
 indicatif = { version = "0.17", features = ["rayon", "terminal-size"] }
-dialoguer = { version = "0.11", features = ["console"] }
+dialoguer = "0.11"
 
 # Utilities
 anyhow = "1.0"
@@ -122,7 +121,7 @@ thiserror = "2.0"
 eyre = "0.6"
 chrono = { version = "0.4", features = ["serde", "tz", "clock"] }
 uuid = { version = "1.21", features = ["serde", "v4", "v7", "fast-rng"] }
-ulid = "1.3"
+ulid = "3.0"
 bytes = { version = "1.9", features = ["serde"] }
 mime = "0.3"
 mime_guess = "2.0"
@@ -130,7 +129,7 @@ percent-encoding = "2.3"
 url = { version = "2.5", features = ["serde"] }
 pathdiff = "0.2"
 walkdir = "2.5"
-ignore = "0.13"
+ignore = "0.4"
 glob = "0.3"
 regex = { version = "1.10", features = ["unicode", "std", "perf", "perf-dfa", "perf-literal", "perf-cache"] }
 lazy_static = "1.4"
@@ -143,6 +142,8 @@ async-channel = "2.3"
 futures = { version = "0.3", features = ["std", "async-await", "channel", "sink", "io", "macro"] }
 pin-project = { version = "1.1", features = ["unsafe-pinned-drop-projection"] }
 scopeguard = "1.2"
+indexmap = "2.0"
+smallvec = "1.12"
 
 # Testing
 testcontainers = { version = "0.20", features = ["tokio", "postgres", "redis"] }
@@ -171,11 +172,11 @@ tokio-tungstenite = { version = "0.23", features = ["native-tls", "rustls-tls"] 
 tungstenite = { version = "0.23", features = ["native-tls", "rustls-tls"] }
 
 # Rate limiting
-governor = { version = "0.7", features = ["std", "clock"] }
+governor = { version = "0.7", features = ["std"] }
 
 # Sentry
-sentry = { version = "0.38", features = ["tokio", "tracing", "anyhow", "eyre", "backtrace"] }
+sentry = { version = "0.38", features = ["tokio", "tracing", "anyhow", "backtrace"] }
 sentry-tracing = "0.38"
 
 # LSP/IDE
-rust-analyzer = { version = "0.1", optional = true }
+rust-analyzer = { version = "0.1" }

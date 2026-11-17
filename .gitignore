@@ -28,4 +28,3 @@ infra/oci/bundles/
 
 
 # Vendor-Quellen bleiben vor Ort, werden aber nicht Teil des neuen Repos
-vendor/*
