@@ -1,3 +1,0 @@
-[submodule "server-ee"]
-	path = vendor/bkg-core-dev/server-ee
-	url = https://code.onedev.io/onedev/server-ee.git
