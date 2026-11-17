@@ -1,0 +1,129 @@
+docs/task.md
+  s_fc4968d509c3df::t_6286a27f05bf8a 13-19
+  s_fc4968d509c3df::t_04a6e41c14bfaf 1-12,20-212
+crates/onedev-api/Cargo.toml
+  s_fc4968d509c3df::t_6d4e956985bbd5 1-37
+crates/onedev-web/Cargo.toml
+  s_fc4968d509c3df::t_4f2d7654b453a7 1-40
+docs/rust-rules.md
+  s_fc4968d509c3df::t_07984d691b81e5 1-321
+crates/onedev-core/src/models/access_token.rs
+  s_fc4968d509c3df::t_946f0afd618f87 1-226
+crates/onedev-core/src/models/build.rs
+  s_fc4968d509c3df::t_463c787f0beeac 1-563
+crates/onedev-core/src/models/oauth.rs
+  s_fc4968d509c3df::t_9301707fe26fdd 1-193
+crates/onedev-db/Cargo.toml
+  s_fc4968d509c3df::t_b8b38bb60dee82 1-25
+crates/onedev-core/src/models/project.rs
+  s_fc4968d509c3df::t_d88c3ce9e232d0 1-208
+crates/onedev-core/src/models/code_comment.rs
+  s_fc4968d509c3df::t_e0f5c883dec287 1-136
+docs/progress.md
+  s_fc4968d509c3df::t_826b3194df650f 21-22,25-30
+  s_fc4968d509c3df::t_36f3e2aad06f6a 1-20,23-24,31-58
+crates/onedev-core/src/models/mod.rs
+  s_fc4968d509c3df::t_8402c736ca0022 1-41
+Cargo.toml
+  s_fc4968d509c3df::t_54f553ed627548 1-181
+crates/onedev-core/Cargo.toml
+  s_fc4968d509c3df::t_524709d412f2ce 1-26
+crates/onedev-core/src/models/role.rs
+  s_fc4968d509c3df::t_670d8cc9f95d32 1-319
+docs/plan.md
+  s_fc4968d509c3df::t_c52b20ddc2913f 1-153
+crates/onedev-build/Cargo.toml
+  s_fc4968d509c3df::t_4255d6fc8d50f4 1-41
+crates/onedev-auth/Cargo.toml
+  s_fc4968d509c3df::t_be0e9e7f7af86a 1-41
+crates/onedev-core/src/lib.rs
+  s_fc4968d509c3df::t_8fab578800c960 1-25
+crates/onedev-core/src/models/issue.rs
+  s_fc4968d509c3df::t_510884ac0566c3 1-290
+crates/onedev-core/src/models/workspace.rs
+  s_fc4968d509c3df::t_86cc5e29017afe 1-209
+crates/onedev-git/Cargo.toml
+  s_fc4968d509c3df::t_48de98d4af38c2 1-50
+crates/onedev-cli/Cargo.toml
+  s_fc4968d509c3df::t_e7041286ad0428 1-36
+crates/onedev-core/src/models/pack.rs
+  s_fc4968d509c3df::t_d90889e53b1954 1-286
+crates/onedev-core/src/models/group.rs
+  s_fc4968d509c3df::t_3d62866325f372 1-201
+crates/onedev-core/src/models/setting.rs
+  s_fc4968d509c3df::t_d1f0c48d0a09a7 1-339
+crates/onedev-core/src/models/ssh_key.rs
+  s_fc4968d509c3df::t_67b1812c10bc87 1-78
+crates/onedev-core/src/models/audit.rs
+  s_fc4968d509c3df::t_1dcdb3103e11d6 1-232
+crates/onedev-core/src/models/dashboard.rs
+  s_fc4968d509c3df::t_3e02f201406908 1-150
+crates/onedev-core/src/permissions/mod.rs
+  s_fc4968d509c3df::t_63d8d75cb554cb 1-582
+crates/onedev-core/src/models/gpg_key.rs
+  s_fc4968d509c3df::t_704a9f277eac56 1-105
+crates/onedev-core/src/models/user.rs
+  s_fc4968d509c3df::t_ccab89bee3cf79 1-223
+crates/onedev-core/src/search/mod.rs
+  s_fc4968d509c3df::t_4fd22afabe17fc 1-295
+crates/onedev-server/Cargo.toml
+  s_fc4968d509c3df::t_06a5d54826f7c5 1-45
+crates/onedev-core/src/models/pull_request.rs
+  s_fc4968d509c3df::t_bef36cd95acf19 1-319
+crates/onedev-core/src/models/email.rs
+  s_fc4968d509c3df::t_3f1b58946af6e6 1-189
+crates/onedev-core/src/events/mod.rs
+  s_fc4968d509c3df::t_dbefcf0f0b4bdc 1-357
+crates/onedev-core/src/models/webhook.rs
+  s_fc4968d509c3df::t_b0d73e795981bd 1-278
+vendor/old-onedev-mango/.gitmodules
+  s_fc4968d509c3df::t_ddc253fbfcdecd 2
+vendor/old-onedev-mango/rust/Cargo.toml
+  s_6133c78594a0ca::t_05bc4058a1bc5c 1-38
+vendor/old-onedev-mango/rust/crates/onedev-core/Cargo.toml
+  s_6133c78594a0ca::t_acf8578a783305 1-19
+vendor/old-onedev-mango/rust/crates/onedev-core/src/auth.rs
+  s_6133c78594a0ca::t_8a6343dc704067 1-88
+vendor/old-onedev-mango/rust/crates/onedev-core/src/build.rs
+  s_6133c78594a0ca::t_dda4572255fcf7 1-50
+vendor/old-onedev-mango/rust/crates/onedev-core/src/error.rs
+  s_6133c78594a0ca::t_f0eab4e0c67a36 1-35
+vendor/old-onedev-mango/rust/crates/onedev-core/src/issue.rs
+  s_6133c78594a0ca::t_68a27cd210290e 1-67
+vendor/old-onedev-mango/rust/crates/onedev-core/src/lib.rs
+  s_6133c78594a0ca::t_f812629dfab626 1-18
+vendor/old-onedev-mango/rust/crates/onedev-core/src/pack.rs
+  s_6133c78594a0ca::t_abb375b983dd91 1-16
+vendor/old-onedev-mango/rust/crates/onedev-core/src/project.rs
+  s_6133c78594a0ca::t_35f78a1d409819 1-105
+vendor/old-onedev-mango/rust/crates/onedev-core/src/pull_request.rs
+  s_6133c78594a0ca::t_5e89e11555f2d5 1-54
+vendor/old-onedev-mango/rust/crates/onedev-core/src/query.rs
+  s_6133c78594a0ca::t_96b5f1f8e0e2c9 1-104
+vendor/old-onedev-mango/rust/crates/onedev-core/src/user.rs
+  s_6133c78594a0ca::t_e76336b245ad40 1-85
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "c56c6c6497097055f4eb5a590299ea555a12757f",
+  "prompts": {},
+  "sessions": {
+    "s_6133c78594a0ca": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e0832ff6-d0ce-46d9-b784-cd563dd3d29f",
+        "model": "poolside/laguna-xs-2.1"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    },
+    "s_fc4968d509c3df": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e152e6bc4ffejPRtPDKqejzaSv",
+        "model": "combo/best-free"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}
