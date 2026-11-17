@@ -1,0 +1,14 @@
+vendor/bkg-core-dev/server-product/docker/docker-compose.yaml
+  h_76ea00ebfa3ec3 5-7,27-30,46-47
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "c2ef8362e2f152b6b3d8f29d8ecfeb4e9accad68",
+  "prompts": {},
+  "humans": {
+    "h_76ea00ebfa3ec3": {
+      "author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}
