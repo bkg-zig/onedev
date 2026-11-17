@@ -1,0 +1,45 @@
+crates/onedev-auth/src/lib.rs
+  s_fc4968d509c3df::t_d6a2d3ea1c888e 8-9,16-17
+crates/onedev-auth/src/extractors/mod.rs
+  s_fc4968d509c3df::t_900fa152024d7b 1-217
+crates/onedev-auth/src/handlers/auth_handlers.rs
+  s_fc4968d509c3df::t_b3614aabf0def2 1-219
+crates/onedev-auth/src/services/authorization_service.rs
+  s_fc4968d509c3df::t_491ecbf7365cb0 1-345
+crates/onedev-auth/src/errors/mod.rs
+  s_fc4968d509c3df::t_e0d24739431eb6 1-163
+crates/onedev-auth/src/handlers/mod.rs
+  s_fc4968d509c3df::t_683973e6f08279 1-13
+crates/onedev-auth/src/services/session_service.rs
+  s_fc4968d509c3df::t_be0d594e37bf98 1-68
+crates/onedev-auth/src/handlers/session_handlers.rs
+  s_fc4968d509c3df::t_0864cb2aead412 1-141
+crates/onedev-auth/src/handlers/token_handlers.rs
+  s_fc4968d509c3df::t_109ea7c67e46eb 1-240
+crates/onedev-auth/src/handlers/two_factor_handlers.rs
+  s_fc4968d509c3df::t_a44ba1f9d9c63c 1-176
+crates/onedev-auth/src/middleware/mod.rs
+  s_fc4968d509c3df::t_ae6cff0bf1bfdc 1-198
+crates/onedev-auth/src/services/token_service.rs
+  s_fc4968d509c3df::t_d52f2f02b5e9d2 1-144
+crates/onedev-auth/src/utils/mod.rs
+  s_fc4968d509c3df::t_551ff7ed937c9f 1-201
+crates/onedev-auth/src/services/two_factor_service.rs
+  s_fc4968d509c3df::t_0d48c65b887ebd 1-147
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "7b3941ca3e2ff49242b5eba224630fcd965748fb",
+  "prompts": {},
+  "sessions": {
+    "s_fc4968d509c3df": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e152e6bc4ffejPRtPDKqejzaSv",
+        "model": "combo/best-free"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}
