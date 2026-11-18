@@ -53,6 +53,7 @@ Vollständige 1-to-1 Portierung von OneDev v17.2.1 von Java zu Rust. **KEIN MVP!
 
 ### Phase 2 - API & Stack Control ✅
 - `onedev-api`: Axum REST Handlers (Projects, Issues, MRs, Builds, Git, Auth, Admin)
+- Auth-/User-/Project-/Group-/Issue-Handler echt gegen DB-Services verdrahtet (MR/Build/Git/LFS noch Stubs)
 - Stack Control APIs: `GET /api/stack/status`, `GET /api/stack/logs`
 - `onedev-server`: Lifecycle, Services, Middleware
 - OpenAPI/Swagger Docs
