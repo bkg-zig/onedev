@@ -1,0 +1,14 @@
+docker/compose.yml
+  h_76ea00ebfa3ec3 6,132,166
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "19539856c7f6ae7e48c4b5bf93150f23ccea740a",
+  "prompts": {},
+  "humans": {
+    "h_76ea00ebfa3ec3": {
+      "author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}
