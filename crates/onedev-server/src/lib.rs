@@ -27,6 +27,7 @@ use axum::{Router, routing::get};
 use jsonwebtoken::Algorithm;
 use secrecy::SecretString;
 use sqlx::PgPool;
+use std::convert::Infallible;
 use std::sync::Arc;
 use crate::config::AppConfig;
 use onedev_db::{create_pool, run_migrations};
@@ -34,6 +35,13 @@ use onedev_api::{AppState as ApiState, create_router as create_api_router};
 
 // Application state is defined in state module
 pub use state::AppState;
+
+// Allow nesting ApiState router inside AppState router
+impl axum::extract::FromRef<AppState> for ApiState {
+    fn from_ref(app_state: &AppState) -> Self {
+        app_state.api_state.clone()
+    }
+}
 
 /// Build scheduler handle
 pub struct BuildScheduler {

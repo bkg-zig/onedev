@@ -26,7 +26,7 @@ pub struct AppState {
 }
 
 /// Create the main API router
-pub fn create_router(state: AppState) -> Router {
+pub fn create_router<S: Clone + Send + Sync + 'static>(state: AppState) -> Router<S> {
     Router::new()
         // OpenAPI document (Swagger UI crate is incompatible with utoipa 5)
         .route(
