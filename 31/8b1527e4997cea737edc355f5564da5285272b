@@ -1,0 +1,32 @@
+crates/onedev-api/src/routes/mod.rs
+  s_b4d4a7c7a80ee3::t_17f599621b2c48 29
+crates/onedev-server/src/lib.rs
+  s_b4d4a7c7a80ee3::t_85484e99ef3341 30,39-44
+  s_b4d4a7c7a80ee3::t_43e754a004a309 45
+crates/onedev-server/src/metrics.rs
+  s_fc4968d509c3df::t_f9680384a9e32f 23
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "318b1527e4997cea737edc355f5564da5285272b",
+  "prompts": {},
+  "sessions": {
+    "s_b4d4a7c7a80ee3": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e15302bc6ffeeevu8JM3MfvFlY",
+        "model": "nvidia/nemotron-3-ultra-550b-a55b"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    },
+    "s_fc4968d509c3df": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e152e6bc4ffejPRtPDKqejzaSv",
+        "model": "combo/best-free"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}
