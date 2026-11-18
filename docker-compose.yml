@@ -1,9 +1,12 @@
 services:
   # PostgreSQL Database (using pgrust fork)
   db:
-    image: bkg-core-admin-db:mango
+    # Echte Postgres: pgrust v0.4-beta lehnt die PostgREST-Katalogabfragen
+    # hart ab (gravity refused, D2223) -> REST 503. Custom-Image liegt in
+    # infra/supadb/docker (mango), Upstream pgrust bleibt unberuehrt.
+    image: bkg-core-supadb:mango
     build:
-      context: ../pgrust/bkg/docker/db
+      context: ../supadb/docker
       dockerfile: Dockerfile
     container_name: bkg-core-admin-db
     restart: unless-stopped
@@ -12,7 +15,8 @@ services:
       POSTGRES_PASSWORD_FILE: /run/secrets/db_password
       POSTGRES_DB: onedev
     volumes:
-      - db_data:/var/lib/postgresql/data
+      # Frisches PGDATA: altes pgrust-Verzeichnis ist inkompatibel.
+      - supadb_data:/var/lib/postgresql/data
     ports:
       - "${BKG_DB_PORT:-5432}:5432"
     healthcheck:
@@ -22,7 +26,13 @@ services:
       retries: 10
       start_period: 30s
     networks:
-      - bkg-core-admin-network
+      bkg-core-admin-network:
+      bkg-dev-net:
+        # Bestehende, in control.allocations (ip:infra-bkg-core) festgehaltene
+        # Adresse; Alias `bkg-core` ist der DB-Host aller dev-Stack-Dienste.
+        ipv4_address: 172.217.0.93
+        aliases:
+          - bkg-core
     secrets:
       - db_password
 
@@ -190,6 +200,8 @@ services:
 volumes:
   db_data:
     name: bkg-core-admin-db-data
+  supadb_data:
+    name: bkg-core-admin-supadb-data
   git_data:
     name: bkg-core-admin-git-data
   build_data:
@@ -210,6 +222,9 @@ networks:
     ipam:
       config:
         - subnet: 172.28.0.0/16
+  bkg-dev-net:
+    name: bkg-dev-net
+    external: true
 
 secrets:
   db_password:
