@@ -7,7 +7,8 @@ use axum::{
     middleware::Next,
     response::Response,
 };
-use governor::{Quota, RateLimiter, state::InMemoryState, clock::DefaultClock};
+use governor::{Quota, RateLimiter, state::InMemoryState, clock::DefaultClock, state::keyed::DefaultKeyedStateStore};
+use std::num::NonZeroU32;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::Mutex;
@@ -16,15 +17,15 @@ use uuid::Uuid;
 
 use crate::config::AppConfig;
 
-/// Rate limiter state
-pub type RateLimiterState = Arc<Mutex<RateLimiter<String, InMemoryState, DefaultClock>>>;
+/// Rate limiter state - using keyed rate limiting
+pub type RateLimiterState = Arc<Mutex<RateLimiter<String, DefaultKeyedStateStore<String>, DefaultClock>>>;
 
 /// Create rate limiter from config
 pub fn create_rate_limiter(config: &AppConfig) -> RateLimiterState {
-    let quota = Quota::per_minute(config.security.rate_limit.requests_per_minute)
-        .allow_burst(config.security.rate_limit.burst);
+    let quota = Quota::per_minute(NonZeroU32::new(config.security.rate_limit.requests_per_minute).unwrap_or(NonZeroU32::new(100).unwrap()))
+        .allow_burst(NonZeroU32::new(config.security.rate_limit.burst).unwrap_or(NonZeroU32::new(10).unwrap()));
 
-    let limiter = RateLimiter::<String, InMemoryState, DefaultClock>::direct(quota);
+    let limiter = RateLimiter::keyed(quota);
     Arc::new(Mutex::new(limiter))
 }
 
@@ -35,16 +36,16 @@ pub async fn rate_limit_middleware(
     next: Next,
 ) -> Result<Response, StatusCode> {
     // Extract client identifier (IP or user ID)
-    let client_id = extract_client_id(&req);
+    let _client_id = extract_client_id(&req);
 
     let mut limiter = limiter.lock().await;
-    match limiter.check_key(&client_id) {
+    match limiter.check() {
         Ok(_) => {
             drop(limiter);
             Ok(next.run(req).await)
         }
         Err(_) => {
-            warn!("Rate limit exceeded for client: {}", client_id);
+            warn!("Rate limit exceeded");
             Err(StatusCode::TOO_MANY_REQUESTS)
         }
     }

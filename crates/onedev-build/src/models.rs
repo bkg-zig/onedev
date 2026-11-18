@@ -324,16 +324,30 @@ pub enum TriggerEvent {
 }
 
 /// Status of a job or a whole build.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type, Default)]
 #[sqlx(type_name = "build_status", rename_all = "lowercase")]
 #[serde(rename_all = "lowercase")]
 pub enum BuildStatus {
+    #[default]
     Pending,
     Running,
     Success,
     Failed,
     Skipped,
     Cancelled,
+}
+
+impl std::fmt::Display for BuildStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            BuildStatus::Pending => write!(f, "Pending"),
+            BuildStatus::Running => write!(f, "Running"),
+            BuildStatus::Success => write!(f, "Success"),
+            BuildStatus::Failed => write!(f, "Failed"),
+            BuildStatus::Skipped => write!(f, "Skipped"),
+            BuildStatus::Cancelled => write!(f, "Cancelled"),
+        }
+    }
 }
 
 /// One executed step.

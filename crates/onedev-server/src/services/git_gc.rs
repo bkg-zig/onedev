@@ -2,6 +2,7 @@
 
 use anyhow::Result;
 use chrono::{DateTime, Utc};
+use gix::discover;
 use gix::Repository;
 use gix_odb::memory::Proxy as OdbProxy;
 use gix_odb::Handle;
@@ -143,19 +144,21 @@ impl GitGcService {
     /// Run GC on a single repository
     async fn run_gc_on_repo(&self, repo_path: &PathBuf) -> Result<()> {
         let repo_path = repo_path.clone();
+        let aggressive = self.config.aggressive;
+        let prune_expire = self.config.prune_expire.clone();
 
         // Run GC in blocking task
         task::spawn_blocking(move || -> Result<()> {
-            let repo = Repository::discover(&repo_path)?;
+            let repo = discover(&repo_path)?.open()?;
 
             // Configure GC
             let mut gc = repo.gc();
 
-            if self.config.aggressive {
+            if aggressive {
                 gc = gc.aggressive(true);
             }
 
-            gc = gc.prune_expire(&self.config.prune_expire);
+            gc = gc.prune_expire(&prune_expire);
 
             // Run GC
             gc.exec()?;
@@ -187,7 +190,7 @@ impl GitGcService {
 
         let repo_path = repo_path.clone();
         task::spawn_blocking(move || -> Result<()> {
-            let repo = Repository::discover(&repo_path)?;
+            let repo = discover(&repo_path)?.open()?;
             repo.gc().aggressive(true).prune_expire("now").exec()?;
             Ok(())
         }).await??;
@@ -219,7 +222,7 @@ impl GitGcService {
         let stats = if repo_path.exists() {
             let repo_path = repo_path.clone();
             task::spawn_blocking(move || -> Result<GitGcStats> {
-                let repo = Repository::discover(&repo_path)?;
+                let repo = discover(&repo_path)?.open()?;
                 let object_db = repo.objects;
 
                 let (loose_count, loose_size) = count_loose_objects(&object_db)?;

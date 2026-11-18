@@ -24,6 +24,8 @@ pub use anyhow::Result;
 pub use thiserror::Error;
 
 use axum::{Router, routing::get};
+use jsonwebtoken::Algorithm;
+use secrecy::SecretString;
 use sqlx::PgPool;
 use std::sync::Arc;
 use crate::config::AppConfig;
@@ -252,12 +254,14 @@ pub async fn create_app_state(config: &AppConfig) -> Result<AppState> {
     // Create AuthConfig for onedev-auth
     let auth_config = onedev_auth::AuthConfig {
         jwt_config: onedev_auth::models::token::TokenConfig {
-            secret: config.auth.jwt_secret.clone(),
             issuer: "onedev".to_string(),
             audience: "onedev".to_string(),
-            access_token_ttl: std::time::Duration::from_secs(config.auth.token_expiry_hours as u64 * 3600),
-            refresh_token_ttl: std::time::Duration::from_secs(config.auth.refresh_expiry_days as u64 * 86400),
-            algorithm: onedev_auth::models::token::TokenAlgorithm::RS256,
+            access_ttl_seconds: (config.auth.token_expiry_hours * 3600) as i64,
+            refresh_ttl_seconds: (config.auth.refresh_expiry_days * 86400) as i64,
+            temporary_ttl_seconds: 300,
+            private_key: secrecy::SecretString::new(config.auth.private_key.clone().into()),
+            public_key: secrecy::SecretString::new(config.auth.public_key.clone().into()),
+            algorithm: jsonwebtoken::Algorithm::RS256,
         },
         totp_config: onedev_auth::models::two_factor::TotpConfig {
             algorithm: onedev_auth::models::two_factor::TotpAlgorithm::Sha1,
@@ -265,25 +269,18 @@ pub async fn create_app_state(config: &AppConfig) -> Result<AppState> {
             period: 30,
             skew: 1,
         },
-        session_ttl_seconds: config.auth.session_timeout_minutes * 60,
+        session_ttl_seconds: (config.auth.session_timeout_minutes * 60) as i64,
         remember_me_ttl_seconds: 30 * 24 * 60 * 60,
         max_failed_attempts: config.auth.max_failed_attempts,
-        lockout_duration_seconds: config.auth.lockout_duration_minutes * 60,
+        lockout_duration_seconds: (config.auth.lockout_duration_minutes * 60) as i64,
         password_reset_ttl_seconds: 60 * 60,
     };
 
     // Create API state using the onedev-api factory
-    let api_state = onedev_api::create_app_state(db_pool.clone(), auth_config).await?;
+    let api_state = onedev_api::create_app_state((*db_pool).clone(), auth_config).await?;
 
-    // Initialize all services
-    let (
-        build_scheduler,
-        cleanup_service,
-        git_gc_service,
-        search_indexer,
-        webhook_dispatcher,
-        metrics_collector,
-    ) = state::init_services(
+    // Initialize all services using state module
+    let app_state = state::init_state(
         db_pool.clone(),
         Arc::new(config.clone()),
         api_state.clone(),
@@ -293,18 +290,7 @@ pub async fn create_app_state(config: &AppConfig) -> Result<AppState> {
     // Mark startup complete
     lifecycle.mark_startup_complete();
 
-    Ok(AppState {
-        config: Arc::new(config.clone()),
-        db_pool,
-        api_state,
-        lifecycle,
-        build_scheduler,
-        cleanup_service,
-        git_gc_service,
-        search_indexer,
-        webhook_dispatcher,
-        metrics_collector,
-    })
+    Ok(app_state)
 }
 
 /// Run the HTTP server

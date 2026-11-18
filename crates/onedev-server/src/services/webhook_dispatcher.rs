@@ -167,7 +167,7 @@ impl WebhookDispatcher {
             let event: String = delivery.try_get("event")?;
             let payload: Value = delivery.try_get("payload")?;
             let url: String = delivery.try_get("url")?;
-            let attempt: i32 = delivery.try_get("attempt")? + 1;
+            let attempt: i32 = delivery.try_get("attempt").unwrap_or(0) + 1;
 
             // Update attempt count
             sqlx::query("UPDATE webhook_deliveries SET attempt = $1, last_attempt_at = $2 WHERE id = $3")
@@ -397,7 +397,7 @@ impl WebhookDispatcher {
 }
 
 /// Webhook statistics
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct WebhookStats {
     pub by_status: std::collections::HashMap<String, usize>,
     pub avg_delivery_latency_secs: Option<f64>,

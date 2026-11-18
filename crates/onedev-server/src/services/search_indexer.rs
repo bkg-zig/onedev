@@ -474,7 +474,7 @@ impl SearchIndexer {
 }
 
 /// Search index statistics
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, Default)]
 pub struct SearchIndexStats {
     pub by_type: std::collections::HashMap<String, (usize, Option<DateTime<Utc>>)>,
     pub last_full_reindex: Option<DateTime<Utc>>,

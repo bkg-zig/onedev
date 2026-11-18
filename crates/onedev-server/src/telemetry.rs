@@ -1,7 +1,7 @@
 //! Logging Setup (OpenTelemetry temporarily disabled)
 
 use anyhow::Result;
-use tracing_subscriber::{fmt, EnvFilter};
+use tracing_subscriber::{fmt, EnvFilter, Layer, prelude::*};
 
 /// Initialize logging with structured format
 pub fn init_logging(config: &crate::config::AppConfig) -> Result<()> {

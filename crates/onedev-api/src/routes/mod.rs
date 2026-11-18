@@ -216,21 +216,19 @@ pub fn create_router(state: AppState) -> Router {
 
 /// Create application state with all services
 pub async fn create_app_state(
-    db_pool: sqlx::PgPool,
+    db_pool: onedev_db::DbPool,
     auth_config: onedev_auth::AuthConfig,
 ) -> anyhow::Result<AppState> {
     use crate::services::{
         AuthService, AuthorizationService, BuildService, GitService, GroupService,
         IssueService, LfsService, MergeRequestService, ProjectService, SystemService, UserService,
     };
-    use onedev_auth::services::authorization_service::AuthorizationService as InnerAuthzService;
     use onedev_db::DbPool;
 
     // Create auth services
     let auth_service = AuthService::new(auth_config, db_pool.clone())?;
     
-    let inner_authz_service = InnerAuthzService::new(db_pool.clone());
-    let authorization_service = AuthorizationService::new(inner_authz_service);
+    let authorization_service = AuthorizationService::new(db_pool.clone());
 
     // Create API services (they create their own repositories internally)
     let user_service = UserService::new(db_pool.clone());
