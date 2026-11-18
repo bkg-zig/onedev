@@ -1,0 +1,14 @@
+docs/compose-web-test.md
+  h_76ea00ebfa3ec3 14,17-22
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "136a9eb4d9f85fd7e118e7f2b57bffd86e0413fc",
+  "prompts": {},
+  "humans": {
+    "h_76ea00ebfa3ec3": {
+      "author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}
