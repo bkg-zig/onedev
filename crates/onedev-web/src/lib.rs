@@ -38,7 +38,8 @@ pub struct WebState {
 impl WebState {
     pub async fn new(config: WebConfig) -> anyhow::Result<Self> {
         // Initialize Tera template engine
-        let mut tera = tera::Tera::new(&format!("{}/**/*", config.templates.template_dir))?;
+        let template_dir = config.templates.template_dir.to_string_lossy();
+        let mut tera = tera::Tera::new(&format!("{}/**/*", template_dir))?;
         tera.autoescape_on(vec![".html", ".htm"]);
 
         // Add custom filters

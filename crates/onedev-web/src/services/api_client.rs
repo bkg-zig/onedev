@@ -17,13 +17,13 @@ pub struct ApiClient {
 impl ApiClient {
     pub fn new(config: &WebConfig) -> Self {
         let client = Client::builder()
-            .timeout(std::time::Duration::from_secs(30))
+            .timeout(std::time::Duration::from_secs(config.api.timeout_secs))
             .build()
             .expect("Failed to create HTTP client");
 
         Self {
             client,
-            base_url: config.api_base_url.clone(),
+            base_url: config.api.base_url.clone(),
             token: None,
         }
     }
