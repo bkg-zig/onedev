@@ -1,0 +1,18 @@
+crates/onedev-server/src/metrics.rs
+  h_76ea00ebfa3ec3 21,31,33
+crates/onedev-server/src/middleware.rs
+  h_76ea00ebfa3ec3 43-45,47
+crates/onedev-server/src/services/build_scheduler.rs
+  h_76ea00ebfa3ec3 292-293,319,323
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "089dc2cb36f1effaf3cd2c441cfc8033b05b5fae",
+  "prompts": {},
+  "humans": {
+    "h_76ea00ebfa3ec3": {
+      "author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}
