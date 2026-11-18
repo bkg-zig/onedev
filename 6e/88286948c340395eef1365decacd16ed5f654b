@@ -1,0 +1,19 @@
+docker/compose.yml
+  s_0de1f439e1761a::t_dca2f35290483b 6,33,113,132
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "6e88286948c340395eef1365decacd16ed5f654b",
+  "prompts": {},
+  "sessions": {
+    "s_0de1f439e1761a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0f2f81bd-eb11-4834-95c4-07542b095264",
+        "model": "unknown"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}
