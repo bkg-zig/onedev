@@ -178,40 +178,40 @@ pub fn create_router<S: Clone + Send + Sync + 'static>(state: AppState) -> Route
         )
         // Git Smart HTTP routes
         .route(
-            "/git/{project_path}/info/refs",
+            "/git/{*project_path}/info/refs",
             get(git_handlers::info_refs),
         )
         .route(
-            "/git/{project_path}/git-upload-pack",
+            "/git/{*project_path}/git-upload-pack",
             post(git_handlers::git_upload_pack),
         )
         .route(
-            "/git/{project_path}/git-receive-pack",
+            "/git/{*project_path}/git-receive-pack",
             post(git_handlers::git_receive_pack),
         )
         // LFS routes
         .route(
-            "/git/{project_path}/info/lfs/objects/batch",
+            "/git/{*project_path}/info/lfs/objects/batch",
             post(lfs_handlers::lfs_batch),
         )
         .route(
-            "/git/{project_path}/info/lfs/objects/{oid}",
+            "/git/{*project_path}/info/lfs/objects/{oid}",
             get(lfs_handlers::lfs_download),
         )
         .route(
-            "/git/{project_path}/info/lfs/objects/{oid}",
+            "/git/{*project_path}/info/lfs/objects/{oid}",
             put(lfs_handlers::lfs_upload),
         )
         .route(
-            "/git/{project_path}/info/lfs/locks",
+            "/git/{*project_path}/info/lfs/locks",
             get(lfs_handlers::lfs_locks),
         )
         .route(
-            "/git/{project_path}/info/lfs/locks",
+            "/git/{*project_path}/info/lfs/locks",
             post(lfs_handlers::lfs_create_lock),
         )
         .route(
-            "/git/{project_path}/info/lfs/locks/{id}",
+            "/git/{*project_path}/info/lfs/locks/{id}",
             delete(lfs_handlers::lfs_unlock),
         )
         .with_state(state)

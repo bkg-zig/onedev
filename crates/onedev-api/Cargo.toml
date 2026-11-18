@@ -11,6 +11,7 @@ description = "OneDev HTTP API - Axum Routes, Extractors, OpenAPI"
 onedev-core = { path = "../onedev-core" }
 onedev-db = { path = "../onedev-db" }
 onedev-auth = { path = "../onedev-auth" }
+onedev-git = { path = "../onedev-git" }
 axum.workspace = true
 axum-extra.workspace = true
 tower.workspace = true
@@ -34,3 +35,5 @@ mime.workspace = true
 mime_guess.workspace = true
 governor.workspace = true
 flume.workspace = true
+[dev-dependencies]
+tempfile = "3"
