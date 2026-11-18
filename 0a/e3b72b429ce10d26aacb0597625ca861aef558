@@ -1,0 +1,24 @@
+Cargo.lock
+  h_76ea00ebfa3ec3 6222,6231,6237
+crates/onedev-web/Cargo.toml
+  h_76ea00ebfa3ec3 14,25-26,64,75-76
+crates/onedev-web/src/handlers/auth.rs
+  h_76ea00ebfa3ec3 20-23,25-34
+crates/onedev-web/src/lib.rs
+  h_76ea00ebfa3ec3 53-56,73-100,103
+crates/onedev-web/templates/auth/login.html
+  h_76ea00ebfa3ec3 2-3,6-9,11-42
+docs/progress.md
+  h_76ea00ebfa3ec3 60
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "0ae3b72b429ce10d26aacb0597625ca861aef558",
+  "prompts": {},
+  "humans": {
+    "h_76ea00ebfa3ec3": {
+      "author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}
