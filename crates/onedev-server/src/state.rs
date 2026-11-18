@@ -112,9 +112,9 @@ pub async fn init_services(
     let webhook_dispatcher = Arc::new(WebhookDispatcher::new(
         crate::services::webhook_dispatcher::WebhookDispatcher::new(
             db_pool.clone(),
-            config.webhooks.clone().into(),
+            config.webhook.clone().into(),
             lifecycle.shutdown_rx(),
-        )
+        )?
     ));
 
     // Metrics collector
@@ -128,4 +128,70 @@ pub async fn init_services(
         webhook_dispatcher,
         metrics_collector,
     ))
+}
+
+// Conversion traits for config
+impl From<crate::config::BuildConfig> for crate::services::build_scheduler::BuildSchedulerConfig {
+    fn from(c: crate::config::BuildConfig) -> Self {
+        Self {
+            max_concurrent_builds: c.max_concurrent_builds,
+            default_timeout_minutes: c.default_timeout_minutes,
+            queue_poll_interval_secs: 10,
+            stuck_build_threshold_minutes: 10,
+        }
+    }
+}
+
+impl From<crate::config::CleanupConfig> for crate::services::cleanup::CleanupConfig {
+    fn from(c: crate::config::CleanupConfig) -> Self {
+        Self {
+            build_log_retention_days: c.build_log_retention_days,
+            artifact_retention_days: c.artifact_retention_days,
+            temp_file_retention_hours: c.temp_file_retention_hours,
+            audit_log_retention_days: c.audit_log_retention_days,
+            webhook_log_retention_days: c.webhook_log_retention_days,
+            search_index_cleanup_days: c.search_index_cleanup_days,
+            run_interval_hours: c.run_interval_hours,
+        }
+    }
+}
+
+impl From<crate::config::GitConfig> for crate::services::git_gc::GitGcConfig {
+    fn from(c: crate::config::GitConfig) -> Self {
+        Self {
+            repos_root: c.repos_root,
+            gc_interval_hours: c.gc_interval_hours,
+            auto_gc_threshold: 1000,
+            aggressive: false,
+            prune_expire: "2.weeks.ago".to_string(),
+            max_repos_per_run: 10,
+        }
+    }
+}
+
+impl From<crate::config::SearchConfig> for crate::services::search_indexer::SearchIndexerConfig {
+    fn from(c: crate::config::SearchConfig) -> Self {
+        Self {
+            batch_size: c.batch_size,
+            index_interval_secs: c.index_interval_secs,
+            full_reindex_interval_hours: c.full_reindex_interval_hours,
+            enable_code_search: c.enable_code_search,
+            enable_issue_search: c.enable_issue_search,
+            enable_wiki_search: c.enable_wiki_search,
+        }
+    }
+}
+
+impl From<crate::config::WebhookConfig> for crate::services::webhook_dispatcher::WebhookDispatcherConfig {
+    fn from(c: crate::config::WebhookConfig) -> Self {
+        Self {
+            max_retries: c.max_retries,
+            retry_delay_secs: c.retry_delay_secs,
+            max_retry_delay_secs: c.max_retry_delay_secs,
+            timeout_secs: c.timeout_secs,
+            verify_ssl: c.verify_ssl,
+            poll_interval_secs: 30,
+            batch_size: 50,
+        }
+    }
 }

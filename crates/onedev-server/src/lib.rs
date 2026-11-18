@@ -252,6 +252,9 @@ pub async fn create_app_state(config: &AppConfig) -> Result<AppState> {
     let lifecycle = Arc::new(LifecycleManager::new());
 
     // Create AuthConfig for onedev-auth
+    let private_key = config.auth.private_key.clone().unwrap_or_default();
+    let public_key = config.auth.public_key.clone().unwrap_or_default();
+    
     let auth_config = onedev_auth::AuthConfig {
         jwt_config: onedev_auth::models::token::TokenConfig {
             issuer: "onedev".to_string(),
@@ -259,8 +262,8 @@ pub async fn create_app_state(config: &AppConfig) -> Result<AppState> {
             access_ttl_seconds: (config.auth.token_expiry_hours * 3600) as i64,
             refresh_ttl_seconds: (config.auth.refresh_expiry_days * 86400) as i64,
             temporary_ttl_seconds: 300,
-            private_key: secrecy::SecretString::new(config.auth.private_key.clone().into()),
-            public_key: secrecy::SecretString::new(config.auth.public_key.clone().into()),
+            private_key: secrecy::SecretString::new(private_key.into()),
+            public_key: secrecy::SecretString::new(public_key.into()),
             algorithm: jsonwebtoken::Algorithm::RS256,
         },
         totp_config: onedev_auth::models::two_factor::TotpConfig {

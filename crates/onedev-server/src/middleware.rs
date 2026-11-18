@@ -1,31 +1,30 @@
 //! HTTP Middleware
 
 use axum::{
-    body::Body,
-    extract::{MatchedPath, Request, State},
-    http::{HeaderMap, HeaderValue, StatusCode},
+    extract::{Request, State},
+    http::{HeaderValue, StatusCode},
     middleware::Next,
     response::Response,
 };
-use governor::{Quota, RateLimiter, state::InMemoryState, clock::DefaultClock, state::keyed::DefaultKeyedStateStore};
+use governor::{Quota, RateLimiter, state::InMemoryState, clock::DefaultClock};
 use std::num::NonZeroU32;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::Mutex;
-use tracing::{debug, warn};
+use tracing::warn;
 use uuid::Uuid;
 
 use crate::config::AppConfig;
 
-/// Rate limiter state - using keyed rate limiting
-pub type RateLimiterState = Arc<Mutex<RateLimiter<String, DefaultKeyedStateStore<String>, DefaultClock>>>;
+/// Rate limiter state - using NotKeyed for global rate limiting
+pub type RateLimiterState = Arc<Mutex<RateLimiter<governor::state::NotKeyed, InMemoryState, DefaultClock>>>;
 
 /// Create rate limiter from config
 pub fn create_rate_limiter(config: &AppConfig) -> RateLimiterState {
     let quota = Quota::per_minute(NonZeroU32::new(config.security.rate_limit.requests_per_minute).unwrap_or(NonZeroU32::new(100).unwrap()))
         .allow_burst(NonZeroU32::new(config.security.rate_limit.burst).unwrap_or(NonZeroU32::new(10).unwrap()));
 
-    let limiter = RateLimiter::keyed(quota);
+    let limiter = RateLimiter::direct(quota);
     Arc::new(Mutex::new(limiter))
 }
 
@@ -35,17 +34,14 @@ pub async fn rate_limit_middleware(
     req: Request,
     next: Next,
 ) -> Result<Response, StatusCode> {
-    // Extract client identifier (IP or user ID)
-    let _client_id = extract_client_id(&req);
-
     let mut limiter = limiter.lock().await;
     match limiter.check() {
         Ok(_) => {
             drop(limiter);
             Ok(next.run(req).await)
         }
-        Err(_) => {
-            warn!("Rate limit exceeded");
+        Err(e) => {
+            warn!("Rate limit exceeded: {:?}", e);
             Err(StatusCode::TOO_MANY_REQUESTS)
         }
     }

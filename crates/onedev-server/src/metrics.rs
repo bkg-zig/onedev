@@ -8,10 +8,9 @@ use axum::{
     Router,
 };
 use metrics::{counter, gauge, histogram};
-use metrics_exporter_prometheus::{Matcher, PrometheusBuilder, PrometheusHandle};
+use metrics_exporter_prometheus::{PrometheusBuilder, PrometheusHandle};
 use regex::Regex;
-use sqlx::{PgPool, Row, PgRow};
-use std::sync::Arc;
+use sqlx::{PgPool, Row};
 use std::time::{Duration, Instant};
 use tracing::{info, debug};
 
@@ -23,11 +22,9 @@ pub fn init_metrics() -> MetricsHandle {
     let builder = PrometheusBuilder::new()
         .set_buckets(&[
             0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0,
-        ])
-        .add_global_label("service", "onedev")
-        .idle_timeout(Duration::from_secs(60));
+        ]);
 
-    let handle = builder.install().expect("Failed to install Prometheus recorder");
+    let handle = builder.install_recorder().expect("Failed to install Prometheus recorder");
     info!("Prometheus metrics initialized");
     handle
 }

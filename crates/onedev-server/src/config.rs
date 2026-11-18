@@ -139,6 +139,10 @@ fn default_max_lifetime() -> u64 {
 pub struct AuthConfig {
     /// JWT secret key (base64 encoded)
     pub jwt_secret: String,
+    /// RSA private key for JWT signing (PEM format)
+    pub private_key: Option<String>,
+    /// RSA public key for JWT verification (PEM format)
+    pub public_key: Option<String>,
     /// Token expiry in hours
     #[serde(default = "default_token_expiry_hours")]
     pub token_expiry_hours: i64,
