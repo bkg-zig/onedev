@@ -1,0 +1,26 @@
+scripts/docker-build.sh
+  s_4dc460dbf339a2::t_a788c81f918bd1 1-45
+scripts/temp-db.sh
+  s_4dc460dbf339a2::t_356ef1239f7d7c 1-73
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "a6aee4869f7413434855be8c543cb1894964c62b",
+  "prompts": {},
+  "humans": {
+    "h_76ea00ebfa3ec3": {
+      "author": "bkg <bkg@skill.eysho.info>"
+    }
+  },
+  "sessions": {
+    "s_4dc460dbf339a2": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e163f433bffe5t2PzgPpubA64u",
+        "model": "big-pickle"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}
