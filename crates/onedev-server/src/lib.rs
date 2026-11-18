@@ -10,9 +10,9 @@ pub mod telemetry;
 
 // Explicit re-exports to avoid ambiguous glob re-exports
 pub use config::AppConfig;
+pub use config::AuthConfig;
 pub use config::CleanupConfig;
 pub use config::WebhookConfig;
-pub use config::AuthConfig;
 pub use lifecycle::LifecycleManager;
 pub use metrics::MetricsHandle;
 pub use metrics::init_metrics;
@@ -24,9 +24,9 @@ pub use services::search_indexer::SearchIndexerConfig;
 pub use services::webhook_dispatcher::WebhookDispatcherConfig;
 pub use state::AppState;
 pub use state::init_state;
-pub use telemetry::init_telemetry;
-pub use telemetry::init_otel;
 pub use telemetry::init_logging;
+pub use telemetry::init_otel;
+pub use telemetry::init_telemetry;
 
 pub use anyhow::Result;
 pub use chrono::{DateTime, Utc};
@@ -198,6 +198,7 @@ impl WebhookDispatcher {
 }
 
 /// Metrics collector
+#[allow(dead_code)]
 pub struct MetricsCollector {
     inner: Arc<tokio::sync::Mutex<Option<tokio::task::JoinHandle<()>>>>,
 }
@@ -240,7 +241,6 @@ pub fn create_app_router(state: AppState) -> Router {
         .route("/", get(hello_handler))
         .route("/health", get(health_handler))
         .route("/metrics", get(metrics_handler))
-        .route("/api/health", get(health_handler))
         .nest("/api", api_router)
         .with_state(state)
 }
@@ -252,9 +252,6 @@ pub async fn health_handler() -> &'static str {
 
 /// Create application state from config
 pub async fn create_app_state(config: &AppConfig) -> Result<AppState> {
-    // Initialize logging
-    crate::init_logging(config)?;
-
     // Create database pool
     let db_pool =
         Arc::new(create_pool(&config.database.url, config.database.max_connections).await?);
@@ -273,8 +270,8 @@ pub async fn create_app_state(config: &AppConfig) -> Result<AppState> {
         jwt_config: onedev_auth::models::token::TokenConfig {
             issuer: "onedev".to_string(),
             audience: "onedev".to_string(),
-            access_ttl_seconds: (config.auth.token_expiry_hours * 3600) as i64,
-            refresh_ttl_seconds: (config.auth.refresh_expiry_days * 86400) as i64,
+            access_ttl_seconds: (config.auth.token_expiry_hours * 3600),
+            refresh_ttl_seconds: (config.auth.refresh_expiry_days * 86400),
             temporary_ttl_seconds: 300,
             private_key: secrecy::SecretString::new(private_key.into()),
             public_key: secrecy::SecretString::new(public_key.into()),
@@ -286,10 +283,10 @@ pub async fn create_app_state(config: &AppConfig) -> Result<AppState> {
             period: 30,
             skew: 1,
         },
-        session_ttl_seconds: (config.auth.session_timeout_minutes * 60) as i64,
+        session_ttl_seconds: (config.auth.session_timeout_minutes * 60),
         remember_me_ttl_seconds: 30 * 24 * 60 * 60,
         max_failed_attempts: config.auth.max_failed_attempts,
-        lockout_duration_seconds: (config.auth.lockout_duration_minutes * 60) as i64,
+        lockout_duration_seconds: (config.auth.lockout_duration_minutes * 60),
         password_reset_ttl_seconds: 60 * 60,
     };
 

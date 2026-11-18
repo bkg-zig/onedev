@@ -1,11 +1,12 @@
 //! HTTP Middleware
 
+use crate::config::AppConfig;
 use axum::{
+    Router,
     extract::{Request, State},
     http::{HeaderValue, StatusCode},
     middleware::Next,
     response::Response,
-    Router,
 };
 use governor::{Quota, RateLimiter, clock::DefaultClock, state::InMemoryState};
 use std::num::NonZeroU32;
@@ -14,7 +15,6 @@ use std::time::Duration;
 use tokio::sync::Mutex;
 use tracing::warn;
 use uuid::Uuid;
-use crate::config::AppConfig;
 
 /// Rate limiter state - using NotKeyed for global rate limiting
 pub type RateLimiterState =
@@ -57,27 +57,26 @@ pub async fn rate_limit_middleware(
 #[allow(dead_code)]
 fn extract_client_id(req: &Request) -> String {
     // Try to get user ID from auth header
-    if let Some(auth_header) = req.headers().get("authorization") {
-        if let Ok(auth_str) = auth_header.to_str() {
-            if auth_str.starts_with("Bearer ") {
-                // Could extract user ID from JWT, for now use token prefix
-                let end = std::cmp::min(20, auth_str.len());
-                return format!("token:{}", &auth_str[7..end]);
-            }
-        }
+    if let Some(auth_header) = req.headers().get("authorization")
+        && let Ok(auth_str) = auth_header.to_str()
+        && auth_str.starts_with("Bearer ")
+    {
+        // Could extract user ID from JWT, for now use token prefix
+        let end = std::cmp::min(20, auth_str.len());
+        return format!("token:{}", &auth_str[7..end]);
     }
 
     // Fall back to IP
-    if let Some(forwarded) = req.headers().get("x-forwarded-for") {
-        if let Ok(ip) = forwarded.to_str() {
-            return format!("ip:{}", ip.split(',').next().unwrap_or("unknown").trim());
-        }
+    if let Some(forwarded) = req.headers().get("x-forwarded-for")
+        && let Ok(ip) = forwarded.to_str()
+    {
+        return format!("ip:{}", ip.split(',').next().unwrap_or("unknown").trim());
     }
 
-    if let Some(real_ip) = req.headers().get("x-real-ip") {
-        if let Ok(ip) = real_ip.to_str() {
-            return format!("ip:{}", ip);
-        }
+    if let Some(real_ip) = req.headers().get("x-real-ip")
+        && let Ok(ip) = real_ip.to_str()
+    {
+        return format!("ip:{}", ip);
     }
 
     // Fallback to a generic identifier
@@ -216,15 +215,13 @@ pub async fn request_size_limit_middleware(
 ) -> Result<Response, StatusCode> {
     const MAX_SIZE: usize = 100 * 1024 * 1024; // 100MB
 
-    if let Some(content_length) = req.headers().get("content-length") {
-        if let Ok(len_str) = content_length.to_str() {
-            if let Ok(len) = len_str.parse::<usize>() {
-                if len > MAX_SIZE {
-                    warn!("Request size {} exceeds limit {}", len, MAX_SIZE);
-                    return Err(StatusCode::PAYLOAD_TOO_LARGE);
-                }
-            }
-        }
+    if let Some(content_length) = req.headers().get("content-length")
+        && let Ok(len_str) = content_length.to_str()
+        && let Ok(len) = len_str.parse::<usize>()
+        && len > MAX_SIZE
+    {
+        warn!("Request size {} exceeds limit {}", len, MAX_SIZE);
+        return Err(StatusCode::PAYLOAD_TOO_LARGE);
     }
 
     Ok(next.run(req).await)
@@ -252,6 +249,6 @@ where
         .layer(tower_http::cors::CorsLayer::permissive())
         .layer(tower_http::compression::CompressionLayer::new())
         .layer(tower::limit::ConcurrencyLimitLayer::new(1000))
-        // TimeoutLayer removed due to Error type incompatibility with Infallible
-        // Can be re-added with tower 0.4+ when using compatible error types
+    // TimeoutLayer removed due to Error type incompatibility with Infallible
+    // Can be re-added with tower 0.4+ when using compatible error types
 }

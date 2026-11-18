@@ -7,7 +7,10 @@ use crate::services::{
     GitGcService as GitGcServiceInner, SearchIndexer as SearchIndexerInner,
     WebhookDispatcher as WebhookDispatcherInner,
 };
-use crate::{BuildScheduler, CleanupService, GitGcService, MetricsCollector, SearchIndexer, WebhookDispatcher};
+use crate::{
+    BuildScheduler, CleanupService, GitGcService, MetricsCollector, SearchIndexer,
+    WebhookDispatcher,
+};
 use onedev_api::AppState as ApiState;
 use sqlx::PgPool;
 use std::sync::Arc;

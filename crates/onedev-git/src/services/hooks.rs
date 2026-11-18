@@ -9,8 +9,7 @@ use std::sync::{Arc, RwLock};
 
 use crate::errors::{GitError, GitResult};
 use crate::models::{
-    GitActor, HookDecision, PostReceiveListener, ProtectionRule, ProtectionRules, PushContext,
-    PushEvent, RefUpdate,
+    GitActor, HookDecision, PostReceiveListener, ProtectionRules, PushContext, PushEvent, RefUpdate,
 };
 use crate::utils::{
     PktLine, decode_pkt_lines, glob_matches, repository_path, run_git, validate_ref_name,
@@ -284,6 +283,7 @@ pub fn push_context(project_path: &str, actor: GitActor, body: &[u8]) -> GitResu
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::models::ProtectionRule;
     use crate::utils::encode_pkt_line;
 
     #[test]

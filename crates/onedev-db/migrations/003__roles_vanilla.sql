@@ -58,7 +58,7 @@ DROP TYPE project_role;
 -- GroupAuthorization (group + project + role)
 CREATE TABLE group_authorizations (
     id BIGSERIAL PRIMARY KEY,
-    uuid UUID NOT NULL DEFAULT uuid_generate_v4() UNIQUE,
+    uuid UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
     group_id BIGINT NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
     project_id BIGINT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     role_id BIGINT NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
@@ -72,7 +72,7 @@ CREATE INDEX idx_group_authorizations_project_id ON group_authorizations(project
 -- BaseAuthorization (project + role, applies to everyone)
 CREATE TABLE base_authorizations (
     id BIGSERIAL PRIMARY KEY,
-    uuid UUID NOT NULL DEFAULT uuid_generate_v4() UNIQUE,
+    uuid UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
     project_id BIGINT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     role_id BIGINT NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -84,7 +84,7 @@ CREATE INDEX idx_base_authorizations_project_id ON base_authorizations(project_i
 -- AccessTokenAuthorization (project + access token + role)
 CREATE TABLE access_token_authorizations (
     id BIGSERIAL PRIMARY KEY,
-    uuid UUID NOT NULL DEFAULT uuid_generate_v4() UNIQUE,
+    uuid UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
     project_id BIGINT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     access_token_id BIGINT NOT NULL REFERENCES access_tokens(id) ON DELETE CASCADE,
     role_id BIGINT NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
@@ -97,7 +97,7 @@ CREATE INDEX idx_access_token_authorizations_token_id ON access_token_authorizat
 -- LinkAuthorization (link name + role)
 CREATE TABLE link_authorizations (
     id BIGSERIAL PRIMARY KEY,
-    uuid UUID NOT NULL DEFAULT uuid_generate_v4() UNIQUE,
+    uuid UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
     link_name VARCHAR(200) NOT NULL,
     role_id BIGINT NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),

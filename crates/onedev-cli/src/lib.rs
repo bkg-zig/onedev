@@ -2,8 +2,8 @@
 
 use clap::{Args, Parser, Subcommand};
 use clap_complete::Shell;
-use strum::Display;
 use std::path::PathBuf;
+use strum::Display;
 
 #[derive(Parser, Debug)]
 #[command(name = "onedev")]
@@ -780,7 +780,6 @@ pub enum AdminSubcommand {
 
     /// Show system metrics
     Metrics {
-
         /// Output format
         #[arg(short, long, value_enum, default_value = "table")]
         format: OutputFormat,
@@ -797,7 +796,6 @@ pub enum AdminSubcommand {
 
     /// Rebuild search index
     Reindex {
-
         /// Project ID (default: all)
         #[arg(value_name = "PROJECT_ID")]
         project: Option<String>,
@@ -805,7 +803,6 @@ pub enum AdminSubcommand {
 
     /// Cleanup old data
     Cleanup {
-
         /// Days to keep (default: 30)
         #[arg(long, default_value = "30")]
         days: u32,
@@ -817,7 +814,6 @@ pub enum AdminSubcommand {
 
     /// Maintenance mode
     Maintenance {
-
         /// Enable or disable
         #[arg(value_enum)]
         action: MaintenanceAction,
@@ -857,7 +853,6 @@ pub enum DevSubcommand {
 
     /// Lint code
     Lint {
-
         /// Fix automatically
         #[arg(long)]
         fix: bool,
@@ -865,7 +860,6 @@ pub enum DevSubcommand {
 
     /// Format code
     Format {
-
         /// Check only (don't write)
         #[arg(long)]
         check: bool,
@@ -873,7 +867,6 @@ pub enum DevSubcommand {
 
     /// Start development server
     Serve {
-
         /// Port to listen on
         #[arg(short, long, default_value = "46315")]
         port: u16,
@@ -1308,7 +1301,7 @@ impl Default for CliConfig {
 }
 
 /// Load configuration
-async fn load_config(path: Option<&std::path::Path>) -> anyhow::Result<CliConfig> {
+async fn load_config(_path: Option<&std::path::Path>) -> anyhow::Result<CliConfig> {
     Ok(CliConfig::default())
 }
 
@@ -1319,7 +1312,9 @@ pub async fn run_cli(cli: Cli) -> anyhow::Result<()> {
 
     // Set up logging
     if cli.verbose {
-        unsafe { std::env::set_var("RUST_LOG", "debug"); }
+        unsafe {
+            std::env::set_var("RUST_LOG", "debug");
+        }
     }
 
     match cli.command {
@@ -1340,11 +1335,25 @@ pub async fn run_cli(cli: Cli) -> anyhow::Result<()> {
 /// Handler functions
 async fn handle_stack(cmd: StackCommands, _config: &CliConfig) -> anyhow::Result<()> {
     match cmd.command {
-        StackSubcommand::Up { detach, build, services } => {
-            println!("Starting stack (detach={}, build={}, services={:?})", detach, build, services);
+        StackSubcommand::Up {
+            detach,
+            build,
+            services,
+        } => {
+            println!(
+                "Starting stack (detach={}, build={}, services={:?})",
+                detach, build, services
+            );
         }
-        StackSubcommand::Down { volumes, rmi, services } => {
-            println!("Stopping stack (volumes={}, rmi={}, services={:?})", volumes, rmi, services);
+        StackSubcommand::Down {
+            volumes,
+            rmi,
+            services,
+        } => {
+            println!(
+                "Stopping stack (volumes={}, rmi={}, services={:?})",
+                volumes, rmi, services
+            );
         }
         StackSubcommand::Restart { services } => {
             println!("Restarting services: {:?}", services);
@@ -1352,8 +1361,15 @@ async fn handle_stack(cmd: StackCommands, _config: &CliConfig) -> anyhow::Result
         StackSubcommand::Status { all } => {
             println!("Stack status (all={})", all);
         }
-        StackSubcommand::Logs { follow, tail, services } => {
-            println!("Viewing logs (follow={}, tail={}, services={:?})", follow, tail, services);
+        StackSubcommand::Logs {
+            follow,
+            tail,
+            services,
+        } => {
+            println!(
+                "Viewing logs (follow={}, tail={}, services={:?})",
+                follow, tail, services
+            );
         }
         StackSubcommand::Exec { service, command } => {
             println!("Executing in {}: {:?}", service, command);
@@ -1365,7 +1381,10 @@ async fn handle_stack(cmd: StackCommands, _config: &CliConfig) -> anyhow::Result
             println!("Pulling images for: {:?}", services);
         }
         StackSubcommand::Build { services, no_cache } => {
-            println!("Building images (services={:?}, no_cache={})", services, no_cache);
+            println!(
+                "Building images (services={:?}, no_cache={})",
+                services, no_cache
+            );
         }
     }
     Ok(())
@@ -1374,16 +1393,36 @@ async fn handle_stack(cmd: StackCommands, _config: &CliConfig) -> anyhow::Result
 async fn handle_project(cmd: ProjectCommands, _config: &CliConfig) -> anyhow::Result<()> {
     match cmd.command {
         ProjectSubcommand::List { visibility, search } => {
-            println!("Listing projects (visibility={:?}, search={:?})", visibility, search);
+            println!(
+                "Listing projects (visibility={:?}, search={:?})",
+                visibility, search
+            );
         }
         ProjectSubcommand::Show { project } => {
             println!("Showing project: {}", project);
         }
-        ProjectSubcommand::Create { name, description, visibility, readme, template } => {
-            println!("Creating project: {} (visibility={:?}, readme={}, template={:?})", name, visibility, readme, template);
+        ProjectSubcommand::Create {
+            name,
+            description: _,
+            visibility,
+            readme,
+            template,
+        } => {
+            println!(
+                "Creating project: {} (visibility={:?}, readme={}, template={:?})",
+                name, visibility, readme, template
+            );
         }
-        ProjectSubcommand::Update { project, name, description, visibility } => {
-            println!("Updating project: {} (name={:?}, visibility={:?})", project, name, visibility);
+        ProjectSubcommand::Update {
+            project,
+            name,
+            description: _,
+            visibility,
+        } => {
+            println!(
+                "Updating project: {} (name={:?}, visibility={:?})",
+                project, name, visibility
+            );
         }
         ProjectSubcommand::Delete { project, force } => {
             println!("Deleting project: {} (force={})", project, force);
@@ -1395,7 +1434,15 @@ async fn handle_project(cmd: ProjectCommands, _config: &CliConfig) -> anyhow::Re
             println!("Transferring project: {} to {}", project, target);
         }
         ProjectSubcommand::Archive { project, unarchive } => {
-            println!("{} project: {}", if unarchive { "Unarchiving" } else { "Archiving" }, project);
+            println!(
+                "{} project: {}",
+                if unarchive {
+                    "Unarchiving"
+                } else {
+                    "Archiving"
+                },
+                project
+            );
         }
     }
     Ok(())
@@ -1409,11 +1456,29 @@ async fn handle_user(cmd: UserCommands, _config: &CliConfig) -> anyhow::Result<(
         UserSubcommand::Show { user } => {
             println!("Showing user: {}", user);
         }
-        UserSubcommand::Create { username, email, name, password, admin } => {
-            println!("Creating user: {} (email={}, admin={})", username, email, admin);
+        UserSubcommand::Create {
+            username,
+            email,
+            name: _,
+            password: _,
+            admin,
+        } => {
+            println!(
+                "Creating user: {} (email={}, admin={})",
+                username, email, admin
+            );
         }
-        UserSubcommand::Update { user, email, name, password, admin } => {
-            println!("Updating user: {} (email={:?}, admin={:?})", user, email, admin);
+        UserSubcommand::Update {
+            user,
+            email,
+            name: _,
+            password: _,
+            admin,
+        } => {
+            println!(
+                "Updating user: {} (email={:?}, admin={:?})",
+                user, email, admin
+            );
         }
         UserSubcommand::Delete { user, force } => {
             println!("Deleting user: {} (force={})", user, force);
@@ -1433,7 +1498,11 @@ async fn handle_ssh_key(cmd: SshKeyCommands) -> anyhow::Result<()> {
         SshKeySubcommand::List { user } => {
             println!("Listing SSH keys for user: {}", user);
         }
-        SshKeySubcommand::Add { user, title, key } => {
+        SshKeySubcommand::Add {
+            user,
+            title,
+            key: _,
+        } => {
             println!("Adding SSH key for user: {} (title={})", user, title);
         }
         SshKeySubcommand::Remove { user, key_id } => {
@@ -1463,8 +1532,16 @@ async fn handle_token(cmd: TokenCommands) -> anyhow::Result<()> {
         TokenSubcommand::List { user } => {
             println!("Listing tokens for user: {}", user);
         }
-        TokenSubcommand::Create { user, name, scopes, expiry } => {
-            println!("Creating token for user: {} (name={}, scopes={:?}, expiry={})", user, name, scopes, expiry);
+        TokenSubcommand::Create {
+            user,
+            name,
+            scopes,
+            expiry,
+        } => {
+            println!(
+                "Creating token for user: {} (name={}, scopes={:?}, expiry={})",
+                user, name, scopes, expiry
+            );
         }
         TokenSubcommand::Revoke { user, token_id } => {
             println!("Revoking token {} for user: {}", token_id, user);
@@ -1475,14 +1552,29 @@ async fn handle_token(cmd: TokenCommands) -> anyhow::Result<()> {
 
 async fn handle_build(cmd: BuildCommands, _config: &CliConfig) -> anyhow::Result<()> {
     match cmd.command {
-        BuildSubcommand::List { project, status, branch } => {
-            println!("Listing builds (project={:?}, status={:?}, branch={:?})", project, status, branch);
+        BuildSubcommand::List {
+            project,
+            status,
+            branch,
+        } => {
+            println!(
+                "Listing builds (project={:?}, status={:?}, branch={:?})",
+                project, status, branch
+            );
         }
         BuildSubcommand::Show { id } => {
             println!("Showing build: {}", id);
         }
-        BuildSubcommand::Trigger { project, pipeline, ref_name, variables } => {
-            println!("Triggering build: project={}, pipeline={}, ref={}, variables={:?}", project, pipeline, ref_name, variables);
+        BuildSubcommand::Trigger {
+            project,
+            pipeline,
+            ref_name,
+            variables,
+        } => {
+            println!(
+                "Triggering build: project={}, pipeline={}, ref={}, variables={:?}",
+                project, pipeline, ref_name, variables
+            );
         }
         BuildSubcommand::Cancel { id } => {
             println!("Cancelling build: {}", id);
@@ -1491,7 +1583,10 @@ async fn handle_build(cmd: BuildCommands, _config: &CliConfig) -> anyhow::Result
             println!("Retrying build: {}", id);
         }
         BuildSubcommand::Logs { id, follow, tail } => {
-            println!("Viewing logs for build: {} (follow={}, tail={})", id, follow, tail);
+            println!(
+                "Viewing logs for build: {} (follow={}, tail={})",
+                id, follow, tail
+            );
         }
         BuildSubcommand::Artifacts { id } => {
             println!("Listing artifacts for build: {}", id);
@@ -1511,17 +1606,47 @@ async fn handle_git(cmd: GitCommands, _config: &CliConfig) -> anyhow::Result<()>
         GitSubcommand::Commit { project, sha } => {
             println!("Showing commit {} for project: {}", sha, project);
         }
-        GitSubcommand::Ls { project, ref_name, path } => {
-            println!("Listing files for project: {} at {} (path={:?})", project, ref_name, path);
+        GitSubcommand::Ls {
+            project,
+            ref_name,
+            path,
+        } => {
+            println!(
+                "Listing files for project: {} at {} (path={:?})",
+                project, ref_name, path
+            );
         }
-        GitSubcommand::Cat { project, ref_name, path } => {
-            println!("Showing file {} for project: {} at {}", path, project, ref_name);
+        GitSubcommand::Cat {
+            project,
+            ref_name,
+            path,
+        } => {
+            println!(
+                "Showing file {} for project: {} at {}",
+                path, project, ref_name
+            );
         }
-        GitSubcommand::Log { project, ref_name, limit, path } => {
-            println!("Showing log for project: {} (ref={:?}, limit={}, path={:?})", project, ref_name, limit, path);
+        GitSubcommand::Log {
+            project,
+            ref_name,
+            limit,
+            path,
+        } => {
+            println!(
+                "Showing log for project: {} (ref={:?}, limit={}, path={:?})",
+                project, ref_name, limit, path
+            );
         }
-        GitSubcommand::Diff { project, base, head, path } => {
-            println!("Showing diff for project: {} ({}..{}) (path={:?})", project, base, head, path);
+        GitSubcommand::Diff {
+            project,
+            base,
+            head,
+            path,
+        } => {
+            println!(
+                "Showing diff for project: {} ({}..{}) (path={:?})",
+                project, base, head, path
+            );
         }
         GitSubcommand::Hook(cmd) => handle_git_hook(cmd).await?,
     }
@@ -1533,13 +1658,21 @@ async fn handle_git_hook(cmd: GitHookCommands) -> anyhow::Result<()> {
         GitHookSubcommand::List { project } => {
             println!("Listing hooks for project: {}", project);
         }
-        GitHookSubcommand::Add { project, name, script } => {
+        GitHookSubcommand::Add {
+            project,
+            name,
+            script: _,
+        } => {
             println!("Adding hook {} for project: {}", name, project);
         }
         GitHookSubcommand::Remove { project, name } => {
             println!("Removing hook {} for project: {}", name, project);
         }
-        GitHookSubcommand::Toggle { project, name, action } => {
+        GitHookSubcommand::Toggle {
+            project,
+            name,
+            action,
+        } => {
             println!("{} hook {} for project: {}", action, name, project);
         }
     }
@@ -1599,11 +1732,27 @@ async fn handle_config(cmd: ConfigCommands, _config: &CliConfig) -> anyhow::Resu
 
 async fn handle_backup(cmd: BackupCommands, _config: &CliConfig) -> anyhow::Result<()> {
     match cmd.command {
-        BackupSubcommand::Create { dir, include_repos, include_artifacts, include_lfs } => {
-            println!("Creating backup in {:?} (repos={}, artifacts={}, lfs={})", dir, include_repos, include_artifacts, include_lfs);
+        BackupSubcommand::Create {
+            dir,
+            include_repos,
+            include_artifacts,
+            include_lfs,
+        } => {
+            println!(
+                "Creating backup in {:?} (repos={}, artifacts={}, lfs={})",
+                dir, include_repos, include_artifacts, include_lfs
+            );
         }
-        BackupSubcommand::Restore { dir, include_repos, include_artifacts, include_lfs } => {
-            println!("Restoring backup from {:?} (repos={}, artifacts={}, lfs={})", dir, include_repos, include_artifacts, include_lfs);
+        BackupSubcommand::Restore {
+            dir,
+            include_repos,
+            include_artifacts,
+            include_lfs,
+        } => {
+            println!(
+                "Restoring backup from {:?} (repos={}, artifacts={}, lfs={})",
+                dir, include_repos, include_artifacts, include_lfs
+            );
         }
         BackupSubcommand::List { dir } => {
             println!("Listing backups in {:?}", dir);
@@ -1647,10 +1796,14 @@ async fn handle_user_admin(cmd: UserAdminCommands) -> anyhow::Result<()> {
         UserAdminSubcommand::List { inactive } => {
             println!("Listing users (inactive={})", inactive);
         }
-        UserAdminSubcommand::CreateAdmin { username, email, password } => {
+        UserAdminSubcommand::CreateAdmin {
+            username,
+            email,
+            password: _,
+        } => {
             println!("Creating admin user: {} ({})", username, email);
         }
-        UserAdminSubcommand::ResetPassword { user, password } => {
+        UserAdminSubcommand::ResetPassword { user, password: _ } => {
             println!("Resetting password for user: {}", user);
         }
         UserAdminSubcommand::ToggleActive { user } => {
@@ -1675,7 +1828,15 @@ async fn handle_project_admin(cmd: ProjectAdminCommands) -> anyhow::Result<()> {
             println!("Transferring project {} to owner: {}", project, owner);
         }
         ProjectAdminSubcommand::Archive { project, unarchive } => {
-            println!("{} project: {}", if unarchive { "Unarchiving" } else { "Archiving" }, project);
+            println!(
+                "{} project: {}",
+                if unarchive {
+                    "Unarchiving"
+                } else {
+                    "Archiving"
+                },
+                project
+            );
         }
     }
     Ok(())
@@ -1692,7 +1853,11 @@ async fn handle_group_admin(cmd: GroupAdminCommands) -> anyhow::Result<()> {
         GroupAdminSubcommand::Delete { group } => {
             println!("Deleting group: {}", group);
         }
-        GroupAdminSubcommand::Member { group, user, action } => {
+        GroupAdminSubcommand::Member {
+            group,
+            user,
+            action,
+        } => {
             println!("{} user {} to/from group: {}", action, user, group);
         }
     }

@@ -37,6 +37,9 @@ pub fn create_router<S: Clone + Send + Sync + 'static>(state: AppState) -> Route
         .route("/health", get(system_handlers::health))
         .route("/ready", get(system_handlers::ready))
         .route("/version", get(system_handlers::version))
+        // Stack control
+        .route("/stack/status", get(system_handlers::stack_status))
+        .route("/stack/logs", get(system_handlers::stack_logs))
         // Auth routes (public)
         .route("/auth/login", post(auth_handlers::login))
         .route("/auth/verify-2fa", post(auth_handlers::verify_two_factor))

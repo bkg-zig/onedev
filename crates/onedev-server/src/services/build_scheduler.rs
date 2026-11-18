@@ -5,7 +5,7 @@ use chrono::{DateTime, Utc};
 use flume;
 use sqlx::PgPool;
 use sqlx::Row;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::sync::Semaphore;
 use tracing::{debug, error, info, warn};
@@ -63,7 +63,9 @@ pub struct BuildScheduler {
 #[derive(Debug, Clone)]
 struct RunningBuild {
     build_id: Uuid,
+    #[allow(dead_code)]
     started_at: DateTime<Utc>,
+    #[allow(dead_code)]
     project_id: Uuid,
 }
 
@@ -317,7 +319,7 @@ impl BuildScheduler {
                 serde_yaml::from_str::<BuildSpec>(&spec_str)
             })
             .transpose()?
-            .unwrap_or_else(|| BuildSpec::default());
+            .unwrap_or_else(BuildSpec::default);
 
         Ok(spec)
     }
@@ -348,7 +350,7 @@ impl BuildScheduler {
         db_pool: &PgPool,
         build_id: Uuid,
         report: &BuildReport,
-        artifact_dir: &PathBuf,
+        artifact_dir: &Path,
     ) -> Result<()> {
         for job_result in &report.jobs {
             for artifact in &job_result.artifacts {
@@ -487,5 +489,10 @@ impl BuildQueue {
     /// Get queue length (approximate)
     pub async fn len(&self) -> usize {
         0 // flume unbounded doesn't support len()
+    }
+
+    /// Check if queue is empty
+    pub fn is_empty(&self) -> bool {
+        self.receiver.is_empty()
     }
 }

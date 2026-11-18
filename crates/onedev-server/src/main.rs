@@ -1,21 +1,14 @@
 //! OneDev Main Server Binary
 
-use onedev_server::{config::AppConfig, create_app_state, run_server};
-use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+use onedev_server::{config::AppConfig, create_app_state, init_logging, run_server};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    // Initialize tracing
-    tracing_subscriber::registry()
-        .with(
-            tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "onedev_server=info,axum=info,tower_http=info".into()),
-        )
-        .with(tracing_subscriber::fmt::layer().json())
-        .init();
-
-    // Load configuration
+    // Load configuration first
     let config = AppConfig::load()?;
+
+    // Initialize logging
+    init_logging(&config)?;
 
     // Initialize Sentry if DSN is configured
     if let Some(dsn) = &config.server.sentry_dsn {

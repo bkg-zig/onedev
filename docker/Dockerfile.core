@@ -1,0 +1,74 @@
+# OneDev Core Service - Multi-stage build
+FROM rust:1.96-slim-bookworm AS builder
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    pkg-config \
+    libssl-dev \
+    libpq-dev \
+    ca-certificates \
+    git \
+    curl \
+    build-essential \
+    cmake \
+    protobuf-compiler \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create app user
+RUN useradd -r -s /bin/bash -m -d /app appuser
+
+WORKDIR /app
+
+# Copy all source files
+COPY . .
+
+# Build the application
+RUN cargo build --release --bin onedev-server
+
+# ========================================================================
+# Runtime stage
+# ========================================================================
+FROM debian:bookworm-slim AS runtime
+
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    libssl3 \
+    libpq5 \
+    git \
+    curl \
+    openssh-client \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Create app user
+RUN useradd -r -s /bin/bash -m -d /app appuser
+
+WORKDIR /app
+
+# Copy binary from builder
+COPY --from=builder /app/target/release/onedev-server /usr/local/bin/onedev-server
+
+# Create directories
+RUN mkdir -p /var/opt/onedev/git \
+    /var/opt/onedev/build \
+    /var/opt/onedev/artifacts \
+    /var/opt/onedev/cache \
+    /var/opt/onedev/oci \
+    && chown -R appuser:appuser /var/opt/onedev
+
+# Copy migration files
+COPY --from=builder /app/crates/onedev-db/migrations ./migrations
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:${SERVER_PORT:-18080}/health || exit 1
+
+# Switch to non-root user
+USER appuser
+
+# Expose port
+EXPOSE 18080
+
+# Entry point
+ENTRYPOINT ["onedev-server"]

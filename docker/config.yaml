@@ -1,0 +1,157 @@
+server:
+  bind_address: "0.0.0.0"
+  port: 18080
+  max_concurrent_requests: 1000
+  request_timeout_secs: 60
+  tls_enabled: false
+  environment: "development"
+  otel_enabled: false
+
+database:
+  url: "postgres://postgres:test@localhost:5432/onedev"
+  max_connections: 20
+  min_connections: 5
+  connect_timeout_secs: 30
+  idle_timeout_secs: 600
+  max_lifetime_secs: 1800
+  sqlx_logging: false
+
+auth:
+  jwt_secret: "dGhpcyBpcyBhIHZlcnkgbG9uZyBzZWNyZXQga2V5IHRoYXQgaXMgYmFzZTY0IGVuY29kZWQgZm9yIHRlc3RpbmcgcHVycG9zZXM="
+  token_expiry_hours: 24
+  refresh_expiry_days: 30
+  argon2_memory_kb: 65536
+  argon2_iterations: 3
+  argon2_parallelism: 4
+  enable_2fa: true
+  two_fa_issuer: "OneDev"
+  password_min_length: 12
+  password_require_uppercase: true
+  password_require_lowercase: true
+  password_require_digits: true
+  password_require_special: true
+  session_timeout_minutes: 60
+  max_failed_attempts: 5
+  lockout_duration_minutes: 15
+  oauth: {}
+
+build:
+  default_timeout_minutes: 60
+  max_concurrent_builds: 4
+  log_retention_days: 30
+  artifact_retention_days: 90
+  default_image: "rust:1.89"
+  executor_type: "local"
+  enable_cache: true
+  resources:
+    cpu_limit: 2.0
+    memory_limit_mb: 4096
+    disk_limit_gb: 10
+    max_processes: 256
+
+git:
+  repos_root: "/var/opt/onedev/git"
+  http_backend: "smart-http"
+  max_pack_size_mb: 100
+  receive_timeout_secs: 300
+  enable_lfs: true
+  lfs_storage_path: "/var/opt/onedev/lfs"
+  enable_hooks: true
+  hook_timeout_secs: 60
+  gc_enabled: true
+  gc_interval_hours: 24
+
+webhook:
+  max_retries: 3
+  retry_delay_secs: 60
+  max_retry_delay_secs: 300
+  timeout_secs: 30
+  verify_ssl: true
+  allowed_hosts: []
+  blocked_hosts: []
+  secret_header: "X-Webhook-Secret"
+
+cleanup:
+  build_log_retention_days: 30
+  artifact_retention_days: 90
+  temp_file_retention_hours: 24
+  audit_log_retention_days: 365
+  webhook_log_retention_days: 90
+  search_index_cleanup_days: 30
+  run_interval_hours: 24
+
+search:
+  batch_size: 1000
+  index_interval_secs: 60
+  full_reindex_interval_hours: 168
+  enable_code_search: true
+  enable_issue_search: true
+  enable_wiki_search: true
+
+email:
+  smtp_host: "localhost"
+  smtp_port: 587
+  smtp_username: ""
+  smtp_password: ""
+  starttls: true
+  ssl: false
+  from_address: "noreply@onedev.local"
+  from_name: "OneDev"
+  enabled: false
+  queue_dir: ""
+
+storage:
+  storage_type: "local"
+  local_path: "/var/opt/onedev/storage"
+  s3: null
+  gcs: null
+  azure: null
+  max_file_size_mb: 100
+  allowed_mime_types:
+    - "application/octet-stream"
+    - "text/plain"
+    - "image/png"
+    - "image/jpeg"
+    - "image/gif"
+    - "application/pdf"
+    - "application/zip"
+    - "application/x-tar"
+    - "application/gzip"
+
+observability:
+  log_level: "info"
+  log_format: "json"
+  metrics_enabled: true
+  metrics_port: 9090
+  tracing_enabled: false
+  trace_sample_rate: 0.1
+  profiling_enabled: false
+
+security:
+  cors_origins: ["*"]
+  trusted_proxies: []
+  csp: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' wss: https:;"
+  hsts_enabled: true
+  hsts_max_age: 31536000
+  referrer_policy: "strict-origin-when-cross-origin"
+  permissions_policy: ""
+  rate_limit:
+    enabled: true
+    requests_per_minute: 1000
+    burst: 200
+
+features:
+  builds: true
+  merge_requests: true
+  issues: true
+  wiki: true
+  packages: true
+  code_search: true
+  code_navigation: true
+  webhooks: true
+  ldap: false
+  saml: false
+  oidc: false
+  two_fa: true
+  audit_logs: true
+  project_templates: true

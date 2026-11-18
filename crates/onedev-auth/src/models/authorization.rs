@@ -60,10 +60,7 @@ impl AuthorizationInfo {
 
     /// Update cache with roles for a project
     pub fn update_project_roles(&mut self, project_id: i64, roles: Vec<Role>) {
-        let entry = self
-            .project_roles
-            .entry(project_id)
-            .or_default();
+        let entry = self.project_roles.entry(project_id).or_default();
         *entry = roles;
         self.last_updated = Utc::now();
     }

@@ -1,0 +1,205 @@
+services:
+  # PostgreSQL Database (using pgrust fork)
+  db:
+    image: bkg-core-admin-db:mango
+    build:
+      context: ../../../infra/pgrust/bkg/docker/db
+      dockerfile: Dockerfile
+    container_name: bkg-core-admin-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+      POSTGRES_DB: onedev
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "${BKG_DB_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d onedev"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - bkg-core-admin-network
+    secrets:
+      - db_password
+
+  # OneDev Core Application
+  core:
+    image: bkg-core-admin-core:mango
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.core
+    container_name: bkg-core-admin-core
+    restart: unless-stopped
+    environment:
+      # Server
+      SERVER_HOST: 0.0.0.0
+      SERVER_PORT: ${BKG_INTERNAL_PORT:-18080}
+      
+      # Config directory
+      ONEDEV_CONFIG_DIR: /etc/onedev
+      
+      # Database
+      ONEDEV_DATABASE__URL_FILE: /run/secrets/db_url
+      ONEDEV_DATABASE__MAX_CONNECTIONS: 20
+      
+      # Auth
+      ONEDEV_AUTH__PRIVATE_KEY_FILE: /run/secrets/jwt_private_key
+      ONEDEV_AUTH__PUBLIC_KEY_FILE: /run/secrets/jwt_public_key
+      ARGON2_PARAMS: "m=19456,t=2,p=1"
+      
+      # Git
+      GIT_ROOT: /var/opt/onedev/git
+      GIT_HTTP_ENABLED: "true"
+      GIT_SSH_ENABLED: "true"
+      GIT_SSH_PORT: 6611
+      
+      # Build
+      BUILD_WORK_DIR: /var/opt/onedev/build
+      BUILD_ARTIFACT_DIR: /var/opt/onedev/artifacts
+      BUILD_CACHE_DIR: /var/opt/onedev/cache
+      
+      # Webhook
+      WEBHOOK_SECRET_FILE: /run/secrets/webhook_secret
+      
+      # Logging
+      RUST_LOG: info,onedev_server=debug,tower_http=info
+      RUST_BACKTRACE: 1
+      
+      # Metrics
+      METRICS_ENABLED: "true"
+      METRICS_PORT: 9090
+      
+      # OCI/youki
+      YOUKI_RUNTIME: /usr/local/bin/youki
+      OCI_BUNDLE_DIR: /var/opt/onedev/oci
+      
+    ports:
+      - "${BKG_CORE_PORT:-46315}:${BKG_INTERNAL_PORT:-18080}"
+    volumes:
+      - git_data:/var/opt/onedev/git
+      - build_data:/var/opt/onedev/build
+      - artifact_data:/var/opt/onedev/artifacts
+      - cache_data:/var/opt/onedev/cache
+      - oci_data:/var/opt/onedev/oci
+      - ./config.yaml:/etc/onedev/config.yaml:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - bkg-core-admin-network
+    secrets:
+      - db_password
+      - jwt_private_key
+      - jwt_public_key
+      - webhook_secret
+      - db_url
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 4G
+        reservations:
+          cpus: '1'
+          memory: 1G
+
+  # Gateway (ruxen) - runs on separate profile
+  gateway:
+    image: bkg-core-ruxen:mango
+    build:
+      context: ../../../infra/ruxen
+      dockerfile: contrib/docker/Dockerfile
+    container_name: bkg-core-admin-gateway
+    restart: unless-stopped
+    profiles:
+      - gateway
+    security_opt:
+      - seccomp:../../../infra/ruxen/contrib/docker/seccomp-io_uring.json
+    environment:
+      RUXEN_CONFIG: /etc/ruxen/ruxen.conf
+      RUXEN_ADMIN_PORT: 9999
+    ports:
+      - "${BKG_GATEWAY_PORT:-36697}:8080"
+    volumes:
+      - ./ruxen.conf:/etc/ruxen/ruxen.conf:ro
+      - ruxen_certs:/etc/ruxen/certs
+    depends_on:
+      core:
+        condition: service_started
+    networks:
+      - bkg-core-admin-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+
+  # OCI Runtime (youki) - sidecar for build execution (disabled - no Dockerfile available)
+  # youki:
+  #   image: bkg-youki:mango
+  #   build:
+  #     context: ../../../infra/youki
+  #     dockerfile: Dockerfile
+  #   container_name: bkg-core-admin-youki
+  #   restart: unless-stopped
+  #   privileged: true
+  #   pid: host
+  #   volumes:
+  #     - /sys/fs/cgroup:/sys/fs/cgroup:rw
+  #     - /run:/run:rw
+  #     - oci_data:/var/opt/onedev/oci:rw
+  #     - /var/lib/youki:/var/lib/youki
+  #   environment:
+  #     YOUKI_LOG: info
+  #   networks:
+  #     - bkg-core-admin-network
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         cpus: '2'
+  #         memory: 1G
+  #       reservations:
+  #         cpus: '0.5'
+  #         memory: 256M
+
+volumes:
+  db_data:
+    name: bkg-core-admin-db-data
+  git_data:
+    name: bkg-core-admin-git-data
+  build_data:
+    name: bkg-core-admin-build-data
+  artifact_data:
+    name: bkg-core-admin-artifact-data
+  cache_data:
+    name: bkg-core-admin-cache-data
+  oci_data:
+    name: bkg-core-admin-oci-data
+  ruxen_certs:
+    name: bkg-core-admin-ruxen-certs
+
+networks:
+  bkg-core-admin-network:
+    name: bkg-core-admin-network
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+secrets:
+  db_password:
+    file: /srv/bkg/admin-state/db.env
+  jwt_private_key:
+    file: ../secrets/private_key.pem
+  jwt_public_key:
+    file: ../secrets/public_key.pem
+  webhook_secret:
+    file: ../secrets/webhook_secret.txt
+  db_url:
+    file: ../secrets/db_url.txt

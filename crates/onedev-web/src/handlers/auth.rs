@@ -18,10 +18,7 @@ pub async fn login_page(state: State<WebState>) -> impl IntoResponse {
 }
 
 /// Login handler
-pub async fn login_handler(
-    state: State<WebState>,
-    form: Form<LoginForm>,
-) -> impl IntoResponse {
+pub async fn login_handler(state: State<WebState>, form: Form<LoginForm>) -> impl IntoResponse {
     // Validate credentials (placeholder)
     if form.username == "admin" && form.password == "admin" {
         // Set session cookie

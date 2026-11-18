@@ -3,7 +3,7 @@
 use anyhow::Result;
 use chrono::{DateTime, Utc};
 use sqlx::{PgPool, Row};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::sync::broadcast;
 use tokio::task;
@@ -140,8 +140,8 @@ impl GitGcService {
     }
 
     /// Run GC on a single repository using git command
-    async fn run_gc_on_repo(&self, repo_path: &PathBuf) -> Result<()> {
-        let repo_path = repo_path.clone();
+    async fn run_gc_on_repo(&self, repo_path: &Path) -> Result<()> {
+        let repo_path = repo_path.to_path_buf();
         let aggressive = self.config.aggressive;
 
         // Run GC in blocking task using git command

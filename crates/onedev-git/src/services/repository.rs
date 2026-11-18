@@ -300,12 +300,12 @@ impl RepositoryService {
         let mut summary = String::new();
 
         let push_current = |commits: &mut Vec<crate::models::BlameCommit>,
-                                id: &str,
-                                name: &str,
-                                email: &str,
-                                time: i64,
-                                summary: &str,
-                                line_no: u32| {
+                            id: &str,
+                            name: &str,
+                            email: &str,
+                            time: i64,
+                            summary: &str,
+                            line_no: u32| {
             if let Some(existing) = commits.iter_mut().find(|c| c.commit_id == id) {
                 existing.lines.push(line_no);
             } else if !id.is_empty() {
@@ -383,9 +383,7 @@ impl RepositoryService {
                 let line = line.trim();
                 if let Some(rest) = line.strip_prefix("[submodule \"") {
                     current = Some(rest.trim_end_matches("\"]").to_owned());
-                } else if let (Some(name), Some((key, value))) =
-                    (&current, line.split_once('='))
-                {
+                } else if let (Some(name), Some((key, value))) = (&current, line.split_once('=')) {
                     let entry = urls.entry(name.clone()).or_default();
                     match key.trim() {
                         "path" => entry.0 = value.trim().to_owned(),

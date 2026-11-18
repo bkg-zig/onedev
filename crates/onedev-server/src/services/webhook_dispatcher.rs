@@ -309,7 +309,7 @@ impl WebhookDispatcher {
         // Add signature if secret exists
         if let Some(secret) = secret {
             let secret_str: String = secret.try_get("secret")?;
-            let signature = self.compute_signature(&secret_str, &payload)?;
+            let signature = self.compute_signature(&secret_str, payload)?;
             request = request.header("X-OneDev-Signature", signature);
         }
 

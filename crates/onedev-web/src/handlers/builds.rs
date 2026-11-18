@@ -131,7 +131,11 @@ async fn get_build(_state: &WebState, _project_id: &str, id: &str) -> serde_json
 }
 
 /// Get build stages
-async fn get_build_stages(_state: &WebState, _project_id: &str, _id: &str) -> Vec<serde_json::Value> {
+async fn get_build_stages(
+    _state: &WebState,
+    _project_id: &str,
+    _id: &str,
+) -> Vec<serde_json::Value> {
     vec![
         serde_json::json!({
             "name": "test",

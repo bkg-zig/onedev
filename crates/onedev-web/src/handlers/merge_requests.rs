@@ -214,7 +214,11 @@ async fn get_mr_changes(_state: &WebState, _project_id: &str, _id: &str) -> Vec<
 }
 
 /// Get MR comments
-async fn get_mr_comments(_state: &WebState, _project_id: &str, _id: &str) -> Vec<serde_json::Value> {
+async fn get_mr_comments(
+    _state: &WebState,
+    _project_id: &str,
+    _id: &str,
+) -> Vec<serde_json::Value> {
     vec![
         serde_json::json!({
             "id": 1,

@@ -1,0 +1,80 @@
+# ruxen configuration for OneDev Gateway
+server:
+  # Listen on all interfaces
+  listen:
+    - address: 0.0.0.0
+      port: 8080
+      http2: true
+      tls: false
+  
+  # Admin interface (optional)
+  admin:
+    address: 0.0.0.0
+    port: 9999
+
+# Upstream services
+upstreams:
+  onedev-core:
+    servers:
+      - address: bkg-core-admin-core
+        port: 18080
+        weight: 100
+    health_check:
+      path: /health
+      interval: 10s
+      timeout: 5s
+      healthy_threshold: 2
+      unhealthy_threshold: 3
+
+# Routes
+routes:
+  # Health check - direct
+  - path: /health
+    upstream: onedev-core
+    methods:
+      - GET
+    strip_path: false
+    
+  # API routes
+  - path: /api
+    upstream: onedev-core
+    strip_path: false
+    methods:
+      - GET
+      - POST
+      - PUT
+      - PATCH
+      - DELETE
+      - OPTIONS
+      
+  # Git HTTP
+  - path: /git
+    upstream: onedev-core
+    strip_path: false
+    methods:
+      - GET
+      - POST
+      
+  # WebSocket for real-time features
+  - path: /ws
+    upstream: onedev-core
+    strip_path: false
+    websocket: true
+
+# Global settings
+settings:
+  # Request limits
+  max_request_size: 100MB
+  request_timeout: 60s
+  
+  # Buffer sizes
+  proxy_buffer_size: 64KB
+  
+  # Connection pooling
+  keepalive_requests: 1000
+  keepalive_timeout: 60s
+  
+  # Logging
+  access_log: true
+  error_log: true
+  log_format: json

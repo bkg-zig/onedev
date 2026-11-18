@@ -197,7 +197,10 @@ async fn get_users(_state: &WebState, _params: &UserListParams) -> Vec<serde_jso
 }
 
 /// Get all projects
-async fn get_all_projects(_state: &WebState, _params: &ProjectListParams) -> Vec<serde_json::Value> {
+async fn get_all_projects(
+    _state: &WebState,
+    _params: &ProjectListParams,
+) -> Vec<serde_json::Value> {
     vec![
         serde_json::json!({
             "id": 1,

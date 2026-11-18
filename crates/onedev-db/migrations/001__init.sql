@@ -36,7 +36,7 @@ CREATE TYPE pack_type AS ENUM ('maven', 'npm', 'pypi', 'nuget', 'cargo', 'generi
 -- Users table
 CREATE TABLE users (
     id BIGSERIAL PRIMARY KEY,
-    uuid UUID NOT NULL DEFAULT uuid_generate_v4() UNIQUE,
+    uuid UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
     name VARCHAR(100) NOT NULL UNIQUE,
     full_name VARCHAR(200),
     email VARCHAR(255),
@@ -68,8 +68,8 @@ CREATE INDEX idx_users_deleted_at ON users(deleted_at);
 -- Special system users
 INSERT INTO users (id, uuid, name, full_name, email, user_type, status, created_at, updated_at)
 VALUES
-    (-1, uuid_generate_v4(), 'OneDev', 'OneDev System', 'noreply@onedev.io', 'service', 'active', NOW(), NOW()),
-    (-2, uuid_generate_v4(), 'unknown', 'Unknown User', NULL, 'ordinary', 'disabled', NOW(), NOW())
+    (-1, gen_random_uuid(), 'OneDev', 'OneDev System', 'noreply@onedev.io', 'service', 'active', NOW(), NOW()),
+    (-2, gen_random_uuid(), 'unknown', 'Unknown User', NULL, 'ordinary', 'disabled', NOW(), NOW())
 ON CONFLICT (id) DO NOTHING;
 
 -- Root user (id=1) will be created on first run
@@ -77,7 +77,7 @@ ON CONFLICT (id) DO NOTHING;
 -- Email addresses table
 CREATE TABLE email_addresses (
     id BIGSERIAL PRIMARY KEY,
-    uuid UUID NOT NULL DEFAULT uuid_generate_v4() UNIQUE,
+    uuid UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
     user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     value VARCHAR(255) NOT NULL,
     verified BOOLEAN NOT NULL DEFAULT FALSE,
@@ -95,7 +95,7 @@ CREATE UNIQUE INDEX idx_email_addresses_user_primary ON email_addresses(user_id)
 -- SSH keys table
 CREATE TABLE ssh_keys (
     id BIGSERIAL PRIMARY KEY,
-    uuid UUID NOT NULL DEFAULT uuid_generate_v4() UNIQUE,
+    uuid UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
     user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     title VARCHAR(200) NOT NULL,
     public_key TEXT NOT NULL,
@@ -115,7 +115,7 @@ CREATE INDEX idx_ssh_keys_fingerprint_sha256 ON ssh_keys(fingerprint_sha256);
 -- GPG keys table
 CREATE TABLE gpg_keys (
     id BIGSERIAL PRIMARY KEY,
-    uuid UUID NOT NULL DEFAULT uuid_generate_v4() UNIQUE,
+    uuid UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
     user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     key_id VARCHAR(32) NOT NULL,
     public_key TEXT NOT NULL,
@@ -132,7 +132,7 @@ CREATE INDEX idx_gpg_keys_key_id ON gpg_keys(key_id);
 -- Access tokens table
 CREATE TABLE access_tokens (
     id BIGSERIAL PRIMARY KEY,
-    uuid UUID NOT NULL DEFAULT uuid_generate_v4() UNIQUE,
+    uuid UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
     user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     name VARCHAR(100) NOT NULL,
     token_hash VARCHAR(64) NOT NULL,
@@ -151,7 +151,7 @@ CREATE INDEX idx_access_tokens_revoked_at ON access_tokens(revoked_at);
 -- Groups table
 CREATE TABLE groups (
     id BIGSERIAL PRIMARY KEY,
-    uuid UUID NOT NULL DEFAULT uuid_generate_v4() UNIQUE,
+    uuid UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
     name VARCHAR(100) NOT NULL,
     path VARCHAR(100) NOT NULL,
     description TEXT,
@@ -177,7 +177,7 @@ CREATE UNIQUE INDEX idx_groups_parent_path ON groups(parent_id, path);
 -- Memberships table
 CREATE TABLE memberships (
     id BIGSERIAL PRIMARY KEY,
-    uuid UUID NOT NULL DEFAULT uuid_generate_v4() UNIQUE,
+    uuid UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
     user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     group_id BIGINT NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
     role group_role NOT NULL DEFAULT 'guest',
@@ -192,7 +192,7 @@ CREATE INDEX idx_memberships_group_id ON memberships(group_id);
 -- Projects table
 CREATE TABLE projects (
     id BIGSERIAL PRIMARY KEY,
-    uuid UUID NOT NULL DEFAULT uuid_generate_v4() UNIQUE,
+    uuid UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
     name VARCHAR(200) NOT NULL,
     path VARCHAR(100) NOT NULL,
     description TEXT,
@@ -258,7 +258,7 @@ CREATE TABLE project_number_counters (
 -- Labels table
 CREATE TABLE labels (
     id BIGSERIAL PRIMARY KEY,
-    uuid UUID NOT NULL DEFAULT uuid_generate_v4() UNIQUE,
+    uuid UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
     project_id BIGINT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     name VARCHAR(100) NOT NULL,
     color VARCHAR(7) NOT NULL DEFAULT '#428bca',
@@ -273,7 +273,7 @@ CREATE INDEX idx_labels_project_id ON labels(project_id);
 -- Issues table
 CREATE TABLE issues (
     id BIGSERIAL PRIMARY KEY,
-    uuid UUID NOT NULL DEFAULT uuid_generate_v4() UNIQUE,
+    uuid UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
     project_id BIGINT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     number INTEGER NOT NULL,
     title VARCHAR(500) NOT NULL,
@@ -306,7 +306,7 @@ CREATE UNIQUE INDEX idx_issues_project_number ON issues(project_id, number);
 -- Pull requests table
 CREATE TABLE pull_requests (
     id BIGSERIAL PRIMARY KEY,
-    uuid UUID NOT NULL DEFAULT uuid_generate_v4() UNIQUE,
+    uuid UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
     project_id BIGINT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     number INTEGER NOT NULL,
     title VARCHAR(500) NOT NULL,
@@ -345,7 +345,7 @@ CREATE UNIQUE INDEX idx_pull_requests_project_number ON pull_requests(project_id
 -- User authorizations table
 CREATE TABLE user_authorizations (
     id BIGSERIAL PRIMARY KEY,
-    uuid UUID NOT NULL DEFAULT uuid_generate_v4() UNIQUE,
+    uuid UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
     user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     project_id BIGINT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     role project_role NOT NULL DEFAULT 'guest',
@@ -360,7 +360,7 @@ CREATE INDEX idx_user_authorizations_project_id ON user_authorizations(project_i
 -- Issue authorizations table
 CREATE TABLE issue_authorizations (
     id BIGSERIAL PRIMARY KEY,
-    uuid UUID NOT NULL DEFAULT uuid_generate_v4() UNIQUE,
+    uuid UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
     user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     issue_id BIGINT NOT NULL REFERENCES issues(id) ON DELETE CASCADE,
     permission issue_permission NOT NULL DEFAULT 'view',
@@ -374,7 +374,7 @@ CREATE UNIQUE INDEX idx_issue_authorizations_user_issue ON issue_authorizations(
 -- Watches table
 CREATE TABLE watches (
     id BIGSERIAL PRIMARY KEY,
-    uuid UUID NOT NULL DEFAULT uuid_generate_v4() UNIQUE,
+    uuid UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
     user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     watchable_type watchable_type NOT NULL,
     watchable_id BIGINT NOT NULL,
@@ -388,7 +388,7 @@ CREATE INDEX idx_watches_watchable ON watches(watchable_type, watchable_id);
 -- Query subscriptions table
 CREATE TABLE query_subscriptions (
     id BIGSERIAL PRIMARY KEY,
-    uuid UUID NOT NULL DEFAULT uuid_generate_v4() UNIQUE,
+    uuid UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
     user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     query_name VARCHAR(200) NOT NULL,
     query_type query_type NOT NULL,
@@ -402,7 +402,7 @@ CREATE INDEX idx_query_subscriptions_user_id ON query_subscriptions(user_id);
 -- Roles table
 CREATE TABLE roles (
     id BIGSERIAL PRIMARY KEY,
-    uuid UUID NOT NULL DEFAULT uuid_generate_v4() UNIQUE,
+    uuid UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
     name VARCHAR(100) NOT NULL UNIQUE,
     description TEXT,
     is_system BOOLEAN NOT NULL DEFAULT FALSE,
@@ -413,7 +413,7 @@ CREATE TABLE roles (
 -- Role permissions table
 CREATE TABLE role_permissions (
     id BIGSERIAL PRIMARY KEY,
-    uuid UUID NOT NULL DEFAULT uuid_generate_v4() UNIQUE,
+    uuid UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
     role_id BIGINT NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
     permission VARCHAR(200) NOT NULL,
     resource_type VARCHAR(50),
@@ -427,7 +427,7 @@ CREATE INDEX idx_role_permissions_role_id ON role_permissions(role_id);
 -- System settings table
 CREATE TABLE system_settings (
     id BIGSERIAL PRIMARY KEY,
-    uuid UUID NOT NULL DEFAULT uuid_generate_v4() UNIQUE,
+    uuid UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
     key VARCHAR(200) NOT NULL UNIQUE,
     value JSONB NOT NULL,
     description TEXT,
@@ -440,7 +440,7 @@ CREATE TABLE system_settings (
 -- Project settings table
 CREATE TABLE project_settings (
     id BIGSERIAL PRIMARY KEY,
-    uuid UUID NOT NULL DEFAULT uuid_generate_v4() UNIQUE,
+    uuid UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
     project_id BIGINT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     key VARCHAR(200) NOT NULL,
     value JSONB NOT NULL,
@@ -454,7 +454,7 @@ CREATE INDEX idx_project_settings_project_id ON project_settings(project_id);
 -- User settings table
 CREATE TABLE user_settings (
     id BIGSERIAL PRIMARY KEY,
-    uuid UUID NOT NULL DEFAULT uuid_generate_v4() UNIQUE,
+    uuid UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
     user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     key VARCHAR(200) NOT NULL,
     value JSONB NOT NULL,
@@ -468,7 +468,7 @@ CREATE INDEX idx_user_settings_user_id ON user_settings(user_id);
 -- Webhooks table
 CREATE TABLE webhooks (
     id BIGSERIAL PRIMARY KEY,
-    uuid UUID NOT NULL DEFAULT uuid_generate_v4() UNIQUE,
+    uuid UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
     project_id BIGINT REFERENCES projects(id) ON DELETE CASCADE,
     url TEXT NOT NULL,
     secret VARCHAR(255),
@@ -488,7 +488,7 @@ CREATE INDEX idx_webhooks_project_id ON webhooks(project_id);
 -- Dashboards table
 CREATE TABLE dashboards (
     id BIGSERIAL PRIMARY KEY,
-    uuid UUID NOT NULL DEFAULT uuid_generate_v4() UNIQUE,
+    uuid UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
     owner_id BIGINT NOT NULL,
     owner_type dashboard_owner_type NOT NULL DEFAULT 'user',
     name VARCHAR(200) NOT NULL,
@@ -503,7 +503,7 @@ CREATE INDEX idx_dashboards_owner ON dashboards(owner_id, owner_type);
 -- Dashboard shares table
 CREATE TABLE dashboard_shares (
     id BIGSERIAL PRIMARY KEY,
-    uuid UUID NOT NULL DEFAULT uuid_generate_v4() UNIQUE,
+    uuid UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
     dashboard_id BIGINT NOT NULL REFERENCES dashboards(id) ON DELETE CASCADE,
     user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     permission dashboard_permission NOT NULL DEFAULT 'view',
@@ -518,7 +518,7 @@ CREATE INDEX idx_dashboard_shares_user_id ON dashboard_shares(user_id);
 -- Dashboard visits table
 CREATE TABLE dashboard_visits (
     id BIGSERIAL PRIMARY KEY,
-    uuid UUID NOT NULL DEFAULT uuid_generate_v4() UNIQUE,
+    uuid UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
     user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     dashboard_id BIGINT NOT NULL REFERENCES dashboards(id) ON DELETE CASCADE,
     last_visited_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -528,7 +528,7 @@ CREATE TABLE dashboard_visits (
 -- Code comments table
 CREATE TABLE code_comments (
     id BIGSERIAL PRIMARY KEY,
-    uuid UUID NOT NULL DEFAULT uuid_generate_v4() UNIQUE,
+    uuid UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
     project_id BIGINT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     pull_request_id BIGINT REFERENCES pull_requests(id) ON DELETE CASCADE,
     commit_sha VARCHAR(64) NOT NULL,
@@ -557,7 +557,7 @@ CREATE INDEX idx_code_comments_parent_id ON code_comments(parent_id);
 -- Code comment mentions table
 CREATE TABLE code_comment_mentions (
     id BIGSERIAL PRIMARY KEY,
-    uuid UUID NOT NULL DEFAULT uuid_generate_v4() UNIQUE,
+    uuid UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
     code_comment_id BIGINT NOT NULL REFERENCES code_comments(id) ON DELETE CASCADE,
     user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -567,7 +567,7 @@ CREATE TABLE code_comment_mentions (
 -- Packs table
 CREATE TABLE packs (
     id BIGSERIAL PRIMARY KEY,
-    uuid UUID NOT NULL DEFAULT uuid_generate_v4() UNIQUE,
+    uuid UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
     project_id BIGINT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     name VARCHAR(200) NOT NULL,
     version VARCHAR(100) NOT NULL,
@@ -592,7 +592,7 @@ CREATE INDEX idx_packs_deleted_at ON packs(deleted_at);
 -- Pack blob references table
 CREATE TABLE pack_blob_refs (
     id BIGSERIAL PRIMARY KEY,
-    uuid UUID NOT NULL DEFAULT uuid_generate_v4() UNIQUE,
+    uuid UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
     pack_id BIGINT NOT NULL REFERENCES packs(id) ON DELETE CASCADE,
     blob_sha256 VARCHAR(64) NOT NULL,
     path VARCHAR(500) NOT NULL,
@@ -606,7 +606,7 @@ CREATE INDEX idx_pack_blob_refs_blob_sha256 ON pack_blob_refs(blob_sha256);
 -- Pack labels table
 CREATE TABLE pack_labels (
     id BIGSERIAL PRIMARY KEY,
-    uuid UUID NOT NULL DEFAULT uuid_generate_v4() UNIQUE,
+    uuid UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
     pack_id BIGINT NOT NULL REFERENCES packs(id) ON DELETE CASCADE,
     name VARCHAR(100) NOT NULL,
     color VARCHAR(7) NOT NULL DEFAULT '#428bca',
@@ -617,7 +617,7 @@ CREATE TABLE pack_labels (
 -- Workspaces table
 CREATE TABLE workspaces (
     id BIGSERIAL PRIMARY KEY,
-    uuid UUID NOT NULL DEFAULT uuid_generate_v4() UNIQUE,
+    uuid UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
     project_id BIGINT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     name VARCHAR(200) NOT NULL,
     spec JSONB NOT NULL,
@@ -641,7 +641,7 @@ CREATE INDEX idx_workspaces_status ON workspaces(status);
 -- Builds table
 CREATE TABLE builds (
     id BIGSERIAL PRIMARY KEY,
-    uuid UUID NOT NULL DEFAULT uuid_generate_v4() UNIQUE,
+    uuid UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
     project_id BIGINT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     number INTEGER NOT NULL,
     ref_name VARCHAR(255) NOT NULL,
@@ -673,7 +673,7 @@ CREATE UNIQUE INDEX idx_builds_project_number ON builds(project_id, number);
 -- Build jobs table
 CREATE TABLE build_jobs (
     id BIGSERIAL PRIMARY KEY,
-    uuid UUID NOT NULL DEFAULT uuid_generate_v4() UNIQUE,
+    uuid UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
     build_id BIGINT NOT NULL REFERENCES builds(id) ON DELETE CASCADE,
     name VARCHAR(200) NOT NULL,
     status build_status NOT NULL DEFAULT 'pending',
@@ -696,7 +696,7 @@ CREATE INDEX idx_build_jobs_status ON build_jobs(status);
 -- Build steps table
 CREATE TABLE build_steps (
     id BIGSERIAL PRIMARY KEY,
-    uuid UUID NOT NULL DEFAULT uuid_generate_v4() UNIQUE,
+    uuid UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
     job_id BIGINT NOT NULL REFERENCES build_jobs(id) ON DELETE CASCADE,
     name VARCHAR(200) NOT NULL,
     status build_status NOT NULL DEFAULT 'pending',
@@ -718,7 +718,7 @@ CREATE INDEX idx_build_steps_status ON build_steps(status);
 -- Agents table
 CREATE TABLE agents (
     id BIGSERIAL PRIMARY KEY,
-    uuid UUID NOT NULL DEFAULT uuid_generate_v4() UNIQUE,
+    uuid UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
     name VARCHAR(200) NOT NULL,
     token_hash VARCHAR(64) NOT NULL UNIQUE,
     status agent_status NOT NULL DEFAULT 'offline',
@@ -744,7 +744,7 @@ CREATE INDEX idx_agents_deleted_at ON agents(deleted_at);
 -- Pipelines table
 CREATE TABLE pipelines (
     id BIGSERIAL PRIMARY KEY,
-    uuid UUID NOT NULL DEFAULT uuid_generate_v4() UNIQUE,
+    uuid UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
     project_id BIGINT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     name VARCHAR(200) NOT NULL,
     spec JSONB NOT NULL,
@@ -760,7 +760,7 @@ CREATE INDEX idx_pipelines_project_id ON pipelines(project_id);
 -- Pipeline schedules table
 CREATE TABLE pipeline_schedules (
     id BIGSERIAL PRIMARY KEY,
-    uuid UUID NOT NULL DEFAULT uuid_generate_v4() UNIQUE,
+    uuid UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
     pipeline_id BIGINT NOT NULL REFERENCES pipelines(id) ON DELETE CASCADE,
     cron_expression VARCHAR(100) NOT NULL,
     timezone VARCHAR(50) NOT NULL DEFAULT 'UTC',
@@ -779,7 +779,7 @@ CREATE INDEX idx_pipeline_schedules_next_run ON pipeline_schedules(next_run_at);
 -- OAuth applications table
 CREATE TABLE oauth_applications (
     id BIGSERIAL PRIMARY KEY,
-    uuid UUID NOT NULL DEFAULT uuid_generate_v4() UNIQUE,
+    uuid UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
     owner_id BIGINT NOT NULL,
     owner_type oauth_owner_type NOT NULL DEFAULT 'user',
     name VARCHAR(200) NOT NULL,
@@ -798,7 +798,7 @@ CREATE INDEX idx_oauth_applications_client_id ON oauth_applications(client_id);
 -- OAuth grants table
 CREATE TABLE oauth_grants (
     id BIGSERIAL PRIMARY KEY,
-    uuid UUID NOT NULL DEFAULT uuid_generate_v4() UNIQUE,
+    uuid UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
     application_id BIGINT NOT NULL REFERENCES oauth_applications(id) ON DELETE CASCADE,
     user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     scopes JSONB NOT NULL DEFAULT '[]',
@@ -822,7 +822,7 @@ CREATE INDEX idx_oauth_grants_refresh_token_hash ON oauth_grants(refresh_token_h
 -- SSO accounts table
 CREATE TABLE sso_accounts (
     id BIGSERIAL PRIMARY KEY,
-    uuid UUID NOT NULL DEFAULT uuid_generate_v4() UNIQUE,
+    uuid UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
     user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     provider VARCHAR(50) NOT NULL,
     provider_user_id VARCHAR(255) NOT NULL,
@@ -843,7 +843,7 @@ CREATE INDEX idx_sso_accounts_provider_user ON sso_accounts(provider, provider_u
 -- Audit logs table
 CREATE TABLE audit_logs (
     id BIGSERIAL PRIMARY KEY,
-    uuid UUID NOT NULL DEFAULT uuid_generate_v4() UNIQUE,
+    uuid UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
     user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
     action VARCHAR(100) NOT NULL,
     entity_type VARCHAR(100) NOT NULL,

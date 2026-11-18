@@ -22,11 +22,11 @@ pub use handlers::projects;
 pub use models::admin::*;
 pub use models::auth::User;
 pub use models::builds::{Build, BuildStatus, Pipeline};
-pub use models::dashboard::{DashboardStats, ActivityItem, UserProject};
-pub use models::git::{Branch, CommitRef, TreeEntry, Tag, Commit};
+pub use models::dashboard::{ActivityItem, DashboardStats, UserProject};
+pub use models::git::{Branch, Commit, CommitRef, Tag, TreeEntry};
 pub use models::issues::{Issue, IssueComment, Label, Milestone};
 pub use models::merge_requests::MergeRequest;
-pub use models::profile::{UserProfile, SshKey, GpgKey, AccessToken, Session, UpdateSettingsForm};
+pub use models::profile::{AccessToken, GpgKey, Session, SshKey, UpdateSettingsForm, UserProfile};
 pub use models::projects::{Project, ProjectMember};
 pub use services::*;
 pub use templates::*;
@@ -282,10 +282,10 @@ pub fn date_filter(
                 dt.with_timezone(&Utc).format(format).to_string(),
             ));
         }
-        if let Ok(dt) = timestamp.parse::<i64>() {
-            if let Some(dt) = Utc.timestamp_opt(dt, 0).single() {
-                return Ok(tera::Value::String(dt.format(format).to_string()));
-            }
+        if let Ok(dt) = timestamp.parse::<i64>()
+            && let Some(dt) = Utc.timestamp_opt(dt, 0).single()
+        {
+            return Ok(tera::Value::String(dt.format(format).to_string()));
         }
     } else if let Some(timestamp) = value.as_i64()
         && let Some(dt) = Utc.timestamp_opt(timestamp, 0).single()

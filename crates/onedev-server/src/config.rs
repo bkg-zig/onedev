@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
 /// Application configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct AppConfig {
     /// Server configuration
     pub server: ServerConfig,
@@ -97,6 +97,9 @@ fn default_environment() -> String {
 pub struct DatabaseConfig {
     /// Database URL
     pub url: String,
+    /// Database URL file path (for secrets)
+    #[serde(default, alias = "DATABASE_URL_FILE")]
+    pub url_file: Option<PathBuf>,
     /// Maximum connections in pool
     #[serde(default = "default_max_connections")]
     pub max_connections: u32,
@@ -140,11 +143,20 @@ fn default_max_lifetime() -> u64 {
 /// Authentication configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AuthConfig {
-    /// JWT secret key (base64 encoded)
+    /// JWT secret key (base64 encoded) - for HS256
+    #[serde(default)]
     pub jwt_secret: String,
-    /// RSA private key for JWT signing (PEM format)
+    /// RSA private key for JWT signing (PEM format) - for RS256
+    #[serde(default, alias = "JWT_PRIVATE_KEY_FILE")]
+    pub private_key_file: Option<PathBuf>,
+    /// RSA public key for JWT verification (PEM format) - for RS256
+    #[serde(default, alias = "JWT_PUBLIC_KEY_FILE")]
+    pub public_key_file: Option<PathBuf>,
+    /// RSA private key for JWT signing (PEM format, loaded from file)
+    #[serde(skip)]
     pub private_key: Option<String>,
-    /// RSA public key for JWT verification (PEM format)
+    /// RSA public key for JWT verification (PEM format, loaded from file)
+    #[serde(skip)]
     pub public_key: Option<String>,
     /// Token expiry in hours
     #[serde(default = "default_token_expiry_hours")]
@@ -246,6 +258,7 @@ pub struct OAuthConfig {
     pub gitlab: Option<OAuthProviderConfig>,
     pub google: Option<OAuthProviderConfig>,
     pub microsoft: Option<OAuthProviderConfig>,
+    #[serde(default)]
     pub generic: Vec<OAuthProviderConfig>,
 }
 
@@ -760,36 +773,52 @@ pub struct FeatureFlags {
 
 impl AppConfig {
     /// Load configuration from files and environment
-    pub fn load() -> Result<Self, figment::Error> {
+    pub fn load() -> Result<Self, Box<figment::Error>> {
         let config_dir =
             std::env::var("ONEDEV_CONFIG_DIR").unwrap_or_else(|_| "/etc/onedev".to_string());
 
-        Figment::new()
-            .merge(Toml::file(format!("{}/config.toml", config_dir)).nested())
-            .merge(Yaml::file(format!("{}/config.yaml", config_dir)).nested())
-            .merge(Json::file(format!("{}/config.json", config_dir)).nested())
+        let mut config: AppConfig = Figment::new()
+            .merge(Toml::file(format!("{}/config.toml", config_dir)))
+            .merge(Yaml::file(format!("{}/config.yaml", config_dir)))
+            .merge(Json::file(format!("{}/config.json", config_dir)))
             .merge(Env::prefixed("ONEDEV_").split("__").global())
             .extract()
-    }
-}
+            .map_err(Box::new)?;
 
-impl Default for AppConfig {
-    fn default() -> Self {
-        Self {
-            server: ServerConfig::default(),
-            database: DatabaseConfig::default(),
-            auth: AuthConfig::default(),
-            build: BuildConfig::default(),
-            git: GitConfig::default(),
-            webhook: WebhookConfig::default(),
-            cleanup: CleanupConfig::default(),
-            search: SearchConfig::default(),
-            email: EmailConfig::default(),
-            storage: StorageConfig::default(),
-            observability: ObservabilityConfig::default(),
-            security: SecurityConfig::default(),
-            features: FeatureFlags::default(),
+        // If database URL file is specified, read the URL from the file
+        if let Some(url_file) = &config.database.url_file {
+            let url_from_file = std::fs::read_to_string(url_file).map_err(|e| {
+                Box::new(figment::Error::from(format!(
+                    "Failed to read database URL file: {}",
+                    e
+                )))
+            })?;
+            config.database.url = url_from_file.trim().to_string();
         }
+
+        // If JWT private key file is specified, read the key from the file
+        if let Some(key_file) = &config.auth.private_key_file {
+            let key_from_file = std::fs::read_to_string(key_file).map_err(|e| {
+                Box::new(figment::Error::from(format!(
+                    "Failed to read JWT private key file: {}",
+                    e
+                )))
+            })?;
+            config.auth.private_key = Some(key_from_file.trim().to_string());
+        }
+
+        // If JWT public key file is specified, read the key from the file
+        if let Some(key_file) = &config.auth.public_key_file {
+            let key_from_file = std::fs::read_to_string(key_file).map_err(|e| {
+                Box::new(figment::Error::from(format!(
+                    "Failed to read JWT public key file: {}",
+                    e
+                )))
+            })?;
+            config.auth.public_key = Some(key_from_file.trim().to_string());
+        }
+
+        Ok(config)
     }
 }
 
@@ -815,6 +844,7 @@ impl Default for DatabaseConfig {
     fn default() -> Self {
         Self {
             url: "postgresql://onedev:onedev@localhost:5432/onedev".to_string(),
+            url_file: None,
             max_connections: default_max_connections(),
             min_connections: default_min_connections(),
             connect_timeout_secs: default_connect_timeout(),
@@ -829,6 +859,8 @@ impl Default for AuthConfig {
     fn default() -> Self {
         Self {
             jwt_secret: "change-me-in-production-use-strong-random-secret".to_string(),
+            private_key_file: None,
+            public_key_file: None,
             private_key: None,
             public_key: None,
             token_expiry_hours: default_token_expiry_hours(),
