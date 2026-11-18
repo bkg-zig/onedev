@@ -1,6 +1,6 @@
 //! OneDev Admin CLI (stack control, docker compose, dev tools)
 
-use clap::{Parser, Subcommand, Args};
+use clap::{Args, CommandFactory, Parser, Subcommand};
 use std::path::PathBuf;
 
 #[derive(Parser)]
@@ -32,43 +32,103 @@ pub enum OutputFormat {
     Csv,
 }
 
-#[derive(Subcommand)]
+#[derive(Debug, Args)]
+pub struct StackArgs {
+    #[command(subcommand)]
+    pub command: StackCommands,
+}
+
+#[derive(Debug, Args)]
+pub struct ProjectArgs {
+    #[command(subcommand)]
+    pub command: ProjectCommands,
+}
+
+#[derive(Debug, Args)]
+pub struct UserArgs {
+    #[command(subcommand)]
+    pub command: UserCommands,
+}
+
+#[derive(Debug, Args)]
+pub struct BuildArgs {
+    #[command(subcommand)]
+    pub command: BuildCommands,
+}
+
+#[derive(Debug, Args)]
+pub struct GitArgs {
+    #[command(subcommand)]
+    pub command: GitCommands,
+}
+
+#[derive(Debug, Args)]
+pub struct DbArgs {
+    #[command(subcommand)]
+    pub command: DbCommands,
+}
+
+#[derive(Debug, Args)]
+pub struct ConfigArgs {
+    #[command(subcommand)]
+    pub command: ConfigCommands,
+}
+
+#[derive(Debug, Args)]
+pub struct BackupArgs {
+    #[command(subcommand)]
+    pub command: BackupCommands,
+}
+
+#[derive(Debug, Args)]
+pub struct AdminArgs {
+    #[command(subcommand)]
+    pub command: AdminCommands,
+}
+
+#[derive(Debug, Args)]
+pub struct DevArgs {
+    #[command(subcommand)]
+    pub command: DevCommands,
+}
+
+#[derive(Debug, Subcommand)]
 pub enum Commands {
     /// Stack management (docker compose)
-    Stack(StackCommands),
+    Stack(StackArgs),
 
     /// Project management
-    Project(ProjectCommands),
+    Project(ProjectArgs),
 
     /// User management
-    User(UserCommands),
+    User(UserArgs),
 
     /// Build management
-    Build(BuildCommands),
+    Build(BuildArgs),
 
     /// Git operations
-    Git(GitCommands),
+    Git(GitArgs),
 
     /// Database operations
-    Db(DbCommands),
+    Db(DbArgs),
 
     /// Configuration management
-    Config(ConfigCommands),
+    Config(ConfigArgs),
 
     /// Backup and restore
-    Backup(BackupCommands),
+    Backup(BackupArgs),
 
     /// System administration
-    Admin(AdminCommands),
+    Admin(AdminArgs),
 
     /// Development tools
-    Dev(DevCommands),
+    Dev(DevArgs),
 
     /// Generate shell completions
     Completion(CompletionArgs),
 }
 
-#[derive(Args)]
+#[derive(Debug, Args)]
 pub struct CompletionArgs {
     /// Shell to generate completions for
     #[arg(value_enum)]
@@ -76,7 +136,7 @@ pub struct CompletionArgs {
 }
 
 /// Stack management commands
-#[derive(Subcommand)]
+#[derive(Debug, Subcommand)]
 pub enum StackCommands {
     /// Start the stack
     Up {
@@ -175,7 +235,7 @@ pub enum StackCommands {
 }
 
 /// Project management commands
-#[derive(Subcommand)]
+#[derive(Debug, Subcommand)]
 pub enum ProjectCommands {
     /// List projects
     List {
@@ -298,7 +358,7 @@ pub enum ProjectCommands {
     },
 }
 
-#[derive(Subcommand)]
+#[derive(Debug, Subcommand)]
 pub enum MemberCommands {
     List {
         #[arg(value_name = "PROJECT")]
@@ -328,7 +388,7 @@ pub enum MemberCommands {
     },
 }
 
-#[derive(Subcommand)]
+#[derive(Debug, Subcommand)]
 pub enum SettingsCommands {
     Show,
     Update {
@@ -346,7 +406,7 @@ pub enum SettingsCommands {
 }
 
 /// User management commands
-#[derive(Subcommand)]
+#[derive(Debug, Subcommand)]
 pub enum UserCommands {
     /// List users
     List {
@@ -452,28 +512,28 @@ pub enum UserCommands {
     },
 }
 
-#[derive(Subcommand)]
+#[derive(Debug, Subcommand)]
 pub enum SshKeyCommands {
     List { #[arg(value_name = "USER")] user: String },
     Add { #[arg(value_name = "USER")] user: String, #[arg(value_name = "KEY")] key: String, #[arg(long)] title: Option<String> },
     Remove { #[arg(value_name = "USER")] user: String, #[arg(value_name = "KEY_ID")] key_id: String },
 }
 
-#[derive(Subcommand)]
+#[derive(Debug, Subcommand)]
 pub enum GpgKeyCommands {
     List { #[arg(value_name = "USER")] user: String },
     Add { #[arg(value_name = "USER")] user: String, #[arg(value_name = "KEY")] key: String },
     Remove { #[arg(value_name = "USER")] user: String, #[arg(value_name = "KEY_ID")] key_id: String },
 }
 
-#[derive(Subcommand)]
+#[derive(Debug, Subcommand)]
 pub enum TokenCommands {
     List { #[arg(value_name = "USER")] user: String },
     Create { #[arg(value_name = "USER")] user: String, #[arg(long)] name: String, #[arg(long)] scopes: Vec<String>, #[arg(long)] expires_days: Option<u32> },
     Revoke { #[arg(value_name = "USER")] user: String, #[arg(value_name = "TOKEN_ID")] token_id: String },
 }
 
-#[derive(Subcommand)]
+#[derive(Debug, Subcommand)]
 pub enum TwoFactorCommands {
     Enable { #[arg(value_name = "USER")] user: String },
     Disable { #[arg(value_name = "USER")] user: String },
@@ -481,7 +541,7 @@ pub enum TwoFactorCommands {
 }
 
 /// Build management commands
-#[derive(Subcommand)]
+#[derive(Debug, Subcommand)]
 pub enum BuildCommands {
     /// List builds
     List {
@@ -576,7 +636,7 @@ pub enum BuildCommands {
     },
 }
 
-#[derive(Subcommand)]
+#[derive(Debug, Subcommand)]
 pub enum ArtifactCommands {
     List { #[arg(value_name = "PROJECT")] project: String, #[arg(value_name = "BUILD")] build: u32 },
     Download { #[arg(value_name = "PROJECT")] project: String, #[arg(value_name = "BUILD")] build: u32, #[arg(value_name = "ARTIFACT")] artifact: String, #[arg(long)] output: Option<PathBuf> },
@@ -584,7 +644,7 @@ pub enum ArtifactCommands {
 }
 
 /// Git operations commands
-#[derive(Subcommand)]
+#[derive(Debug, Subcommand)]
 pub enum GitCommands {
     /// Create a new repository
     Init {
@@ -650,7 +710,7 @@ pub enum GitCommands {
     },
 }
 
-#[derive(Subcommand)]
+#[derive(Debug, Subcommand)]
 pub enum HookCommands {
     List { #[arg(value_name = "PROJECT")] project: String },
     Add { #[arg(value_name = "PROJECT")] project: String, #[arg(value_name = "NAME")] name: String, #[arg(value_name = "SCRIPT")] script: String },
@@ -659,7 +719,7 @@ pub enum HookCommands {
     Disable { #[arg(value_name = "PROJECT")] project: String, #[arg(value_name = "NAME")] name: String },
 }
 
-#[derive(Subcommand)]
+#[derive(Debug, Subcommand)]
 pub enum LfsCommands {
     List { #[arg(value_name = "PROJECT")] project: String },
     Lock { #[arg(value_name = "PROJECT")] project: String, #[arg(value_name = "PATH")] path: String },
@@ -668,7 +728,7 @@ pub enum LfsCommands {
 }
 
 /// Database commands
-#[derive(Subcommand)]
+#[derive(Debug, Subcommand)]
 pub enum DbCommands {
     /// Run migrations
     Migrate {
@@ -729,7 +789,7 @@ pub enum DbCommands {
 }
 
 /// Configuration commands
-#[derive(Subcommand)]
+#[derive(Debug, Subcommand)]
 pub enum ConfigCommands {
     /// Show current config
     Show {
@@ -767,7 +827,7 @@ pub enum ConfigCommands {
 }
 
 /// Backup commands
-#[derive(Subcommand)]
+#[derive(Debug, Subcommand)]
 pub enum BackupCommands {
     /// Create full backup
     Create {
@@ -823,7 +883,7 @@ pub enum BackupCommands {
 }
 
 /// Admin commands
-#[derive(Subcommand)]
+#[derive(Debug, Subcommand)]
 pub enum AdminCommands {
     /// System health check
     Health,
@@ -880,13 +940,13 @@ pub enum AdminCommands {
     },
 }
 
-#[derive(Subcommand)]
+#[derive(Debug, Subcommand)]
 pub enum SystemSettingsCommands {
     Show,
     Set { #[arg(value_name = "KEY")] key: String, #[arg(value_name = "VALUE")] value: String },
 }
 
-#[derive(Subcommand)]
+#[derive(Debug, Subcommand)]
 pub enum FeatureFlagCommands {
     List,
     Enable { #[arg(value_name = "FLAG")] flag: String },
@@ -894,7 +954,7 @@ pub enum FeatureFlagCommands {
 }
 
 /// Development commands
-#[derive(Subcommand)]
+#[derive(Debug, Subcommand)]
 pub enum DevCommands {
     /// Start development server
     Serve {
@@ -938,7 +998,7 @@ pub enum DevCommands {
     },
 }
 
-#[derive(Subcommand)]
+#[derive(Debug, Subcommand)]
 pub enum GenerateCommands {
     /// Generate model
     Model { #[arg(value_name = "NAME")] name: String, #[arg(value_name = "FIELDS")] fields: Vec<String> },
@@ -1003,20 +1063,20 @@ pub async fn run_cli(cli: Cli) -> anyhow::Result<()> {
 
     // Set up logging
     if cli.verbose {
-        std::env::set_var("RUST_LOG", "debug");
+        unsafe { std::env::set_var("RUST_LOG", "debug") };
     }
 
     match cli.command {
-        Commands::Stack(cmd) => handle_stack(cmd, &config).await,
-        Commands::Project(cmd) => handle_project(cmd, &config).await,
-        Commands::User(cmd) => handle_user(cmd, &config).await,
-        Commands::Build(cmd) => handle_build(cmd, &config).await,
-        Commands::Git(cmd) => handle_git(cmd, &config).await,
-        Commands::Db(cmd) => handle_db(cmd, &config).await,
-        Commands::Config(cmd) => handle_config(cmd, &config).await,
-        Commands::Backup(cmd) => handle_backup(cmd, &config).await,
-        Commands::Admin(cmd) => handle_admin(cmd, &config).await,
-        Commands::Dev(cmd) => handle_dev(cmd, &config).await,
+        Commands::Stack(args) => handle_stack(args.command, &config).await,
+        Commands::Project(args) => handle_project(args.command, &config).await,
+        Commands::User(args) => handle_user(args.command, &config).await,
+        Commands::Build(args) => handle_build(args.command, &config).await,
+        Commands::Git(args) => handle_git(args.command, &config).await,
+        Commands::Db(args) => handle_db(args.command, &config).await,
+        Commands::Config(args) => handle_config(args.command, &config).await,
+        Commands::Backup(args) => handle_backup(args.command, &config).await,
+        Commands::Admin(args) => handle_admin(args.command, &config).await,
+        Commands::Dev(args) => handle_dev(args.command, &config).await,
         Commands::Completion(args) => handle_completion(args),
     }
 }

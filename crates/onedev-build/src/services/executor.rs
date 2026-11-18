@@ -4,9 +4,10 @@
 //!
 //! * `CheckoutStep` clones the repository at the build's commit (optionally
 //!   shallow, with submodules and LFS content),
-//! * `CommandStep` runs shell commands - inside a Docker container (the
-//!   default and the only mode that isolates untrusted code) or directly on
-//!   the host (`ExecutorMode::Host`, for trusted installations only),
+//! * `CommandStep` runs shell commands - inside a container (Docker, or
+//!   rootless OCI containers run by youki without any daemon; the modes that
+//!   isolate untrusted code) or directly on the host (`ExecutorMode::Host`,
+//!   the default, for trusted installations only),
 //! * `PublishArtifactStep` copies files matching glob patterns into the
 //!   build's artifact store.
 //!
@@ -27,6 +28,8 @@ use std::time::{Duration, Instant};
 use crate::errors::BuildResult;
 use crate::models::{BuildStatus, ExecuteCondition, JobResult, JobSpec, LogLine, Step, StepResult};
 use crate::services::interpolation::{SecretMasker, Variables};
+use crate::services::oci::PullEvent;
+use crate::services::youki::{PullFailure, StepRequest, YoukiRuntime};
 
 const MAX_LINE: u64 = 16 * 1024;
 const POLL: Duration = Duration::from_millis(25);
@@ -88,8 +91,12 @@ impl CancelToken {
 /// Where `CommandStep`s run.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum ExecutorMode {
-    /// Inside Docker containers (isolated; the production default).
+    /// Inside Docker containers (isolated; needs a Docker daemon).
     Docker,
+    /// Inside rootless OCI containers run by youki (isolated; no daemon, no
+    /// root). Needs [`ExecutorConfig::youki`]; see [`crate::services::youki`]
+    /// for what the containers can and cannot do.
+    Youki,
     /// Directly on the host with `sh`. Anyone who can push a build spec runs
     /// code as the server user: only for fully trusted installations.
     #[default]
@@ -112,6 +119,10 @@ pub struct ExecutorConfig {
     pub container_pids_limit: Option<u32>,
     /// Upper bound of the bytes a job may publish as artifacts.
     pub max_artifact_bytes: u64,
+    /// The container runtime of [`ExecutorMode::Youki`]. It verifies the host
+    /// and owns the image cache, so it is created once (`YoukiRuntime::new`)
+    /// and shared. Its resource limits are its own configuration.
+    pub youki: Option<Arc<YoukiRuntime>>,
 }
 
 impl Default for ExecutorConfig {
@@ -126,6 +137,7 @@ impl Default for ExecutorConfig {
             container_cpus: None,
             container_pids_limit: Some(4096),
             max_artifact_bytes: 1024 * 1024 * 1024,
+            youki: None,
         }
     }
 }
@@ -354,6 +366,12 @@ fn terminate_group(child: &mut Child, _grace: Duration) {
 }
 
 fn stop_container(config: &ExecutorConfig, name: &str) {
+    if config.mode == ExecutorMode::Youki {
+        if let Some(runtime) = &config.youki {
+            runtime.terminate(name, config.term_grace);
+        }
+        return;
+    }
     let _ = Command::new(&config.docker_binary)
         .args([
             "stop",
@@ -704,16 +722,12 @@ impl JobExecutor {
                 if step.run_in_container == Some(false) {
                     return Err("this step runs on the host (runInContainer: false), which the docker executor does not allow".into());
                 }
-                let image = match step.image.as_deref() {
-                    Some(image) => Some(
-                        ctx.variables
-                            .interpolate(image)
-                            .map_err(|e| e.to_string())?,
-                    ),
-                    None => ctx.config.default_image.clone(),
-                }
-                .ok_or("the step names no image and no default image is configured")?;
+                let image = step_image(step, ctx)?;
                 self.run_in_container(job, step, &name, &image, &shell, &script, env, ctx)?
+            }
+            ExecutorMode::Youki => {
+                let image = step_image(step, ctx)?;
+                self.run_in_youki(job, step, &name, &image, &shell, &script, &env, ctx)?
             }
         };
         Ok(self.finish(name, end, ctx, &job.name))
@@ -837,6 +851,111 @@ impl JobExecutor {
                 ctx.config.docker_binary.display()
             )
         })
+    }
+
+    /// Run a step in a rootless container of the youki runtime: pull the
+    /// image (cached), give the step a private root filesystem and run the
+    /// container in the foreground, like `docker run` does.
+    #[allow(clippy::too_many_arguments)]
+    fn run_in_youki(
+        &self,
+        job: &JobSpec,
+        step: &Step,
+        name: &str,
+        image: &str,
+        shell: &str,
+        script: &str,
+        env: &[(String, String)],
+        ctx: &JobContext<'_>,
+    ) -> Result<ProcessEnd, String> {
+        let runtime = ctx
+            .config
+            .youki
+            .as_ref()
+            .ok_or("the youki executor is selected but no youki runtime was configured")?;
+        if step.run_in_container == Some(false) {
+            return Err("this step runs on the host (runInContainer: false), which the youki executor does not allow".into());
+        }
+        if let Some(user) = step
+            .run_as
+            .as_deref()
+            .map(str::trim)
+            .filter(|user| !user.is_empty())
+            && !runs_as_root(user)
+        {
+            return Err(format!(
+                "runAs `{user}` is not supported by the youki executor: containers have a single user (root, which is the server's own user on the host)"
+            ));
+        }
+        if !job.required_services.is_empty() {
+            return Err(format!(
+                "job services ({}) are not supported by the youki executor",
+                job.required_services.join(", ")
+            ));
+        }
+        let workspace = ctx
+            .work_dir
+            .canonicalize()
+            .map_err(|e| format!("workspace not accessible: {e}"))?;
+
+        // Pulling can take minutes: it must stay cancellable and bounded by the job's deadline.
+        let stop = || {
+            ctx.cancel.reason().or_else(|| {
+                ctx.deadline
+                    .is_some_and(|deadline| Instant::now() >= deadline)
+                    .then_some(StopReason::TimedOut)
+            })
+        };
+        let progress = |event: PullEvent| {
+            if let Some(line) = describe_pull(image, &event) {
+                emit(&ctx.log, &job.name, name, false, line);
+            }
+        };
+        let pulled = match runtime.pull(image, &stop, &progress) {
+            Ok(pulled) => pulled,
+            Err(PullFailure::Stopped(reason)) => return Ok(ProcessEnd::Stopped(reason)),
+            Err(PullFailure::Failed(message)) => return Err(message),
+        };
+
+        let prepared = runtime.prepare(
+            pulled,
+            &StepRequest {
+                workspace: &workspace,
+                shell,
+                script,
+                env,
+            },
+        )?;
+        for note in &prepared.notes {
+            emit(&ctx.log, &job.name, name, true, note.clone());
+        }
+        let end = run_process(
+            ProcessSpec {
+                program: prepared.program().as_os_str().to_owned(),
+                args: prepared.arguments(),
+                envs: Vec::new(),
+                cwd: prepared.directory().to_path_buf(),
+                container: Some(prepared.id().to_owned()),
+                // everything the container sees comes from its configuration
+                clean_env: true,
+            },
+            ctx,
+            &job.name,
+            name,
+            ctx.deadline,
+        )
+        .map_err(|e| {
+            format!(
+                "failed to start youki ({}): {e}",
+                prepared.program().display()
+            )
+        })?;
+        if let ProcessEnd::Exited(code) = end
+            && let Some(reason) = prepared.runtime_failure(code)
+        {
+            return Err(format!("container runtime failed: {reason}"));
+        }
+        Ok(end)
     }
 
     // -- CheckoutStep -----------------------------------------------------------
@@ -1054,6 +1173,62 @@ impl JobExecutor {
             }
         }
     }
+}
+
+/// The image a command step runs in: its own (with variables interpolated) or
+/// the configured default.
+fn step_image(step: &Step, ctx: &JobContext<'_>) -> Result<String, String> {
+    match step.image.as_deref() {
+        Some(image) => ctx.variables.interpolate(image).map_err(|e| e.to_string()),
+        None => ctx
+            .config
+            .default_image
+            .clone()
+            .ok_or_else(|| "the step names no image and no default image is configured".to_owned()),
+    }
+}
+
+/// Is a `runAs` value (`user` or `user:group`) the root user of the container?
+fn runs_as_root(spec: &str) -> bool {
+    let parts: Vec<&str> = spec.split(':').collect();
+    parts.len() <= 2 && parts.iter().all(|part| matches!(*part, "0" | "root"))
+}
+
+fn human_bytes(bytes: u64) -> String {
+    const UNITS: [&str; 5] = ["B", "KiB", "MiB", "GiB", "TiB"];
+    let mut value = bytes as f64;
+    let mut unit = 0;
+    while value >= 1024.0 && unit + 1 < UNITS.len() {
+        value /= 1024.0;
+        unit += 1;
+    }
+    if unit == 0 {
+        format!("{bytes} B")
+    } else {
+        format!("{value:.1} {}", UNITS[unit])
+    }
+}
+
+/// The job-log line for an image pull event.
+fn describe_pull(image: &str, event: &PullEvent) -> Option<String> {
+    Some(match event {
+        PullEvent::Cached { digest } => format!("image {image} found in the cache ({digest})"),
+        PullEvent::UsingStale { reason } => {
+            format!("registry not reachable ({reason}); using the cached copy of {image}")
+        }
+        PullEvent::Downloading {
+            layers,
+            compressed_bytes,
+        } => format!(
+            "pulling image {image}: {layers} layer{}, {}",
+            if *layers == 1 { "" } else { "s" },
+            human_bytes(*compressed_bytes)
+        ),
+        PullEvent::LayerDone { index, total } => format!("layer {index}/{total} pulled"),
+        PullEvent::Unpacked { bytes, entries } => {
+            format!("image unpacked: {} in {entries} files", human_bytes(*bytes))
+        }
+    })
 }
 
 #[cfg(unix)]

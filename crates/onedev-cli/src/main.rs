@@ -1,5 +1,6 @@
 //! OneDev CLI Binary
 
+use clap::Parser as _;
 use onedev_cli::{Cli, run_cli};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 

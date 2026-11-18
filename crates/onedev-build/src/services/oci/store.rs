@@ -871,7 +871,7 @@ fn write_atomic(path: &Path, bytes: &[u8]) -> io::Result<()> {
 }
 
 /// Remove a tree that may contain read-only directories.
-fn remove_tree(path: &Path) -> io::Result<()> {
+pub(crate) fn remove_tree(path: &Path) -> io::Result<()> {
     match fs::remove_dir_all(path) {
         Ok(()) => Ok(()),
         Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(()),
@@ -902,7 +902,7 @@ fn make_writable(path: &Path) {
     }
 }
 
-fn open_lock_file(path: &Path) -> io::Result<File> {
+pub(crate) fn open_lock_file(path: &Path) -> io::Result<File> {
     OpenOptions::new()
         .read(true)
         .write(true)
@@ -922,7 +922,7 @@ fn open_lock_file_existing(path: &Path) -> io::Result<Option<File>> {
 
 /// `flock` without blocking: `Ok(false)` when somebody else holds a
 /// conflicting lock.
-fn try_flock(file: &File, operation: libc::c_int) -> io::Result<bool> {
+pub(crate) fn try_flock(file: &File, operation: libc::c_int) -> io::Result<bool> {
     loop {
         // SAFETY: flock(2) on a valid open file descriptor owned by `file`.
         let status = unsafe { libc::flock(file.as_raw_fd(), operation | libc::LOCK_NB) };
