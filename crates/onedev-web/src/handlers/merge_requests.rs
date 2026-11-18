@@ -103,12 +103,58 @@ pub struct CreateMrForm {
     pub draft: bool,
 }
 
-/// Get merge requests list
+/// Live merge request list from the database when configured, otherwise
+/// the dev placeholder row. `search` is a plain substring filter for now;
+/// the full vanilla query language is a later slice (see report 04).
 async fn get_merge_requests(
-    _state: &WebState,
-    _project_id: &str,
-    _params: &MrListParams,
+    state: &WebState,
+    project_id: &str,
+    params: &MrListParams,
 ) -> Vec<serde_json::Value> {
+    let needle = params.search.as_deref().unwrap_or("").to_lowercase();
+    let matches = |title: &str, description: Option<&str>| {
+        needle.is_empty()
+            || title.to_lowercase().contains(&needle)
+            || description.unwrap_or("").to_lowercase().contains(&needle)
+    };
+    if let (Some(pool), Ok(pid)) = (&state.db_pool, project_id.parse::<i64>()) {
+        let mrs = onedev_api::services::MergeRequestService::new(pool.clone());
+        let users = onedev_api::services::UserService::new(pool.clone());
+        let per_page = params.per_page.unwrap_or(25).min(100).max(1) as i64;
+        let page = params.page.unwrap_or(0) as i64;
+        if let Ok(rows) = mrs.list(pid, per_page, page * per_page).await {
+            let mut out = Vec::new();
+            for row in rows {
+                if !matches(&row.title, row.description.as_deref()) {
+                    continue;
+                }
+                let author_name = users
+                    .get(row.author_id)
+                    .await
+                    .map(|user| user.name)
+                    .unwrap_or_default();
+                out.push(serde_json::json!({
+                    "id": row.id,
+                    "number": row.number,
+                    "title": row.title,
+                    "description": row.description,
+                    "state": format!("{:?}", row.state).to_lowercase(),
+                    "author": { "username": author_name, "full_name": null, "avatar_url": null },
+                    "assignee": null,
+                    "reviewers": [],
+                    "source_branch": row.source_branch,
+                    "target_branch": row.target_branch,
+                    "draft": row.draft,
+                    "merge_status": if row.mergeable { "can_be_merged" } else { "unchecked" },
+                    "created_at": row.created_at,
+                    "updated_at": row.updated_at,
+                    "commits_count": 0,
+                    "changes_count": 0
+                }));
+            }
+            return out;
+        }
+    }
     vec![serde_json::json!({
         "id": 1,
         "number": 5,
@@ -129,6 +175,14 @@ async fn get_merge_requests(
         "commits_count": 3,
         "changes_count": 12
     })]
+    .into_iter()
+    .filter(|item| {
+        matches(
+            item.get("title").and_then(|v| v.as_str()).unwrap_or(""),
+            item.get("description").and_then(|v| v.as_str()),
+        )
+    })
+    .collect()
 }
 
 /// Get single merge request
