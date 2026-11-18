@@ -1,0 +1,21 @@
+crates/onedev-db/migrations/005__build_metadata.sql
+  s_0de1f439e1761a::t_68d72f720ee934 1-9
+crates/onedev-db/migrations/004__server_services.sql
+  s_0de1f439e1761a::t_5b1e10b3286fc8 1-173
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "5216cd647043af033cac20a0f6378f9867cc3890",
+  "prompts": {},
+  "sessions": {
+    "s_0de1f439e1761a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0f2f81bd-eb11-4834-95c4-07542b095264",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}
