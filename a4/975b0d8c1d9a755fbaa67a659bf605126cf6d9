@@ -1,0 +1,72 @@
+crates/onedev-server/src/state.rs
+  s_b4d4a7c7a80ee3::t_9d0dcad04309b1 81-86,89-94,97-102,105-110,113-118
+  s_b4d4a7c7a80ee3::t_fb05f59ae68763 5-6,8
+  s_b4d4a7c7a80ee3::t_4ab160c2ed74a8 7,10
+crates/onedev-server/src/lib.rs
+  s_fc4968d509c3df::t_98c0d735dd26da 28
+  s_fc4968d509c3df::t_a463188e0c7fbe 11-18,20-27
+  s_b4d4a7c7a80ee3::t_bcba435c7aa51b 19
+  s_b4d4a7c7a80ee3::t_489f64ed473bae 29
+crates/onedev-server/src/services/webhook_dispatcher.rs
+  s_fc4968d509c3df::t_e7a79370958f8e 11
+crates/onedev-server/src/services/build_scheduler.rs
+  s_fc4968d509c3df::t_5f402f4c8b727b 178,180
+  s_fc4968d509c3df::t_09a03cd610f870 278
+  s_fc4968d509c3df::t_bf377b8180240c 394-395
+  s_fc4968d509c3df::t_2685a8a35c4659 15-16
+crates/onedev-server/src/metrics.rs
+  s_fc4968d509c3df::t_6a34358adbafda 258
+crates/onedev-server/src/main.rs
+  s_b4d4a7c7a80ee3::t_03dac2d75e1f18 32-34
+crates/onedev-web/src/lib.rs
+  s_b4d4a7c7a80ee3::t_d98eeaf31a8a03 87
+  s_b4d4a7c7a80ee3::t_17cf962e93e4b7 243
+  s_fc4968d509c3df::t_f0d608193ca18c 290-293
+crates/onedev-web/src/services/session.rs
+  s_fc4968d509c3df::t_5e0b6aa71b822d 51
+crates/onedev-git/src/services/hooks.rs
+  s_b4d4a7c7a80ee3::t_5bb3287ee17a6c 12
+crates/onedev-server/src/services/cleanup.rs
+  s_fc4968d509c3df::t_5c8b7f86efb93c 47
+crates/onedev-server/src/middleware.rs
+  s_fc4968d509c3df::t_f09422075379a4 255-256
+  s_b4d4a7c7a80ee3::t_0e4a52acfef707 245-253,257
+  s_fc4968d509c3df::t_58056dd28ff221 43,50
+  s_fc4968d509c3df::t_48a2a8ae4dc21a 254
+  s_fc4968d509c3df::t_b3406c76663a34 8
+  s_fc4968d509c3df::t_6ad730086b2e93 57,64-65
+  s_fc4968d509c3df::t_0a720b3162ec3c 117
+crates/onedev-server/src/telemetry.rs
+  s_b4d4a7c7a80ee3::t_b821e84bc7764b 38-44
+crates/onedev-web/src/config.rs
+  s_fc4968d509c3df::t_2be91762e7220c 186,196
+crates/onedev-server/src/services/git_gc.rs
+  s_fc4968d509c3df::t_f758a348cd0711 10
+  s_fc4968d509c3df::t_1f9121b53e8b23 237
+crates/onedev-server/src/services/search_indexer.rs
+  s_fc4968d509c3df::t_9e14f7d05fd549 8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "a4975b0d8c1d9a755fbaa67a659bf605126cf6d9",
+  "prompts": {},
+  "sessions": {
+    "s_b4d4a7c7a80ee3": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e15302bc6ffeeevu8JM3MfvFlY",
+        "model": "nvidia/nemotron-3-ultra-550b-a55b"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    },
+    "s_fc4968d509c3df": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e152e6bc4ffejPRtPDKqejzaSv",
+        "model": "combo/best-free"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}
