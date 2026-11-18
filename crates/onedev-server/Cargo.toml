@@ -51,6 +51,8 @@ sqlx.workspace = true
 governor.workspace = true
 regex.workspace = true
 gix.workspace = true
+gix-odb.workspace = true
+serde_yaml.workspace = true
 reqwest = { version = "0.12", features = ["json", "rustls-tls", "gzip", "brotli"] }
 hmac = "0.12"
 sha2 = "0.10"

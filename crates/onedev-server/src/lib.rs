@@ -46,7 +46,7 @@ pub struct BackgroundWorkers {
 }
 
 /// Create the main application router
-pub fn create_app_router(state: AppState) -> Router {
+pub fn create_app_router(state: AppState) -> Router<AppState> {
     let api_router = create_router(state.api_state.clone());
 
     // Create WebState for the web UI
@@ -59,7 +59,7 @@ pub fn create_app_router(state: AppState) -> Router {
         enable_ssr: true,
         dev_mode: state.config.server.environment == "development",
     };
-    
+
     let web_state = onedev_web::WebState {
         api_state: state.api_state.clone(),
         config: Arc::new(web_config),

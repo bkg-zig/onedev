@@ -91,6 +91,7 @@ gix-date = "0.10"
 gix-trace = "0.3"
 gix-chunk = "0.5"
 gix-packetline = "0.19"
+gix-odb = "0.68"
 
 # Templates
 tera = { version = "1.20", features = ["humansize"] }

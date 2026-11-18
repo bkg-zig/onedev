@@ -189,10 +189,10 @@ impl BuildScheduler {
             };
 
             if let Err(e) = sqlx::query("UPDATE builds SET status = $1, finished_at = $2 WHERE id = $3")
-                .bind(final_status as BuildStatus)
+                .bind(final_status)
                 .bind(Utc::now())
                 .bind(build_id)
-                .execute(&db_pool).await {
+                .execute(&*db_pool).await {
                 error!("Failed to update build status: {}", e);
             }
 
@@ -288,7 +288,7 @@ impl BuildScheduler {
 
         let spec = spec_row
             .map(|row| {
-                let spec_str: String = row.try_get("spec").unwrap_or_default();
+                let spec_str: String = row.get("spec").unwrap_or_default();
                 serde_yaml::from_str::<BuildSpec>(&spec_str)
             })
             .transpose()?
@@ -356,15 +356,15 @@ impl BuildScheduler {
             .fetch_all(&self.db_pool).await?;
 
         for build in stuck_builds {
-            let build_id: Uuid = build.try_get("id")?;
-            let project_id: Uuid = build.try_get("project_id")?;
+            let build_id: Uuid = build.get("id")?;
+            let project_id: Uuid = build.get("project_id")?;
             warn!("Build {} appears stuck, marking as failed", build_id);
             sqlx::query("UPDATE builds SET status = $1, finished_at = $2, error = $3 WHERE id = $4")
-                .bind(BuildStatus::Failed as BuildStatus)
+                .bind(BuildStatus::Failed)
                 .bind(Utc::now())
                 .bind("Build timed out / stuck")
                 .bind(build_id)
-                .execute(&self.db_pool).await?;
+                .execute(&*self.db_pool).await?;
 
             // Remove from running builds
             let mut running = self.running_builds.write().await;
@@ -377,10 +377,10 @@ impl BuildScheduler {
     /// Update build status
     async fn update_build_status(&self, build_id: Uuid, status: BuildStatus) -> Result<()> {
         sqlx::query("UPDATE builds SET status = $1, started_at = CASE WHEN started_at IS NULL THEN $2 ELSE started_at END WHERE id = $3")
-            .bind(status as BuildStatus)
+            .bind(status)
             .bind(Utc::now())
             .bind(build_id)
-            .execute(&self.db_pool).await?;
+            .execute(&*self.db_pool).await?;
         Ok(())
     }
 

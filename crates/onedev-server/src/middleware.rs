@@ -7,7 +7,7 @@ use axum::{
     middleware::Next,
     response::Response,
 };
-use governor::{Quota, RateLimiter};
+use governor::{Quota, RateLimiter, state::InMemoryState, clock::DefaultClock};
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::Mutex;
@@ -17,14 +17,14 @@ use uuid::Uuid;
 use crate::config::AppConfig;
 
 /// Rate limiter state
-pub type RateLimiterState = Arc<Mutex<RateLimiter<String, governor::state::InMemoryState, governor::clock::DefaultClock>>>;
+pub type RateLimiterState = Arc<Mutex<RateLimiter<String, InMemoryState, DefaultClock>>>;
 
 /// Create rate limiter from config
 pub fn create_rate_limiter(config: &AppConfig) -> RateLimiterState {
     let quota = Quota::per_minute(config.security.rate_limit.requests_per_minute)
         .allow_burst(config.security.rate_limit.burst);
 
-    let limiter = RateLimiter::direct(quota);
+    let limiter = RateLimiter::<String, InMemoryState, DefaultClock>::direct(quota);
     Arc::new(Mutex::new(limiter))
 }
 

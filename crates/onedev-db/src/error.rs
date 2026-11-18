@@ -36,6 +36,12 @@ pub enum DbError {
 
     #[error("Configuration error: {0}")]
     Config(#[from] config::ConfigError),
+
+    #[error("Parse error: {0}")]
+    ParseError(String),
+
+    #[error("Query error: {0}")]
+    Query(String),
 }
 
 pub type DbResult<T> = Result<T, DbError>;

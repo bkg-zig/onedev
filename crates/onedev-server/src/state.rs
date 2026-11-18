@@ -92,7 +92,7 @@ impl GitGcService {
         }
     }
 
-    pub async fn get_gc_stats(&self, project_id: uuid::Uuid) -> anyhow::Result<onedev_server::services::git_gc::GitGcStats> {
+    pub async fn get_gc_stats(&self, project_id: uuid::Uuid) -> anyhow::Result<crate::services::git_gc::GitGcStats> {
         if let Some(s) = self.inner.lock().await.as_ref() {
             s.get_gc_stats(project_id).await
         } else {
@@ -121,7 +121,7 @@ impl SearchIndexer {
         }
     }
 
-    pub async fn get_stats(&self) -> anyhow::Result<onedev_server::services::search_indexer::SearchIndexStats> {
+    pub async fn get_stats(&self) -> anyhow::Result<crate::services::search_indexer::SearchIndexStats> {
         if let Some(s) = self.inner.lock().await.as_ref() {
             s.get_stats().await
         } else {
@@ -156,7 +156,7 @@ impl WebhookDispatcher {
         }
     }
 
-    pub async fn get_stats(&self) -> anyhow::Result<onedev_server::services::webhook_dispatcher::WebhookStats> {
+    pub async fn get_stats(&self) -> anyhow::Result<crate::services::webhook_dispatcher::WebhookStats> {
         if let Some(d) = self.inner.lock().await.as_ref() {
             d.get_stats().await
         } else {

@@ -324,12 +324,16 @@ pub enum TriggerEvent {
 }
 
 /// Status of a job or a whole build.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
+#[sqlx(type_name = "build_status", rename_all = "lowercase")]
 #[serde(rename_all = "lowercase")]
 pub enum BuildStatus {
+    Pending,
+    Running,
     Success,
     Failed,
     Skipped,
+    Cancelled,
 }
 
 /// One executed step.

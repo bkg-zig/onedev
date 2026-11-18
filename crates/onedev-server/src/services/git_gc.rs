@@ -3,6 +3,8 @@
 use anyhow::Result;
 use chrono::{DateTime, Utc};
 use gix::Repository;
+use gix_odb::memory::Proxy as OdbProxy;
+use gix_odb::Handle;
 use sqlx::PgPool;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -239,12 +241,12 @@ impl GitGcService {
     }
 }
 
-fn count_loose_objects(_object_db: &gix::ObjectDatabase) -> Result<(u64, u64)> {
+fn count_loose_objects(_object_db: &OdbProxy<Handle>) -> Result<(u64, u64)> {
     // Implementation would iterate loose objects
     Ok((0, 0))
 }
 
-fn count_pack_objects(_object_db: &gix::ObjectDatabase) -> Result<(u64, u64)> {
+fn count_pack_objects(_object_db: &OdbProxy<Handle>) -> Result<(u64, u64)> {
     // Implementation would iterate pack files
     Ok((0, 0))
 }

@@ -41,7 +41,7 @@ pub fn create_metrics_router(handle: MetricsHandle) -> Router {
 }
 
 /// Prometheus metrics handler
-async fn metrics_handler(handle: MetricsHandle) -> impl IntoResponse {
+pub async fn metrics_handler(handle: MetricsHandle) -> impl IntoResponse {
     handle.render()
 }
 
@@ -159,7 +159,7 @@ pub async fn collect_system_metrics(db_pool: &PgPool) -> Result<()> {
     // Database connections
     if let Ok(stats) = sqlx::query("SELECT count(*) as count FROM pg_stat_activity WHERE state = 'active'")
         .fetch_one(db_pool).await {
-        if let Some(count) = stats.try_get::<i64, _>("count").ok() {
+        if let Ok(count) = stats.get::<i64, _>("count") {
             gauge!("db_active_connections").set(count as f64);
         }
     }
@@ -167,7 +167,7 @@ pub async fn collect_system_metrics(db_pool: &PgPool) -> Result<()> {
     // Database size
     if let Ok(size) = sqlx::query("SELECT pg_database_size(current_database()) as size")
         .fetch_one(db_pool).await {
-        if let Some(s) = size.try_get::<i64, _>("size").ok() {
+        if let Ok(s) = size.get::<i64, _>("size") {
             gauge!("db_size_bytes").set(s as f64);
         }
     }
@@ -183,9 +183,9 @@ pub async fn collect_system_metrics(db_pool: &PgPool) -> Result<()> {
         "#
     ).fetch_all(db_pool).await {
         for table in tables {
-            let schema = table.try_get::<String, _>("schemaname").unwrap_or_default();
-            let tablename = table.try_get::<String, _>("tablename").unwrap_or_default();
-            let size = table.try_get::<i64, _>("size").unwrap_or(0);
+            let schema: String = table.get("schemaname").unwrap_or_default();
+            let tablename: String = table.get("tablename").unwrap_or_default();
+            let size: i64 = table.get("size").unwrap_or(0);
             let labels = [("schema", schema), ("table", tablename)];
             gauge!("db_table_size_bytes", &labels).set(size as f64);
         }
@@ -194,7 +194,7 @@ pub async fn collect_system_metrics(db_pool: &PgPool) -> Result<()> {
     // Build queue depth
     if let Ok(count) = sqlx::query("SELECT count(*) as count FROM builds WHERE status = 'Pending'")
         .fetch_one(db_pool).await {
-        if let Some(c) = count.try_get::<i64, _>("count").ok() {
+        if let Ok(c) = count.get::<i64, _>("count") {
             gauge!("build_queue_depth").set(c as f64);
         }
     }
@@ -202,7 +202,7 @@ pub async fn collect_system_metrics(db_pool: &PgPool) -> Result<()> {
     // Running builds
     if let Ok(count) = sqlx::query("SELECT count(*) as count FROM builds WHERE status = 'Running'")
         .fetch_one(db_pool).await {
-        if let Some(c) = count.try_get::<i64, _>("count").ok() {
+        if let Ok(c) = count.get::<i64, _>("count") {
             gauge!("builds_running").set(c as f64);
         }
     }
@@ -210,7 +210,7 @@ pub async fn collect_system_metrics(db_pool: &PgPool) -> Result<()> {
     // Webhook queue depth
     if let Ok(count) = sqlx::query("SELECT count(*) as count FROM webhook_deliveries WHERE status = 'Pending'")
         .fetch_one(db_pool).await {
-        if let Some(c) = count.try_get::<i64, _>("count").ok() {
+        if let Ok(c) = count.get::<i64, _>("count") {
             gauge!("webhook_queue_depth").set(c as f64);
         }
     }
@@ -218,7 +218,7 @@ pub async fn collect_system_metrics(db_pool: &PgPool) -> Result<()> {
     // Search index size
     if let Ok(count) = sqlx::query("SELECT count(*) as count FROM search_index")
         .fetch_one(db_pool).await {
-        if let Some(c) = count.try_get::<i64, _>("count").ok() {
+        if let Ok(c) = count.get::<i64, _>("count") {
             gauge!("search_index_size").set(c as f64);
         }
     }

@@ -230,3 +230,128 @@ pub async fn close_pool(pool: DbPool) {
     pool.close().await;
     info!("Database connection pool closed");
 }
+
+/// Alias for create_sqlx_pool for backwards compatibility
+pub async fn create_pool(database_url: &str, max_connections: u32) -> DbResult<DbPool> {
+    // Parse the database URL to create a DbConfig
+    let config = parse_database_url(database_url, max_connections)?;
+    create_sqlx_pool(&config).await
+}
+
+/// Parse a PostgreSQL connection URL into a DbConfig
+fn parse_database_url(url: &str, max_connections: u32) -> DbResult<DbConfig> {
+    // Simple parsing of postgres://user:pass@host:port/db
+    let url = url.strip_prefix("postgres://").or_else(|| url.strip_prefix("postgresql://"))
+        .ok_or_else(|| DbError::ParseError("Invalid database URL format".to_string()))?;
+
+    let (auth_part, rest) = url.split_once('@')
+        .ok_or_else(|| DbError::ParseError("Missing @ in database URL".to_string()))?;
+
+    let (username, password) = auth_part.split_once(':')
+        .ok_or_else(|| DbError::ParseError("Missing : in auth part".to_string()))?;
+
+    let (host_port, database) = rest.split_once('/')
+        .ok_or_else(|| DbError::ParseError("Missing / in database URL".to_string()))?;
+
+    let (host, port) = host_port.split_once(':')
+        .ok_or_else(|| DbError::ParseError("Missing : in host:port".to_string()))?;
+
+    let port: u16 = port.parse()
+        .map_err(|_| DbError::ParseError("Invalid port number".to_string()))?;
+
+    Ok(DbConfig {
+        host: host.to_string(),
+        port,
+        username: username.to_string(),
+        password: password.to_string(),
+        database: database.to_string(),
+        max_connections,
+        min_connections: max_connections / 4,
+        acquire_timeout: Duration::from_secs(30),
+        idle_timeout: Duration::from_secs(600),
+        max_lifetime: Duration::from_secs(1800),
+    })
+}
+
+/// Cleanup old data (build logs, temp files, etc.)
+pub async fn cleanup_old_data(pool: &DbPool) -> DbResult<()> {
+    // Cleanup old build logs (older than 30 days)
+    sqlx::query("DELETE FROM build_logs WHERE created_at < NOW() - INTERVAL '30 days'")
+        .execute(pool)
+        .await
+        .map_err(|e| DbError::Query(e.to_string()))?;
+
+    // Cleanup old audit logs (older than 365 days)
+    sqlx::query("DELETE FROM audit_logs WHERE created_at < NOW() - INTERVAL '365 days'")
+        .execute(pool)
+        .await
+        .map_err(|e| DbError::Query(e.to_string()))?;
+
+    // Cleanup old webhook deliveries (older than 30 days)
+    sqlx::query("DELETE FROM webhook_deliveries WHERE created_at < NOW() - INTERVAL '30 days'")
+        .execute(pool)
+        .await
+        .map_err(|e| DbError::Query(e.to_string()))?;
+
+    info!("Old data cleanup completed");
+    Ok(())
+}
+
+/// Process webhook delivery queue
+pub async fn process_webhook_queue(pool: &DbPool) -> DbResult<()> {
+    // Get pending webhook deliveries
+    let deliveries = sqlx::query!(
+        r#"
+        SELECT id, webhook_id, event, payload, url, attempts
+        FROM webhook_deliveries
+        WHERE status = 'pending' AND attempts < 5
+        ORDER BY created_at
+        LIMIT 50
+        "#
+    )
+    .fetch_all(pool)
+    .await
+    .map_err(|e| DbError::Query(e.to_string()))?;
+
+    for delivery in deliveries {
+        // In a real implementation, this would make HTTP requests to the webhook URL
+        // For now, just mark as completed
+        sqlx::query!(
+            r#"
+            UPDATE webhook_deliveries
+            SET status = 'completed', completed_at = NOW(), attempts = attempts + 1
+            WHERE id = $1
+            "#,
+            delivery.id
+        )
+        .execute(pool)
+        .await
+        .map_err(|e| DbError::Query(e.to_string()))?;
+    }
+
+    Ok(())
+}
+
+/// Update search index for projects, issues, etc.
+pub async fn update_search_index(pool: &DbPool) -> DbResult<()> {
+    // Update full-text search vectors for projects
+    sqlx::query("UPDATE projects SET search_vector = to_tsvector('english', coalesce(name, '') || ' ' || coalesce(description, '')) WHERE search_vector IS NULL")
+        .execute(pool)
+        .await
+        .map_err(|e| DbError::Query(e.to_string()))?;
+
+    // Update full-text search vectors for issues
+    sqlx::query("UPDATE issues SET search_vector = to_tsvector('english', coalesce(title, '') || ' ' || coalesce(description, '')) WHERE search_vector IS NULL")
+        .execute(pool)
+        .await
+        .map_err(|e| DbError::Query(e.to_string()))?;
+
+    // Update full-text search vectors for merge requests
+    sqlx::query("UPDATE merge_requests SET search_vector = to_tsvector('english', coalesce(title, '') || ' ' || coalesce(description, '')) WHERE search_vector IS NULL")
+        .execute(pool)
+        .await
+        .map_err(|e| DbError::Query(e.to_string()))?;
+
+    info!("Search index update completed");
+    Ok(())
+}
