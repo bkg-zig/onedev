@@ -6121,6 +6121,7 @@ dependencies = [
  "onedev-auth",
  "onedev-core",
  "onedev-db",
+ "onedev-git",
  "percent-encoding",
  "pulldown-cmark",
  "rand 0.9.5",

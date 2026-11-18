@@ -12,6 +12,7 @@ onedev-core = { path = "../onedev-core" }
 onedev-api = { path = "../onedev-api" }
 onedev-auth = { path = "../onedev-auth" }
 onedev-db = { path = "../onedev-db" }
+onedev-git = { path = "../onedev-git" }
 tera.workspace = true
 askama.workspace = true
 markdown.workspace = true

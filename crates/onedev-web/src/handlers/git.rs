@@ -122,8 +122,51 @@ pub struct GitCommitsParams {
     pub per_page: Option<u32>,
 }
 
+/// Git repository root (pared with the API's GitService).
+fn git_root() -> std::path::PathBuf {
+    std::env::var("ONEDEV_GIT_ROOT")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(|_| std::path::PathBuf::from("/var/lib/onedev/repos"))
+}
+
+fn git_service() -> onedev_git::services::repository::RepositoryService {
+    onedev_git::services::repository::RepositoryService::new(onedev_git::models::GitConfig {
+        root: git_root(),
+        ..Default::default()
+    })
+}
+
+/// Resolve the repository path for a project URL id.
+/// Numeric ids are looked up in the DB; anything else is used as-is.
+async fn project_path(state: &WebState, id: &str) -> String {
+    if let (Some(pool), Ok(pid)) = (&state.db_pool, id.parse::<i64>()) {
+        if let Ok(project) = onedev_api::services::ProjectService::new(pool.clone())
+            .get(pid)
+            .await
+        {
+            return project.full_path;
+        }
+    }
+    id.to_owned()
+}
+
 /// Get project
-async fn get_project(_state: &WebState, id: &str) -> serde_json::Value {
+async fn get_project(state: &WebState, id: &str) -> serde_json::Value {
+    if let (Some(pool), Ok(pid)) = (&state.db_pool, id.parse::<i64>()) {
+        if let Ok(project) = onedev_api::services::ProjectService::new(pool.clone())
+            .get(pid)
+            .await
+        {
+            return serde_json::json!({
+                "id": project.id,
+                "name": project.name,
+                "path": project.full_path,
+                "description": project.description,
+                "visibility": format!("{:?}", project.visibility).to_lowercase(),
+                "default_branch": project.default_branch
+            });
+        }
+    }
     serde_json::json!({
         "id": id,
         "name": "onedev/core",
@@ -133,8 +176,20 @@ async fn get_project(_state: &WebState, id: &str) -> serde_json::Value {
     })
 }
 
-/// Get branches
-async fn get_branches(_state: &WebState, _project_id: &str) -> Vec<serde_json::Value> {
+/// Get branches (live via gix when the repo exists, else placeholder).
+async fn get_branches(state: &WebState, project_id: &str) -> Vec<serde_json::Value> {
+    let path = project_path(state, project_id).await;
+    if let Ok(refs) = git_service().list_branches(&path) {
+        let mut out = refs
+            .into_iter()
+            .map(|r| {
+                serde_json::json!({ "name": r.name, "protected": r.name == "main", "commit": { "sha": r.object_id } })
+            })
+            .collect::<Vec<_>>();
+        if !out.is_empty() {
+            return out;
+        }
+    }
     vec![
         serde_json::json!({ "name": "main", "protected": true, "commit": { "sha": "abc123def456", "message": "Release v1.0.0" } }),
         serde_json::json!({ "name": "develop", "protected": false, "commit": { "sha": "def456ghi789", "message": "Merge feature/dark-mode" } }),
@@ -143,21 +198,53 @@ async fn get_branches(_state: &WebState, _project_id: &str) -> Vec<serde_json::V
     ]
 }
 
-/// Get tags
-async fn get_tags(_state: &WebState, _project_id: &str) -> Vec<serde_json::Value> {
+/// Get tags (live via gix when the repo exists, else placeholder).
+async fn get_tags(state: &WebState, project_id: &str) -> Vec<serde_json::Value> {
+    let path = project_path(state, project_id).await;
+    if let Ok(refs) = git_service().list_tags(&path) {
+        let out = refs
+            .into_iter()
+            .map(|r| serde_json::json!({ "name": r.name, "commit": { "sha": r.object_id } }))
+            .collect::<Vec<_>>();
+        if !out.is_empty() {
+            return out;
+        }
+    }
     vec![
         serde_json::json!({ "name": "v1.0.0", "commit": { "sha": "abc123def456", "message": "Release v1.0.0" }, "tagger": { "name": "Admin User", "date": "2024-01-15T10:00:00Z" } }),
         serde_json::json!({ "name": "v0.9.0", "commit": { "sha": "mno345pqr678", "message": "Beta release" }, "tagger": { "name": "Admin User", "date": "2024-01-01T10:00:00Z" } }),
     ]
 }
 
-/// Get recent commits
+/// Get recent commits (live via gix history when the repo exists).
 async fn get_recent_commits(
-    _state: &WebState,
-    _project_id: &str,
-    _ref_name: &str,
-    _limit: usize,
+    state: &WebState,
+    project_id: &str,
+    ref_name: &str,
+    limit: usize,
 ) -> Vec<serde_json::Value> {
+    let path = project_path(state, project_id).await;
+    if let Ok(commits) = git_service().history(&path, ref_name, limit) {
+        let out = commits
+            .into_iter()
+            .map(|c| {
+                let short = c.id.chars().take(7).collect::<String>();
+                serde_json::json!({
+                    "sha": c.id,
+                    "short_sha": short,
+                    "message": c.message,
+                    "author": { "username": c.author.name, "full_name": c.committer.name, "avatar_url": null, "email": c.author.email },
+                    "authored_at": chrono::DateTime::from_timestamp(c.author.timestamp, 0),
+                    "committed_at": chrono::DateTime::from_timestamp(c.committer.timestamp, 0),
+                    "verified": false,
+                    "parents": c.parents
+                })
+            })
+            .collect::<Vec<_>>();
+        if !out.is_empty() {
+            return out;
+        }
+    }
     vec![
         serde_json::json!({
             "sha": "abc123def456789",
@@ -192,13 +279,31 @@ async fn get_recent_commits(
     ]
 }
 
-/// Get tree entries
+/// Get tree entries (live via gix when the repo exists).
 async fn get_tree_entries(
-    _state: &WebState,
-    _project_id: &str,
-    _ref_name: &str,
+    state: &WebState,
+    project_id: &str,
+    ref_name: &str,
     path: &str,
 ) -> Vec<serde_json::Value> {
+    let repo_path = project_path(state, project_id).await;
+    if let Ok(entries) = git_service().list_tree(&repo_path, ref_name, path) {
+        let out = entries
+            .into_iter()
+            .map(|e| {
+                serde_json::json!({
+                    "name": e.path.rsplit('/').next().unwrap_or(&e.path),
+                    "type": format!("{:?}", e.kind).to_lowercase(),
+                    "path": e.path,
+                    "size": e.size,
+                    "oid": e.object_id
+                })
+            })
+            .collect::<Vec<_>>();
+        if !out.is_empty() {
+            return out;
+        }
+    }
     if path.is_empty() {
         vec![
             serde_json::json!({ "name": "src", "type": "tree", "mode": "040000", "path": "src" }),
@@ -220,14 +325,26 @@ async fn get_tree_entries(
     }
 }
 
-/// Get blob content
+/// Get blob content (live via gix when the repo exists).
 async fn get_blob(
-    _state: &WebState,
-    _project_id: &str,
-    _ref_name: &str,
+    state: &WebState,
+    project_id: &str,
+    ref_name: &str,
     path: &str,
 ) -> serde_json::Value {
-    // In real implementation, fetch from git
+    let repo_path = project_path(state, project_id).await;
+    if let Ok(blob) = git_service().read_blob(&repo_path, ref_name, path) {
+        let content = blob.text().unwrap_or_default();
+        let lines = content.lines().count();
+        return serde_json::json!({
+            "path": path,
+            "size": content.len(),
+            "encoding": "utf-8",
+            "content": content,
+            "language": "rust",
+            "lines": lines
+        });
+    }
     serde_json::json!({
         "path": path,
         "size": 2048,
@@ -238,8 +355,25 @@ async fn get_blob(
     })
 }
 
-/// Get commit detail
-async fn get_commit(_state: &WebState, _project_id: &str, sha: &str) -> serde_json::Value {
+/// Get commit detail (live via gix when the repo exists).
+async fn get_commit(state: &WebState, project_id: &str, sha: &str) -> serde_json::Value {
+    let repo_path = project_path(state, project_id).await;
+    if let Ok(commit) = git_service().resolve_commit(&repo_path, sha) {
+        let short = commit.id.chars().take(7).collect::<String>();
+        return serde_json::json!({
+            "sha": commit.id,
+            "short_sha": short,
+            "message": commit.message,
+            "author": { "username": commit.author.name, "full_name": commit.committer.name, "avatar_url": null, "email": commit.author.email },
+            "committer": { "username": commit.committer.name, "full_name": commit.committer.name, "avatar_url": null, "email": commit.committer.email },
+            "authored_at": chrono::DateTime::from_timestamp(commit.author.timestamp, 0),
+            "committed_at": chrono::DateTime::from_timestamp(commit.committer.timestamp, 0),
+            "verified": false,
+            "parents": commit.parents,
+            "stats": { "files_changed": 0, "additions": 0, "deletions": 0 },
+            "changes": []
+        });
+    }
     serde_json::json!({
         "sha": sha,
         "short_sha": &sha[..8.min(sha.len())],
