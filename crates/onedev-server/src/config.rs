@@ -826,6 +826,8 @@ impl Default for AuthConfig {
     fn default() -> Self {
         Self {
             jwt_secret: "change-me-in-production-use-strong-random-secret".to_string(),
+            private_key: None,
+            public_key: None,
             token_expiry_hours: default_token_expiry_hours(),
             refresh_expiry_days: default_refresh_expiry_days(),
             argon2_memory_kb: default_argon2_memory(),

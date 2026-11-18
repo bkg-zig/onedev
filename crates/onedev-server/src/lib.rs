@@ -32,20 +32,8 @@ use crate::config::AppConfig;
 use onedev_db::{create_pool, run_migrations};
 use onedev_api::{AppState as ApiState, create_router as create_api_router};
 
-/// Application state for the server
-#[derive(Clone)]
-pub struct AppState {
-    pub config: Arc<AppConfig>,
-    pub db_pool: Arc<PgPool>,
-    pub api_state: ApiState,
-    pub lifecycle: Arc<LifecycleManager>,
-    pub build_scheduler: Arc<BuildScheduler>,
-    pub cleanup_service: Arc<CleanupService>,
-    pub git_gc_service: Arc<GitGcService>,
-    pub search_indexer: Arc<SearchIndexer>,
-    pub webhook_dispatcher: Arc<WebhookDispatcher>,
-    pub metrics_collector: Arc<MetricsCollector>,
-}
+// Application state is defined in state module
+pub use state::AppState;
 
 /// Build scheduler handle
 pub struct BuildScheduler {

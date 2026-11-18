@@ -291,7 +291,7 @@ impl BuildScheduler {
 
         let spec = spec_row
             .map(|row| {
-                let spec_str: String = row.get::<String, _>("spec").unwrap_or_default();
+                let spec_str: String = row.try_get("spec").unwrap_or_else(|_| String::new());
                 serde_yaml::from_str::<BuildSpec>(&spec_str)
             })
             .transpose()?
@@ -359,8 +359,8 @@ impl BuildScheduler {
             .fetch_all(self.db_pool.as_ref()).await?;
 
         for build in stuck_builds {
-            let build_id: Uuid = build.get::<Uuid, _>("id")?;
-            let project_id: Uuid = build.get::<Uuid, _>("project_id")?;
+            let build_id: Uuid = build.get("id");
+            let project_id: Uuid = build.get("project_id");
             warn!("Build {} appears stuck, marking as failed", build_id);
             sqlx::query("UPDATE builds SET status = $1, finished_at = $2, error = $3 WHERE id = $4")
                 .bind(BuildStatus::Failed.to_string())

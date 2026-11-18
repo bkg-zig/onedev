@@ -2,6 +2,8 @@
 
 use anyhow::Result;
 use chrono::{DateTime, Utc};
+use gix_odb::memory::Proxy as OdbProxy;
+use gix_odb::Handle;
 use sqlx::{PgPool, Row};
 use std::path::PathBuf;
 use std::process::Command;
@@ -111,7 +113,7 @@ impl GitGcService {
 
         for repo in repos {
             let project_id: Uuid = repo.try_get("id")?;
-            let path: String = repo.try_get("path")?;
+            let path: String = repo.get("path");
             let repo_path = self.config.repos_root.join(&path);
 
             if !repo_path.exists() {
@@ -173,7 +175,7 @@ impl GitGcService {
             return Err(anyhow::anyhow!("Project not found"));
         };
 
-        let path: String = repo.get("path")?;
+        let path: String = repo.get("path");
         let repo_path = self.config.repos_root.join(&path);
 
         if !repo_path.exists() {
@@ -217,8 +219,8 @@ impl GitGcService {
             return Err(anyhow::anyhow!("Project not found"));
         };
 
-        let path: String = repo.get("path")?;
-        let last_gc: Option<DateTime<Utc>> = repo.get("gc_last_run").ok();
+        let path: String = repo.try_get("path")?;
+        let last_gc: Option<DateTime<Utc>> = repo.try_get("gc_last_run").ok();
         let repo_path = self.config.repos_root.join(&path);
 
         let stats = if repo_path.exists() {
@@ -241,15 +243,7 @@ impl GitGcService {
     }
 }
 
-fn count_loose_objects(_object_db: &OdbProxy<Handle>) -> Result<(u64, u64)> {
-    // Implementation would iterate loose objects
-    Ok((0, 0))
-}
 
-fn count_pack_objects(_object_db: &OdbProxy<Handle>) -> Result<(u64, u64)> {
-    // Implementation would iterate pack files
-    Ok((0, 0))
-}
 
 /// Git GC statistics
 #[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]

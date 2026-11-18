@@ -19,7 +19,9 @@ pub type MetricsHandle = PrometheusHandle;
 
 /// Initialize metrics recorder
 pub fn init_metrics() -> MetricsHandle {
+    // PrometheusBuilder::new() returns a Result in newer versions
     let builder = PrometheusBuilder::new()
+        .expect("Failed to create Prometheus builder")
         .set_buckets(&[
             0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0,
         ]);
