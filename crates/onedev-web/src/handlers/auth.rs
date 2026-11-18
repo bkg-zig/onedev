@@ -17,10 +17,21 @@ pub async fn login_page(state: State<WebState>) -> impl IntoResponse {
     render_template(&state, "auth/login.html", context).await
 }
 
-/// Login handler
+/// Login handler — mirrors `LoginPage`: authenticate via the live
+/// `AuthService` when a database is configured, otherwise the dev
+/// placeholder account. Failures re-render the form with the error in
+/// the feedback panel, exactly like the vanilla `FencedFeedbackPanel`.
 pub async fn login_handler(state: State<WebState>, form: Form<LoginForm>) -> impl IntoResponse {
-    // Validate credentials (placeholder)
-    if form.username == "admin" && form.password == "admin" {
+    let valid = match &state.auth_service {
+        Some(auth) => auth
+            .authenticate_password(&form.username, &form.password, form.remember.unwrap_or(false), None, None)
+            .await
+            .map(|result| !result.requires_two_factor)
+            .unwrap_or(false),
+        None => form.username == "admin" && form.password == "admin",
+    };
+
+    if valid {
         // Set session cookie
         let mut response = Response::new(axum::body::Body::empty());
         *response.status_mut() = StatusCode::FOUND;

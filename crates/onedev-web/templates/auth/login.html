@@ -1,12 +1,43 @@
 {% extends "base.html" %}
+{# 1:1 port of LoginPage.html (passwordCheckFrag): same form groups,     #}
+{# classes and labels; wicket feedback panel becomes the error block.    #}
 {% block title %}Sign In · OneDev{% endblock title %}
 {% block page_title %}Sign In{% endblock page_title %}
+{% block head %}
+<link rel="stylesheet" href="/static/vanilla/web/page/security/login.css">
+<link rel="stylesheet" href="/static/vanilla/web/page/simple/simple.css">
+{% endblock head %}
 {% block content %}
-<div class="p-2 p-sm-5"><h1>{{ title }}</h1>
-{% if error is defined and error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
-<form method="post" action="/login" hx-post="/login" hx-swap="outerHTML">
-<input name="username" value="{{ username | default(value='') }}" placeholder="Username or email">
-<input name="password" type="password" placeholder="Password">
-<button type="submit">Sign In</button></form>
-<p>No account? <a href="/register">Sign up</a></p></div>
+<div class="main text-center">
+  <div class="title">
+    <h3>Sign In</h3>
+  </div>
+  <form method="post" action="/login" hx-post="/login" hx-swap="outerHTML">
+    {% if error is defined and error %}
+    <div class="alert alert-danger">{{ error }}</div>
+    {% endif %}
+    <div class="form-group">
+      <label for="userName">Login name or email address <span class="text-danger">*</span></label>
+      <input id="userName" name="username" autocomplete="username" type="text" class="form-control" value="{{ username | default(value='') }}">
+    </div>
+    <div class="form-group">
+      <label for="password">Password <span class="text-danger">*</span></label>
+      <input id="password" name="password" autocomplete="current-password" type="password" class="form-control">
+    </div>
+    <div class="form-group d-flex flex-wrap justify-content-between">
+      <div class="checkbox-inline">
+        <label class="checkbox">
+          <input id="rememberMe" name="remember" type="checkbox" class="form-check-input" value="true">
+          Remember Me
+        </label>
+      </div>
+      <a href="/password-reset">Forgot Password?</a>
+    </div>
+    <button class="btn btn-primary font-weight-bold" type="submit">Sign in</button>
+  </form>
+  <div class="signup">
+    <span class="text-muted mr-1">Don&apos;t have an account yet?</span> <a href="/register" class="font-weight-bold">Sign Up!</a>
+  </div>
+  <div class="foot text-muted">Powered by <a href="https://code.onedev.io" class="text-muted text-hover-primary">OneDev</a></div>
+</div>
 {% endblock content %}

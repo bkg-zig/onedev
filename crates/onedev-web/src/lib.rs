@@ -50,6 +50,10 @@ pub struct WebState {
     /// `None` until then: handlers render with placeholder data so the
     /// UI is testable without a database.
     pub api_state: Option<ApiState>,
+    /// Live authentication service when `ONEDEV_WEB_DATABASE_URL` is set.
+    /// `None` without a database: auth handlers fall back to the
+    /// placeholder check so pages stay testable.
+    pub auth_service: Option<Arc<onedev_auth::services::auth_service::AuthService>>,
     pub config: Arc<WebConfig>,
     pub tera: Arc<tera::Tera>,
 }
@@ -66,8 +70,37 @@ impl WebState {
         tera.register_filter("datefmt", date_filter);
         tera.register_filter("truncate", truncate_filter);
 
+        // Optional live backend: Postgres + ephemeral RSA keys for JWT.
+        // Without a database URL the UI renders with placeholder data.
+        let auth_service = match std::env::var("ONEDEV_WEB_DATABASE_URL") {
+            Ok(url) if !url.trim().is_empty() => {
+                let pool = onedev_db::pool::create_pool(&url, 5).await?;
+                onedev_db::run_migrations(&pool).await?;
+                let (private_key, public_key) =
+                    onedev_auth::models::token::generate_rsa_keys()?;
+                let auth_config = onedev_auth::services::auth_service::AuthConfig {
+                    jwt_config: onedev_auth::models::token::TokenConfig {
+                        issuer: "onedev".to_owned(),
+                        audience: "onedev".to_owned(),
+                        access_ttl_seconds: 15 * 60,
+                        refresh_ttl_seconds: 7 * 24 * 60 * 60,
+                        temporary_ttl_seconds: 5 * 60,
+                        private_key: secrecy::SecretString::from(private_key),
+                        public_key: secrecy::SecretString::from(public_key),
+                        algorithm: jsonwebtoken::Algorithm::RS256,
+                    },
+                    ..Default::default()
+                };
+                Some(Arc::new(
+                    onedev_auth::services::auth_service::AuthService::new(auth_config, pool)?,
+                ))
+            }
+            _ => None,
+        };
+
         Ok(Self {
             api_state: None,
+            auth_service,
             config: Arc::new(config),
             tera: Arc::new(tera),
         })

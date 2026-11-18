@@ -11,6 +11,7 @@ description = "OneDev Web UI - SSR Templates, Static Assets, DX Integration"
 onedev-core = { path = "../onedev-core" }
 onedev-api = { path = "../onedev-api" }
 onedev-auth = { path = "../onedev-auth" }
+onedev-db = { path = "../onedev-db" }
 tera.workspace = true
 askama.workspace = true
 markdown.workspace = true
@@ -21,6 +22,8 @@ axum-extra = { workspace = true, default-features = false, features = ["cookie",
 tower-http = { workspace = true, features = ["fs"] }
 tower.workspace = true
 figment.workspace = true
+secrecy.workspace = true
+jsonwebtoken.workspace = true
 digest.workspace = true
 tokio = { workspace = true }
 getrandom = { version = "0.3", features = ["std"], default-features = false }
@@ -58,6 +61,7 @@ sqlx.workspace = true
 onedev-core = { path = "../onedev-core", optional = true }
 onedev-api = { path = "../onedev-api", optional = true }
 onedev-auth = { path = "../onedev-auth", optional = true }
+onedev-db = { path = "../onedev-db", optional = true }
 tera = { workspace = true, optional = true }
 askama = { workspace = true, optional = true }
 markdown = { workspace = true, optional = true }
@@ -68,6 +72,8 @@ axum-extra = { workspace = true, optional = true }
 tower-http = { workspace = true, optional = true }
 tower = { workspace = true, optional = true }
 figment = { workspace = true, optional = true }
+secrecy = { workspace = true, optional = true }
+jsonwebtoken = { workspace = true, optional = true }
 digest = { workspace = true, optional = true }
 tokio = { workspace = true, optional = true }
 getrandom = { version = "0.3", features = ["wasm_js"], default-features = false, optional = true }
