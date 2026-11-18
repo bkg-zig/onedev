@@ -1,0 +1,47 @@
+crates/onedev-web/src/services/session.rs
+  s_0de1f439e1761a::t_a7207e3c87c419 11
+  s_0de1f439e1761a::t_11c6c679ca4845 30
+  s_0de1f439e1761a::t_e8940b9010ea12 10,12-29
+  s_0de1f439e1761a::t_67b53ccebe8fb4 3-5,62,74-75,92,99-104,118-124
+crates/onedev-web/src/lib.rs
+  s_b4d4a7c7a80ee3::t_d6ddfdb53c780a 41
+  s_b4d4a7c7a80ee3::t_b8b9bb06f2993c 69-70,115,117-118
+crates/onedev-web/Cargo.toml
+  s_b4d4a7c7a80ee3::t_485511a544551e 29,52-55
+Cargo.lock
+  s_0de1f439e1761a::t_07772d29781a8b 6125,6133
+crates/onedev-web/src/routes/mod.rs
+  s_e213d8b74427f6::t_7e573036399e0b 6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "f4c07e960e4407b0258e4ec1b516b30b841962c5",
+  "prompts": {},
+  "sessions": {
+    "s_0de1f439e1761a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0f2f81bd-eb11-4834-95c4-07542b095264",
+        "model": "poolside/laguna-xs-2.1"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    },
+    "s_b4d4a7c7a80ee3": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e15302bc6ffeeevu8JM3MfvFlY",
+        "model": "nvidia/nemotron-3-ultra-550b-a55b"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    },
+    "s_e213d8b74427f6": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e143a2903ffeqMLWwIOGrADl23",
+        "model": "minimaxai/minimax-m3.1-flash"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}
