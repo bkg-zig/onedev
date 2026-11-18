@@ -1,0 +1,67 @@
+Cargo.lock
+  s_57136282ddd701::t_f3cd3f2eb9dcf7 1179-1180,2011,5591,5990,5995,5999,6001,6008,6012,6025,7420,7900,8978,9010,9983,10451-10459,10466-10475
+Cargo.toml
+  s_57136282ddd701::t_4bb99e4996e500 172,191-196
+crates/onedev-build/Cargo.toml
+  s_57136282ddd701::t_106bc4b5587fd9 42-50
+crates/onedev-build/src/models.rs
+  s_57136282ddd701::t_90c29c16bb8472 24-63,124-152,346-347,349-359,361,366-407,410-418,420,422-428,430-453,456-462,470-480,482-485,488-506,512-529,563-580,592-593,601-605,616-767
+crates/onedev-build/src/services/executor.rs
+  s_57136282ddd701::t_600b263dcd9da7 3-24,28-141,146-159,162-394,396-445,448-454,456-460,464,466-467,469-475,477,479-510,517-520,524-530,532-533,535-584,590,592-594,598,600-618,621-623,626,628,630-634,636-646,648-662,664-670,672-685,687-705,707-716,719-735,737-741,743-827,829-838,841-2012
+crates/onedev-build/src/services/interpolation.rs
+  s_57136282ddd701::t_08849ba91c4be1 1-759
+crates/onedev-build/src/services/mod.rs
+  s_57136282ddd701::t_64d04992e1a659 1,4-5,7,9,12,16
+crates/onedev-build/src/services/oci/manifest.rs
+  s_57136282ddd701::t_3cd4517c990398 1-528
+crates/onedev-build/src/services/oci/mod.rs
+  s_57136282ddd701::t_1a5c005074dd4e 1-113
+crates/onedev-build/src/services/oci/reference.rs
+  s_57136282ddd701::t_33382675db2f26 1-388
+crates/onedev-build/src/services/oci/registry.rs
+  s_57136282ddd701::t_81f84a74d90e14 1-1871
+crates/onedev-build/src/services/oci/store.rs
+  s_57136282ddd701::t_5eb6ca9142b8fd 1-1579
+crates/onedev-build/src/services/oci/testing.rs
+  s_57136282ddd701::t_1e227272a29416 1-781
+crates/onedev-build/src/services/oci/unpack.rs
+  s_57136282ddd701::t_27dd19d194f505 1-981
+crates/onedev-build/src/services/parser.rs
+  s_57136282ddd701::t_ba1a524a8d38d8 126-130,133-134,136-141,194,197-198,201,208-251
+crates/onedev-build/src/services/retry_condition.rs
+  s_57136282ddd701::t_5d76df172eddaa 1-483
+crates/onedev-build/src/services/runner.rs
+  s_57136282ddd701::t_73f1f8c60e5bd0 2-14,16,18-19,21-29,31-32,34-50,53-72,76-81,84,87-88,97-108,110,116-130,133,135,137-144,146-174,180-183,185,187-198,201-206,209-212,216,225-226,229-461,464-477,480-486,488-695,697-701,704-723
+crates/onedev-build/src/services/templates.rs
+  s_57136282ddd701::t_bf67c6eaac89d7 1-498
+crates/onedev-build/src/utils.rs
+  s_57136282ddd701::t_1635d479dd19aa 5-7,10-18,21,38-138,150-209
+crates/onedev-build/tests/fixtures/vanilla-onedev-buildspec.yml
+  s_57136282ddd701::t_56a8c7f9bb4dc7 1-469
+crates/onedev-build/tests/runner_test.rs
+  s_57136282ddd701::t_d4dc21dc2aa607 25-27,49,75,95,109-110,112
+crates/onedev-db/migrations/004__server_services.sql
+  s_57136282ddd701::t_dd45e71136543f 1-173
+crates/onedev-db/migrations/005__build_metadata.sql
+  s_57136282ddd701::t_207dfd2f3d4753 1-9
+crates/onedev-server/src/services/build_scheduler.rs
+  s_57136282ddd701::t_5104a75c4db023 256-258
+docs/progress.md
+  s_57136282ddd701::t_cb259d44ce1c33 61
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "3ff309bdadce67828577ec930e3baf96e2350227",
+  "prompts": {},
+  "sessions": {
+    "s_57136282ddd701": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e1080185bffe0aU4R8r4qDWPDH",
+        "model": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}
