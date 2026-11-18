@@ -1,0 +1,70 @@
+# Build artifacts
+target/
+*.rlib
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# CI/CD
+.github/
+
+# Documentation
+docs/
+*.md
+
+# Test files
+tests/
+*.test
+
+# Logs
+*.log
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Secrets
+secrets/
+*.pem
+*.key
+*.crt
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Cache
+.cache/
+node_modules/
+
+# Vendor
+vendor/
+
+# Claude/OpenCode
+.claude/
+.opencode/
+
+# Cargo (Cargo.lock wird für reproduzierbare Builds gebraucht)
+Cargo.toml.orig
+
+# Docker (docker/ wird gebraucht: Dockerfiles + Configs für COPY)
+*.dockerfile
+
+# SQLx
+.sqlx/
+
+# Examples
+examples/
