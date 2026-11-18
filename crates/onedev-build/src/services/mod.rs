@@ -7,6 +7,7 @@ pub mod parser;
 pub mod retry_condition;
 pub mod runner;
 pub mod templates;
+pub mod youki;
 
 pub use executor::*;
 pub use interpolation::*;

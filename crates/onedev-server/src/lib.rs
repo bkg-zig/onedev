@@ -1,6 +1,13 @@
-//! OneDev Main Server Composition
+//! OneDev main server: composition root, lifecycle, background services.
+//!
+//! [`Server::start`] builds everything (database, services, HTTP stack),
+//! [`Server::wait`] serves until shutdown is requested and then drains in a
+//! fixed order: stop accepting connections, finish in-flight requests, stop
+//! the background services (running builds are cancelled and record their
+//! outcome), close the database pool.
 
 pub mod config;
+pub mod http;
 pub mod lifecycle;
 pub mod metrics;
 pub mod middleware;
@@ -8,346 +15,377 @@ pub mod services;
 pub mod state;
 pub mod telemetry;
 
-// Explicit re-exports to avoid ambiguous glob re-exports
-pub use config::AppConfig;
-pub use config::AuthConfig;
-pub use config::CleanupConfig;
-pub use config::WebhookConfig;
-pub use lifecycle::LifecycleManager;
-pub use metrics::MetricsHandle;
-pub use metrics::init_metrics;
-pub use middleware::create_middleware_stack;
-pub use services::build_scheduler::BuildSchedulerConfig;
-pub use services::cleanup::CleanupConfig as CleanupServiceConfig;
-pub use services::git_gc::GitGcConfig;
-pub use services::search_indexer::SearchIndexerConfig;
-pub use services::webhook_dispatcher::WebhookDispatcherConfig;
-pub use state::AppState;
-pub use state::init_state;
-pub use telemetry::init_logging;
-pub use telemetry::init_otel;
-pub use telemetry::init_telemetry;
+#[cfg(test)]
+mod testsupport;
 
-pub use anyhow::Result;
-pub use chrono::{DateTime, Utc};
-pub use serde::{Deserialize, Serialize};
-pub use thiserror::Error;
-/// Re-export commonly used types
-pub use uuid::Uuid;
-
-use axum::{Router, routing::get};
-use onedev_api::{AppState as ApiState, create_router as create_api_router};
-use onedev_db::{create_pool, run_migrations};
+use std::net::{IpAddr, SocketAddr};
 use std::sync::Arc;
+use std::time::Duration;
 
-// Allow nesting ApiState router inside AppState router
-impl axum::extract::FromRef<AppState> for ApiState {
-    fn from_ref(app_state: &AppState) -> Self {
-        app_state.api_state.clone()
-    }
+use anyhow::Context as _;
+use axum::Router;
+use tokio::net::TcpListener;
+use tokio::task::JoinHandle;
+use tracing::{error, info, warn};
+
+pub use config::AppConfig;
+pub use lifecycle::{HealthStatus, Lifecycle, ShutdownSignal};
+pub use state::AppState;
+
+use crate::metrics::MetricsEndpoint;
+use crate::services::supervise;
+
+/// Extra time the background services get on top of the request grace period
+/// (the build scheduler waits for the builds it cancelled).
+const SERVICE_STOP_MARGIN: Duration = Duration::from_secs(5);
+
+/// A started server: listening, services running, not yet serving requests
+/// until [`Server::wait`] is awaited.
+pub struct Server {
+    state: AppState,
+    router: Router,
+    listener: TcpListener,
+    addr: SocketAddr,
+    tasks: Vec<JoinHandle<()>>,
 }
 
-/// Build scheduler handle
-pub struct BuildScheduler {
-    inner: Arc<tokio::sync::Mutex<Option<crate::services::build_scheduler::BuildScheduler>>>,
-}
+impl Server {
+    /// Bring the server up: listen, connect and migrate the database, build
+    /// the services and start the background tasks.
+    ///
+    /// The configuration must have been validated ([`AppConfig::validate`]).
+    pub async fn start(config: AppConfig) -> anyhow::Result<Server> {
+        let config = Arc::new(config);
+        let metrics_handle = metrics::install()?;
 
-impl BuildScheduler {
-    pub fn new(scheduler: crate::services::build_scheduler::BuildScheduler) -> Self {
-        Self {
-            inner: Arc::new(tokio::sync::Mutex::new(Some(scheduler))),
-        }
-    }
-
-    pub async fn running_count(&self) -> usize {
-        if let Some(s) = self.inner.lock().await.as_ref() {
-            s.running_count().await
-        } else {
-            0
-        }
-    }
-
-    pub async fn queue_depth(&self) -> usize {
-        if let Some(s) = self.inner.lock().await.as_ref() {
-            s.queue_depth().await
-        } else {
-            0
-        }
-    }
-}
-
-/// Cleanup service handle
-pub struct CleanupService {
-    inner: Arc<tokio::sync::Mutex<Option<crate::services::cleanup::CleanupService>>>,
-}
-
-impl CleanupService {
-    pub fn new(service: crate::services::cleanup::CleanupService) -> Self {
-        Self {
-            inner: Arc::new(tokio::sync::Mutex::new(Some(service))),
-        }
-    }
-
-    pub async fn trigger_cleanup(&self) -> anyhow::Result<()> {
-        if let Some(s) = self.inner.lock().await.as_ref() {
-            s.trigger_cleanup().await
-        } else {
-            Ok(())
-        }
-    }
-}
-
-/// Git GC service handle
-pub struct GitGcService {
-    inner: Arc<tokio::sync::Mutex<Option<crate::services::git_gc::GitGcService>>>,
-}
-
-impl GitGcService {
-    pub fn new(service: crate::services::git_gc::GitGcService) -> Self {
-        Self {
-            inner: Arc::new(tokio::sync::Mutex::new(Some(service))),
-        }
-    }
-
-    pub async fn run_aggressive_gc(&self, project_id: uuid::Uuid) -> anyhow::Result<()> {
-        if let Some(s) = self.inner.lock().await.as_ref() {
-            s.run_aggressive_gc(project_id).await
-        } else {
-            Ok(())
-        }
-    }
-
-    pub async fn get_gc_stats(
-        &self,
-        project_id: uuid::Uuid,
-    ) -> anyhow::Result<crate::services::git_gc::GitGcStats> {
-        if let Some(s) = self.inner.lock().await.as_ref() {
-            s.get_gc_stats(project_id).await
-        } else {
-            Ok(Default::default())
-        }
-    }
-}
-
-/// Search indexer handle
-pub struct SearchIndexer {
-    inner: Arc<tokio::sync::Mutex<Option<crate::services::search_indexer::SearchIndexer>>>,
-}
-
-impl SearchIndexer {
-    pub fn new(indexer: crate::services::search_indexer::SearchIndexer) -> Self {
-        Self {
-            inner: Arc::new(tokio::sync::Mutex::new(Some(indexer))),
-        }
-    }
-
-    pub async fn trigger_reindex(&self) -> anyhow::Result<()> {
-        if let Some(s) = self.inner.lock().await.as_ref() {
-            s.trigger_reindex().await
-        } else {
-            Ok(())
-        }
-    }
-
-    pub async fn get_stats(
-        &self,
-    ) -> anyhow::Result<crate::services::search_indexer::SearchIndexStats> {
-        if let Some(s) = self.inner.lock().await.as_ref() {
-            s.get_stats().await
-        } else {
-            Ok(Default::default())
-        }
-    }
-}
-
-/// Webhook dispatcher handle
-pub struct WebhookDispatcher {
-    inner: Arc<tokio::sync::Mutex<Option<crate::services::webhook_dispatcher::WebhookDispatcher>>>,
-}
-
-impl WebhookDispatcher {
-    pub fn new(dispatcher: crate::services::webhook_dispatcher::WebhookDispatcher) -> Self {
-        Self {
-            inner: Arc::new(tokio::sync::Mutex::new(Some(dispatcher))),
-        }
-    }
-
-    pub async fn queue_delivery(
-        &self,
-        webhook_id: uuid::Uuid,
-        event: &str,
-        payload: serde_json::Value,
-        url: &str,
-    ) -> anyhow::Result<uuid::Uuid> {
-        if let Some(d) = self.inner.lock().await.as_ref() {
-            d.queue_delivery(webhook_id, event, payload, url).await
-        } else {
-            Err(anyhow::anyhow!("Webhook dispatcher not initialized"))
-        }
-    }
-
-    pub async fn get_stats(
-        &self,
-    ) -> anyhow::Result<crate::services::webhook_dispatcher::WebhookStats> {
-        if let Some(d) = self.inner.lock().await.as_ref() {
-            d.get_stats().await
-        } else {
-            Ok(Default::default())
-        }
-    }
-}
-
-/// Metrics collector
-#[allow(dead_code)]
-pub struct MetricsCollector {
-    inner: Arc<tokio::sync::Mutex<Option<tokio::task::JoinHandle<()>>>>,
-}
-
-impl MetricsCollector {
-    pub fn new() -> Self {
-        Self {
-            inner: Arc::new(tokio::sync::Mutex::new(None)),
-        }
-    }
-}
-
-impl Default for MetricsCollector {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-/// Create the main application router
-pub fn create_app_router(state: AppState) -> Router {
-    // Health check endpoint
-    async fn health_handler() -> &'static str {
-        "OK"
-    }
-
-    // Metrics placeholder
-    async fn metrics_handler() -> &'static str {
-        "OK"
-    }
-
-    // Hello handler for root
-    async fn hello_handler() -> &'static str {
-        "OneDev Server - Hello Universe!"
-    }
-
-    // Create API router
-    let api_router = create_api_router(state.api_state.clone());
-
-    Router::<AppState>::new()
-        .route("/", get(hello_handler))
-        .route("/health", get(health_handler))
-        .route("/metrics", get(metrics_handler))
-        .nest("/api", api_router)
-        .with_state(state)
-}
-
-/// Health check endpoint
-pub async fn health_handler() -> &'static str {
-    "OK"
-}
-
-/// Create application state from config
-pub async fn create_app_state(config: &AppConfig) -> Result<AppState> {
-    // Create database pool
-    let db_pool =
-        Arc::new(create_pool(&config.database.url, config.database.max_connections).await?);
-
-    // Run migrations
-    run_migrations(&db_pool).await?;
-
-    // Initialize lifecycle manager
-    let lifecycle = Arc::new(LifecycleManager::new());
-
-    // Create AuthConfig for onedev-auth
-    let private_key = config.auth.private_key.clone().unwrap_or_default();
-    let public_key = config.auth.public_key.clone().unwrap_or_default();
-
-    let auth_config = onedev_auth::AuthConfig {
-        jwt_config: onedev_auth::models::token::TokenConfig {
-            issuer: "onedev".to_string(),
-            audience: "onedev".to_string(),
-            access_ttl_seconds: (config.auth.token_expiry_hours * 3600),
-            refresh_ttl_seconds: (config.auth.refresh_expiry_days * 86400),
-            temporary_ttl_seconds: 300,
-            private_key: secrecy::SecretString::new(private_key.into()),
-            public_key: secrecy::SecretString::new(public_key.into()),
-            algorithm: jsonwebtoken::Algorithm::RS256,
-        },
-        totp_config: onedev_auth::models::two_factor::TotpConfig {
-            algorithm: onedev_auth::models::two_factor::TotpAlgorithm::Sha1,
-            digits: 6,
-            period: 30,
-            skew: 1,
-        },
-        session_ttl_seconds: (config.auth.session_timeout_minutes * 60),
-        remember_me_ttl_seconds: 30 * 24 * 60 * 60,
-        max_failed_attempts: config.auth.max_failed_attempts,
-        lockout_duration_seconds: (config.auth.lockout_duration_minutes * 60),
-        password_reset_ttl_seconds: 60 * 60,
-    };
-
-    // Create API state using the onedev-api factory
-    let api_state = onedev_api::create_app_state((*db_pool).clone(), auth_config).await?;
-
-    // Initialize all services using state module
-    let app_state = state::init_state(
-        db_pool.clone(),
-        Arc::new(config.clone()),
-        api_state.clone(),
-        lifecycle.clone(),
-    )
-    .await?;
-
-    // Mark startup complete
-    lifecycle.mark_startup_complete();
-
-    Ok(app_state)
-}
-
-/// Run the HTTP server
-pub async fn run_server(state: AppState, config: AppConfig) -> Result<()> {
-    let app = create_app_router(state);
-
-    let addr = format!("{}:{}", config.server.bind_address, config.server.port);
-    let listener = tokio::net::TcpListener::bind(&addr).await?;
-    tracing::info!("OneDev server listening on {}", addr);
-
-    axum::serve(listener, app)
-        .with_graceful_shutdown(shutdown_signal())
-        .await?;
-
-    Ok(())
-}
-
-/// Graceful shutdown signal handler
-async fn shutdown_signal() {
-    let ctrl_c = async {
-        tokio::signal::ctrl_c()
+        // Fail fast on the most common deployment error (port in use)
+        // before anything else is touched.
+        let ip: IpAddr = config
+            .server
+            .bind_address
+            .parse()
+            .with_context(|| format!("server.bind_address `{}` is not an IP address", config.server.bind_address))?;
+        let listener = TcpListener::bind(SocketAddr::new(ip, config.server.port))
             .await
-            .expect("Failed to install Ctrl+C handler");
-    };
+            .with_context(|| format!("cannot listen on {}:{}", config.server.bind_address, config.server.port))?;
+        let addr = listener.local_addr().context("cannot read the listening address")?;
 
-    #[cfg(unix)]
-    let terminate = async {
-        tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
-            .expect("Failed to install signal handler")
-            .recv()
-            .await;
-    };
+        state::prepare_directories(&config)?;
+        let pool = state::connect_database(&config.database).await?;
+        if config.database.run_migrations {
+            state::migrate(&pool).await?;
+        }
 
-    #[cfg(not(unix))]
-    let terminate = std::future::pending::<()>();
+        let lifecycle = Arc::new(Lifecycle::new());
+        let state = AppState::build(config.clone(), pool, lifecycle.clone()).await?;
 
-    tokio::select! {
-        _ = ctrl_c => {
-            tracing::info!("Received Ctrl+C, shutting down gracefully...");
-        },
-        _ = terminate => {
-            tracing::info!("Received SIGTERM, shutting down gracefully...");
-        },
+        let endpoint = MetricsEndpoint::new(
+            metrics_handle.clone(),
+            config.observability.metrics_enabled,
+            config.observability.metrics_token.as_deref(),
+        );
+        let (router, handles) = middleware::apply(http::application(&state, endpoint), &config)?;
+        let tasks = spawn_services(&state, metrics_handle, handles.limiter);
+
+        lifecycle.mark_ready();
+        info!(
+            %addr,
+            environment = %config.server.environment,
+            version = env!("CARGO_PKG_VERSION"),
+            "onedev server listening"
+        );
+        Ok(Server {
+            state,
+            router,
+            listener,
+            addr,
+            tasks,
+        })
+    }
+
+    /// Address the server listens on (useful with port 0).
+    pub fn local_addr(&self) -> SocketAddr {
+        self.addr
+    }
+
+    pub fn lifecycle(&self) -> Arc<Lifecycle> {
+        self.state.lifecycle.clone()
+    }
+
+    pub fn state(&self) -> &AppState {
+        &self.state
+    }
+
+    /// Serve until shutdown is requested ([`Lifecycle::begin_shutdown`]),
+    /// then stop everything in order.
+    pub async fn wait(self) -> anyhow::Result<()> {
+        let Server {
+            state,
+            router,
+            listener,
+            addr: _,
+            tasks,
+        } = self;
+        let grace = Duration::from_secs(state.config.server.shutdown_grace_secs.max(1));
+        let mut shutdown = state.lifecycle.signal();
+        let mut stop_accepting = state.lifecycle.signal();
+
+        let service = router.into_make_service_with_connect_info::<SocketAddr>();
+        let mut serve = tokio::spawn(async move {
+            axum::serve(listener, service)
+                .with_graceful_shutdown(async move { stop_accepting.wait().await })
+                .await
+        });
+
+        let outcome = tokio::select! {
+            result = &mut serve => {
+                // the HTTP server ended without being asked to
+                state.lifecycle.begin_shutdown();
+                server_result(result)
+            }
+            _ = shutdown.wait() => {
+                match tokio::time::timeout(grace, &mut serve).await {
+                    Ok(result) => server_result(result),
+                    Err(_) => {
+                        warn!("open connections did not finish within the grace period, closing them");
+                        serve.abort();
+                        Ok(())
+                    }
+                }
+            }
+        };
+
+        let deadline = tokio::time::Instant::now() + grace + SERVICE_STOP_MARGIN;
+        for mut task in tasks {
+            match tokio::time::timeout_at(deadline, &mut task).await {
+                Ok(Ok(())) => {}
+                Ok(Err(join_error)) => error!(%join_error, "a background service failed while stopping"),
+                Err(_) => {
+                    warn!("a background service did not stop in time, abandoning it");
+                    task.abort();
+                }
+            }
+        }
+        state.pool.close().await;
+        info!("server stopped");
+        outcome
+    }
+}
+
+fn server_result(result: Result<std::io::Result<()>, tokio::task::JoinError>) -> anyhow::Result<()> {
+    match result {
+        Ok(Ok(())) => Ok(()),
+        Ok(Err(error)) => Err(anyhow::Error::new(error).context("the HTTP server failed")),
+        Err(join_error) => Err(anyhow::Error::new(join_error).context("the HTTP server task failed")),
+    }
+}
+
+/// Start the supervised background services.
+fn spawn_services(
+    state: &AppState,
+    metrics: metrics_exporter_prometheus::PrometheusHandle,
+    limiter: Option<Arc<middleware::KeyedLimiter>>,
+) -> Vec<JoinHandle<()>> {
+    let config = &state.config;
+    let lifecycle = &state.lifecycle;
+    let mut tasks = Vec::new();
+
+    if config.features.builds {
+        let scheduler = state.scheduler.clone();
+        tasks.push(tokio::spawn(supervise(
+            "build_scheduler",
+            lifecycle.clone(),
+            move |signal| scheduler.clone().run(signal),
+        )));
+    } else {
+        info!("builds are disabled (features.builds = false)");
+    }
+
+    if config.features.webhooks {
+        let dispatcher = state.webhooks.clone();
+        tasks.push(tokio::spawn(supervise(
+            "webhook_dispatcher",
+            lifecycle.clone(),
+            move |signal| dispatcher.clone().run(signal),
+        )));
+    } else {
+        info!("webhook delivery is disabled (features.webhooks = false)");
+    }
+
+    if config.observability.metrics_enabled {
+        let pool = state.pool.clone();
+        let interval = Duration::from_secs(config.observability.db_metrics_interval_secs.max(1));
+        let started = state.started_at;
+        tasks.push(tokio::spawn(supervise(
+            "metrics_collector",
+            lifecycle.clone(),
+            move |signal| metrics::run_collector(pool.clone(), metrics.clone(), interval, started, signal),
+        )));
+    }
+
+    if let Some(limiter) = limiter {
+        tasks.push(tokio::spawn(supervise(
+            "rate_limiter_gc",
+            lifecycle.clone(),
+            move |signal| middleware::run_limiter_gc(limiter.clone(), signal),
+        )));
+    }
+
+    tasks
+}
+
+/// Run the server until SIGINT / SIGTERM.
+pub async fn run(config: AppConfig) -> anyhow::Result<()> {
+    let server = Server::start(config).await?;
+    handle_signals(server.lifecycle());
+    server.wait().await
+}
+
+/// First SIGINT / SIGTERM starts a graceful shutdown, a second one exits at once.
+pub fn handle_signals(lifecycle: Arc<Lifecycle>) {
+    tokio::spawn(async move {
+        let mut signals = match ShutdownSignals::new() {
+            Ok(signals) => signals,
+            Err(error) => {
+                warn!(%error, "cannot install signal handlers, the server can only be killed");
+                return;
+            }
+        };
+        signals.next().await;
+        info!("shutdown signal received, stopping gracefully (signal again to force)");
+        lifecycle.begin_shutdown();
+        signals.next().await;
+        warn!("second shutdown signal received, exiting immediately");
+        std::process::exit(130);
+    });
+}
+
+#[cfg(unix)]
+struct ShutdownSignals {
+    terminate: tokio::signal::unix::Signal,
+    interrupt: tokio::signal::unix::Signal,
+}
+
+#[cfg(unix)]
+impl ShutdownSignals {
+    fn new() -> std::io::Result<Self> {
+        use tokio::signal::unix::{SignalKind, signal};
+        Ok(Self {
+            terminate: signal(SignalKind::terminate())?,
+            interrupt: signal(SignalKind::interrupt())?,
+        })
+    }
+
+    async fn next(&mut self) {
+        tokio::select! {
+            _ = self.terminate.recv() => {}
+            _ = self.interrupt.recv() => {}
+        }
+    }
+}
+
+#[cfg(not(unix))]
+struct ShutdownSignals;
+
+#[cfg(not(unix))]
+impl ShutdownSignals {
+    fn new() -> std::io::Result<Self> {
+        Ok(Self)
+    }
+
+    async fn next(&mut self) {
+        let _ = tokio::signal::ctrl_c().await;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::testsupport::TestDb;
+    use std::path::Path;
+
+    fn test_config(db: &TestDb, dir: &Path) -> AppConfig {
+        let mut config = AppConfig::default();
+        config.database.url = db.url.clone();
+        config.database.max_connections = 8;
+        config.database.min_connections = 1;
+        config.server.bind_address = "127.0.0.1".to_owned();
+        config.server.port = 0;
+        config.server.shutdown_grace_secs = 5;
+        config.storage.local_path = dir.join("storage");
+        config.git.repos_root = dir.join("repos");
+        config.security.rate_limit.enabled = false;
+        config.build.poll_interval_secs = 1;
+        config.observability.db_metrics_interval_secs = 1;
+        config
+    }
+
+    #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+    async fn the_server_boots_serves_its_endpoints_and_shuts_down_gracefully() {
+        let Some(db) = TestDb::new().await else { return };
+        let dir = tempfile::tempdir().unwrap();
+        let config = test_config(&db, dir.path());
+
+        let server = Server::start(config).await.expect("server starts");
+        let addr = server.local_addr();
+        let lifecycle = server.lifecycle();
+        let running = tokio::spawn(server.wait());
+        let client = reqwest::Client::new();
+        let url = |path: &str| format!("http://{addr}{path}");
+
+        let health = client.get(url("/health")).send().await.unwrap();
+        assert_eq!(health.status(), 200);
+        assert!(health.headers().contains_key("x-request-id"), "the middleware stack is active");
+        assert!(health.headers().contains_key("x-content-type-options"));
+        let body: serde_json::Value = health.json().await.unwrap();
+        assert_eq!(body["status"], "healthy");
+
+        let ready = client.get(url("/ready")).send().await.unwrap();
+        assert_eq!(ready.status(), 200);
+        assert_eq!(ready.json::<serde_json::Value>().await.unwrap()["ready"], true);
+
+        let version = client.get(url("/api/version")).send().await.unwrap();
+        assert_eq!(version.status(), 200, "the REST API is mounted below /api");
+
+        let missing = client.get(url("/nothing-here")).send().await.unwrap();
+        assert_eq!(missing.status(), 404);
+
+        // the collector publishes the build info gauge after its first tick
+        let mut rendered = String::new();
+        for _ in 0..50 {
+            rendered = client.get(url("/metrics")).send().await.unwrap().text().await.unwrap();
+            if rendered.contains("onedev_build_info") {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(100)).await;
+        }
+        assert!(rendered.contains("onedev_build_info"), "{rendered}");
+        assert!(rendered.contains("http_requests_total"), "requests are counted");
+
+        // shutdown: readiness flips first, then the server stops
+        lifecycle.begin_shutdown();
+        let outcome = tokio::time::timeout(Duration::from_secs(20), running)
+            .await
+            .expect("the server stops within the grace period")
+            .expect("the server task does not panic");
+        outcome.expect("a requested shutdown is not an error");
+        assert!(
+            client.get(url("/health")).send().await.is_err(),
+            "the listener is closed after shutdown"
+        );
+    }
+
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn starting_on_a_taken_port_fails_before_touching_the_database() {
+        let Some(db) = TestDb::new().await else { return };
+        let dir = tempfile::tempdir().unwrap();
+        let taken = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let mut config = test_config(&db, dir.path());
+        config.server.port = taken.local_addr().unwrap().port();
+        // an unreachable database must not matter: the port is checked first
+        config.database.url = "postgres://nobody:nothing@127.0.0.1:1/none".to_owned();
+        let error = Server::start(config).await.err().expect("start must fail");
+        assert!(format!("{error:#}").contains("cannot listen"), "{error:#}");
+        assert!(!dir.path().join("storage").exists(), "nothing was created");
     }
 }
