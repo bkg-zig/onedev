@@ -1,0 +1,46 @@
+crates/onedev-auth/src/services/auth_service.rs
+  s_b4d4a7c7a80ee3::t_17412e7f745bb6 616
+  s_b4d4a7c7a80ee3::t_f6eb77c69e5bcb 797
+  s_b4d4a7c7a80ee3::t_05e6d9e1bcbb3b 133
+  s_b4d4a7c7a80ee3::t_4a76a78c09e376 125
+  s_b4d4a7c7a80ee3::t_5205ac19581875 697-698
+  s_b4d4a7c7a80ee3::t_8bda2cc375e4fb 11
+crates/onedev-api/src/lib.rs
+  s_fc4968d509c3df::t_c0b4a3385d7cb3 37
+crates/onedev-auth/src/models/two_factor.rs
+  s_b4d4a7c7a80ee3::t_45f51c8a49ab65 122-123,127
+crates/onedev-api/src/routes/mod.rs
+  s_fc4968d509c3df::t_2cf771dd7f51bb 227,235-241
+  s_fc4968d509c3df::t_bc2245b29049f7 220,226
+  s_fc4968d509c3df::t_231a00845b611c 230
+  s_fc4968d509c3df::t_09f588316126b3 216-219,221-225,228-229,231-234,242-259
+crates/onedev-server/src/lib.rs
+  s_fc4968d509c3df::t_49509769fbadb6 252-274,276
+  s_fc4968d509c3df::t_21fb9e52673b2c 275
+crates/onedev-auth/src/services/two_factor_service.rs
+  s_b4d4a7c7a80ee3::t_7fa2a5c6cc368e 4
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "8c2768f43e8a3b9e80eea067aad522ad200f87a1",
+  "prompts": {},
+  "sessions": {
+    "s_b4d4a7c7a80ee3": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e15302bc6ffeeevu8JM3MfvFlY",
+        "model": "nvidia/nemotron-3-ultra-550b-a55b"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    },
+    "s_fc4968d509c3df": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e152e6bc4ffejPRtPDKqejzaSv",
+        "model": "combo/best-free"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}
