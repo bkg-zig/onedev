@@ -18,7 +18,7 @@ use tracing::{debug, info};
 pub type MetricsHandle = PrometheusHandle;
 
 /// Initialize metrics recorder
-pub fn init_metrics() -> MetricsHandle {
+pub fn init_metrics() -> Result<MetricsHandle> {
     let builder = PrometheusBuilder::new();
     let builder = builder
         .set_buckets(&[
@@ -28,9 +28,9 @@ pub fn init_metrics() -> MetricsHandle {
 
     let handle = builder
         .install_recorder()
-        .expect("Failed to install Prometheus recorder");
+        .map_err(|e| anyhow::anyhow!("Failed to install Prometheus recorder: {e}"))?;
     info!("Prometheus metrics initialized");
-    handle
+    Ok(handle)
 }
 
 /// Create metrics router

@@ -40,17 +40,11 @@ pub async fn rate_limit_middleware(
     req: Request,
     next: Next,
 ) -> Result<Response, StatusCode> {
-    let limiter = limiter.lock().await;
-    match limiter.check() {
-        Ok(_) => {
-            drop(limiter);
-            Ok(next.run(req).await)
-        }
-        Err(e) => {
-            tracing::warn!("Rate limit exceeded: {:?}", e);
-            Err(StatusCode::TOO_MANY_REQUESTS)
-        }
+    if limiter.lock().await.check().is_err() {
+        tracing::warn!("Rate limit exceeded");
+        return Err(StatusCode::TOO_MANY_REQUESTS);
     }
+    Ok(next.run(req).await)
 }
 
 /// Extract client identifier from request

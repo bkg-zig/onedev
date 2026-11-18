@@ -289,7 +289,8 @@ impl BuildScheduler {
                 Some(log_sender_clone),
             )
         })
-        .await??;
+        .await
+        .map_err(|e| anyhow::anyhow!("build task failed: {e}"))??;
 
         // Save artifacts metadata
         Self::save_artifacts(&db_pool, queued_build.build_id, &report, &artifact_dir).await?;
@@ -315,11 +316,11 @@ impl BuildScheduler {
 
         let spec = spec_row
             .map(|row| {
-                let spec_str: String = row.try_get("spec").unwrap_or_else(|_| String::new());
+                let spec_str: String = row.try_get("spec").unwrap_or_default();
                 serde_yaml::from_str::<BuildSpec>(&spec_str)
             })
             .transpose()?
-            .unwrap_or_else(BuildSpec::default);
+            .unwrap_or_default();
 
         Ok(spec)
     }
