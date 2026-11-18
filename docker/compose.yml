@@ -3,7 +3,7 @@ services:
   db:
     image: bkg-core-admin-db:mango
     build:
-      context: ../../../infra/pgrust/bkg/docker/db
+      context: ../pgrust/bkg/docker/db
       dockerfile: Dockerfile
     container_name: bkg-core-admin-db
     restart: unless-stopped
@@ -30,7 +30,7 @@ services:
   core:
     image: bkg-core-admin-core:mango
     build:
-      context: .
+      context: ..
       dockerfile: docker/Dockerfile.core
     container_name: bkg-core-admin-core
     restart: unless-stopped
@@ -110,7 +110,7 @@ services:
   web:
     image: bkg-core-admin-web:mango
     build:
-      context: .
+      context: ..
       dockerfile: docker/Dockerfile.web
     container_name: bkg-core-admin-web
     restart: unless-stopped
@@ -129,7 +129,7 @@ services:
   gateway:
     image: bkg-core-ruxen:mango
     build:
-      context: ../../../infra/ruxen
+      context: ../ruxen
       dockerfile: contrib/docker/Dockerfile
     container_name: bkg-core-admin-gateway
     restart: unless-stopped
