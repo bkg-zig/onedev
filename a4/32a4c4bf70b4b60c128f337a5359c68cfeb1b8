@@ -1,0 +1,19 @@
+crates/onedev-api/src/handlers/group_handlers.rs
+  s_4dc460dbf339a2::t_303b979723da9b 1,4,7-9,13-14,16-21,26-27,29,34-35,37,42-44,46,51-52,54-55,60-61,63,68-70,72,77,80-85,90-92,94-110,115-116,118-119
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "a432a4c4bf70b4b60c128f337a5359c68cfeb1b8",
+  "prompts": {},
+  "sessions": {
+    "s_4dc460dbf339a2": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e163f433bffe5t2PzgPpubA64u",
+        "model": "big-pickle"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}
