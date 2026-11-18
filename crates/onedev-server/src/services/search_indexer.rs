@@ -2,7 +2,7 @@
 
 use anyhow::Result;
 use chrono::{DateTime, Utc};
-use sqlx::PgPool;
+use sqlx::{PgPool, Row};
 use std::sync::Arc;
 use tokio::sync::broadcast;
 use tokio::task;
@@ -187,7 +187,7 @@ impl SearchIndexer {
             "#
         )
             .bind(batch_size)
-            .fetch_all(&self.db_pool).await?;
+            .fetch_all(self.db_pool.as_ref()).await?;
 
         // Update search_indexed_at
         if !indexed.is_empty() {
@@ -195,7 +195,7 @@ impl SearchIndexer {
             sqlx::query("UPDATE issues SET search_indexed_at = $1 WHERE id = ANY($2)")
                 .bind(Utc::now())
                 .bind(&ids)
-                .execute(&self.db_pool).await?;
+                .execute(self.db_pool.as_ref()).await?;
         }
 
         Ok(indexed.len())
@@ -231,14 +231,14 @@ impl SearchIndexer {
             "#
         )
             .bind(batch_size)
-            .fetch_all(&self.db_pool).await?;
+            .fetch_all(self.db_pool.as_ref()).await?;
 
         if !indexed.is_empty() {
             let ids: Vec<Uuid> = indexed.iter().filter_map(|r| r.try_get("entity_id").ok()).collect();
             sqlx::query("UPDATE projects SET search_indexed_at = $1 WHERE id = ANY($2)")
                 .bind(Utc::now())
                 .bind(&ids)
-                .execute(&self.db_pool).await?;
+                .execute(self.db_pool.as_ref()).await?;
         }
 
         Ok(indexed.len())
@@ -270,14 +270,14 @@ impl SearchIndexer {
             "#
         )
             .bind(batch_size)
-            .fetch_all(&self.db_pool).await?;
+            .fetch_all(self.db_pool.as_ref()).await?;
 
         if !indexed.is_empty() {
             let ids: Vec<Uuid> = indexed.iter().filter_map(|r| r.try_get("entity_id").ok()).collect();
             sqlx::query("UPDATE wiki_pages SET search_indexed_at = $1 WHERE id = ANY($2)")
                 .bind(Utc::now())
                 .bind(&ids)
-                .execute(&self.db_pool).await?;
+                .execute(self.db_pool.as_ref()).await?;
         }
 
         Ok(indexed.len())
@@ -323,7 +323,7 @@ impl SearchIndexer {
             )
                 .bind(batch_size)
                 .bind(offset as i64)
-                .fetch_all(&self.db_pool).await?;
+                .fetch_all(self.db_pool.as_ref()).await?;
 
             let count = indexed.len();
             total += count;
@@ -336,7 +336,7 @@ impl SearchIndexer {
 
         sqlx::query("UPDATE issues SET search_indexed_at = $1 WHERE deleted_at IS NULL")
             .bind(Utc::now())
-            .execute(&self.db_pool).await?;
+            .execute(self.db_pool.as_ref()).await?;
 
         Ok(total)
     }
@@ -369,7 +369,7 @@ impl SearchIndexer {
             )
                 .bind(batch_size)
                 .bind(offset as i64)
-                .fetch_all(&self.db_pool).await?;
+                .fetch_all(self.db_pool.as_ref()).await?;
 
             let count = indexed.len();
             total += count;
@@ -382,7 +382,7 @@ impl SearchIndexer {
 
         sqlx::query("UPDATE projects SET search_indexed_at = $1 WHERE deleted_at IS NULL")
             .bind(Utc::now())
-            .execute(&self.db_pool).await?;
+            .execute(self.db_pool.as_ref()).await?;
 
         Ok(total)
     }
@@ -414,7 +414,7 @@ impl SearchIndexer {
             )
                 .bind(batch_size)
                 .bind(offset as i64)
-                .fetch_all(&self.db_pool).await?;
+                .fetch_all(self.db_pool.as_ref()).await?;
 
             let count = indexed.len();
             total += count;
@@ -427,7 +427,7 @@ impl SearchIndexer {
 
         sqlx::query("UPDATE wiki_pages SET search_indexed_at = $1 WHERE deleted_at IS NULL")
             .bind(Utc::now())
-            .execute(&self.db_pool).await?;
+            .execute(self.db_pool.as_ref()).await?;
 
         Ok(total)
     }
@@ -454,7 +454,7 @@ impl SearchIndexer {
             FROM search_index
             GROUP BY entity_type
             "#
-        ).fetch_all(&self.db_pool).await?;
+        ).fetch_all(self.db_pool.as_ref()).await?;
 
         let mut by_type = std::collections::HashMap::new();
         for row in stats {

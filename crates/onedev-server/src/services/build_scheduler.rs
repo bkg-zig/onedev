@@ -3,6 +3,7 @@
 use anyhow::Result;
 use chrono::{DateTime, Utc};
 use flume;
+use sqlx::Row;
 use sqlx::PgPool;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -10,9 +11,10 @@ use tokio::sync::Semaphore;
 use tracing::{info, warn, error, debug};
 use uuid::Uuid;
 
+// Import types from onedev-build
+use onedev_build::models::{BuildStatus, BuildSpec, BuildReport, JobResult, LogLine, TriggerEvent};
 use onedev_build::services::{BuildRunner, HostExecutor};
-use onedev_build::models::{BuildSpec, TriggerEvent, BuildReport, BuildStatus, JobSpec};
-use onedev_core::events::EventBus;
+use onedev_build::models::{StepResult, ExecuteCondition};
 
 /// Build scheduler configuration
 #[derive(Debug, Clone)]
@@ -189,10 +191,10 @@ impl BuildScheduler {
             };
 
             if let Err(e) = sqlx::query("UPDATE builds SET status = $1, finished_at = $2 WHERE id = $3")
-                .bind(final_status)
+                .bind(final_status.to_string())
                 .bind(Utc::now())
                 .bind(build_id)
-                .execute(&*db_pool).await {
+                .execute(db_pool.as_ref()).await {
                 error!("Failed to update build status: {}", e);
             }
 
@@ -353,18 +355,18 @@ impl BuildScheduler {
             "#
         )
             .bind(threshold)
-            .fetch_all(&self.db_pool).await?;
+            .fetch_all(self.db_pool.as_ref()).await?;
 
         for build in stuck_builds {
             let build_id: Uuid = build.get("id")?;
             let project_id: Uuid = build.get("project_id")?;
             warn!("Build {} appears stuck, marking as failed", build_id);
             sqlx::query("UPDATE builds SET status = $1, finished_at = $2, error = $3 WHERE id = $4")
-                .bind(BuildStatus::Failed)
+                .bind(BuildStatus::Failed.to_string())
                 .bind(Utc::now())
                 .bind("Build timed out / stuck")
                 .bind(build_id)
-                .execute(&*self.db_pool).await?;
+                .execute(self.db_pool.as_ref()).await?;
 
             // Remove from running builds
             let mut running = self.running_builds.write().await;
@@ -419,13 +421,14 @@ impl BuildScheduler {
 /// Build queue for external use
 pub struct BuildQueue {
     sender: flume::Sender<QueuedBuild>,
+    receiver: flume::Receiver<QueuedBuild>,
 }
 
 impl BuildQueue {
-    pub fn new(db_pool: Arc<PgPool>) -> Self {
+    pub fn new(_db_pool: Arc<PgPool>) -> Self {
         // In a real implementation, this would be shared with the scheduler
-        let (sender, _receiver) = flume::unbounded();
-        Self { sender }
+        let (sender, receiver) = flume::unbounded();
+        Self { sender, receiver }
     }
 
     /// Add a build to the queue
@@ -435,8 +438,8 @@ impl BuildQueue {
     }
 
     /// Pop a build from the queue (used by scheduler)
-    pub async fn pop(&self) -> Result<Option<QueuedBuild>> {
-        match self.sender.receiver().try_recv() {
+    pub fn pop(&self) -> Result<Option<QueuedBuild>> {
+        match self.receiver.try_recv() {
             Ok(build) => Ok(Some(build)),
             Err(flume::TryRecvError::Empty) => Ok(None),
             Err(flume::TryRecvError::Disconnected) => Ok(None),

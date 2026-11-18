@@ -4,7 +4,7 @@ use crate::{DbError, DbResult};
 use deadpool_postgres::{Config, Pool, Runtime};
 use serde::Deserialize;
 use sqlx::postgres::{PgConnectOptions, PgPoolOptions};
-use sqlx::{Pool as SqlxPool, Postgres};
+use sqlx::{Pool as SqlxPool, Postgres, Row};
 use std::fmt;
 use std::time::Duration;
 use tokio_postgres::NoTls;
@@ -300,7 +300,7 @@ pub async fn cleanup_old_data(pool: &DbPool) -> DbResult<()> {
 /// Process webhook delivery queue
 pub async fn process_webhook_queue(pool: &DbPool) -> DbResult<()> {
     // Get pending webhook deliveries
-    let deliveries = sqlx::query!(
+    let deliveries = sqlx::query(
         r#"
         SELECT id, webhook_id, event, payload, url, attempts
         FROM webhook_deliveries
@@ -316,14 +316,16 @@ pub async fn process_webhook_queue(pool: &DbPool) -> DbResult<()> {
     for delivery in deliveries {
         // In a real implementation, this would make HTTP requests to the webhook URL
         // For now, just mark as completed
-        sqlx::query!(
+        // Note: delivery.id is a String from the query, bind it as such
+        let id: String = delivery.try_get("id").map_err(|e| DbError::Query(e.to_string()))?;
+        sqlx::query(
             r#"
             UPDATE webhook_deliveries
             SET status = 'completed', completed_at = NOW(), attempts = attempts + 1
             WHERE id = $1
-            "#,
-            delivery.id
+            "#
         )
+        .bind(&id)
         .execute(pool)
         .await
         .map_err(|e| DbError::Query(e.to_string()))?;

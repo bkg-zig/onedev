@@ -23,229 +23,439 @@ pub use serde::{Serialize, Deserialize};
 pub use anyhow::Result;
 pub use thiserror::Error;
 
-use axum::Router;
+use axum::{Router, routing::get};
+use sqlx::PgPool;
 use std::sync::Arc;
-use onedev_api::{create_router, AppState as ApiState};
+use crate::config::AppConfig;
+use onedev_db::{create_pool, run_migrations};
+use onedev_api::{AppState as ApiState, create_router as create_api_router};
 
 /// Application state for the server
 #[derive(Clone)]
 pub struct AppState {
-    pub api_state: ApiState,
     pub config: Arc<AppConfig>,
-    pub db_pool: Arc<sqlx::PgPool>,
-    pub background_workers: Arc<BackgroundWorkers>,
+    pub db_pool: Arc<PgPool>,
+    pub api_state: ApiState,
+    pub lifecycle: Arc<LifecycleManager>,
+    pub build_scheduler: Arc<BuildScheduler>,
+    pub cleanup_service: Arc<CleanupService>,
+    pub git_gc_service: Arc<GitGcService>,
+    pub search_indexer: Arc<SearchIndexer>,
+    pub webhook_dispatcher: Arc<WebhookDispatcher>,
+    pub metrics_collector: Arc<MetricsCollector>,
 }
 
-/// Background worker handles
-pub struct BackgroundWorkers {
-    pub build_executor: tokio::task::JoinHandle<()>,
-    pub cleanup_worker: tokio::task::JoinHandle<()>,
-    pub webhook_worker: tokio::task::JoinHandle<()>,
-    pub search_indexer: tokio::task::JoinHandle<()>,
-    pub metrics_collector: tokio::task::JoinHandle<()>,
+/// Build scheduler handle
+pub struct BuildScheduler {
+    inner: Arc<tokio::sync::Mutex<Option<crate::services::build_scheduler::BuildScheduler>>>,
+}
+
+impl BuildScheduler {
+    pub fn new(scheduler: crate::services::build_scheduler::BuildScheduler) -> Self {
+        Self {
+            inner: Arc::new(tokio::sync::Mutex::new(Some(scheduler))),
+        }
+    }
+
+    pub async fn running_count(&self) -> usize {
+        if let Some(s) = self.inner.lock().await.as_ref() {
+            s.running_count().await
+        } else {
+            0
+        }
+    }
+
+    pub async fn queue_depth(&self) -> usize {
+        if let Some(s) = self.inner.lock().await.as_ref() {
+            s.queue_depth().await
+        } else {
+            0
+        }
+    }
+}
+
+/// Cleanup service handle
+pub struct CleanupService {
+    inner: Arc<tokio::sync::Mutex<Option<crate::services::cleanup::CleanupService>>>,
+}
+
+impl CleanupService {
+    pub fn new(service: crate::services::cleanup::CleanupService) -> Self {
+        Self {
+            inner: Arc::new(tokio::sync::Mutex::new(Some(service))),
+        }
+    }
+
+    pub async fn trigger_cleanup(&self) -> anyhow::Result<()> {
+        if let Some(s) = self.inner.lock().await.as_ref() {
+            s.trigger_cleanup().await
+        } else {
+            Ok(())
+        }
+    }
+}
+
+/// Git GC service handle
+pub struct GitGcService {
+    inner: Arc<tokio::sync::Mutex<Option<crate::services::git_gc::GitGcService>>>,
+}
+
+impl GitGcService {
+    pub fn new(service: crate::services::git_gc::GitGcService) -> Self {
+        Self {
+            inner: Arc::new(tokio::sync::Mutex::new(Some(service))),
+        }
+    }
+
+    pub async fn run_aggressive_gc(&self, project_id: uuid::Uuid) -> anyhow::Result<()> {
+        if let Some(s) = self.inner.lock().await.as_ref() {
+            s.run_aggressive_gc(project_id).await
+        } else {
+            Ok(())
+        }
+    }
+
+    pub async fn get_gc_stats(&self, project_id: uuid::Uuid) -> anyhow::Result<crate::services::git_gc::GitGcStats> {
+        if let Some(s) = self.inner.lock().await.as_ref() {
+            s.get_gc_stats(project_id).await
+        } else {
+            Ok(Default::default())
+        }
+    }
+}
+
+/// Search indexer handle
+pub struct SearchIndexer {
+    inner: Arc<tokio::sync::Mutex<Option<crate::services::search_indexer::SearchIndexer>>>,
+}
+
+impl SearchIndexer {
+    pub fn new(indexer: crate::services::search_indexer::SearchIndexer) -> Self {
+        Self {
+            inner: Arc::new(tokio::sync::Mutex::new(Some(indexer))),
+        }
+    }
+
+    pub async fn trigger_reindex(&self) -> anyhow::Result<()> {
+        if let Some(s) = self.inner.lock().await.as_ref() {
+            s.trigger_reindex().await
+        } else {
+            Ok(())
+        }
+    }
+
+    pub async fn get_stats(&self) -> anyhow::Result<crate::services::search_indexer::SearchIndexStats> {
+        if let Some(s) = self.inner.lock().await.as_ref() {
+            s.get_stats().await
+        } else {
+            Ok(Default::default())
+        }
+    }
+}
+
+/// Webhook dispatcher handle
+pub struct WebhookDispatcher {
+    inner: Arc<tokio::sync::Mutex<Option<crate::services::webhook_dispatcher::WebhookDispatcher>>>,
+}
+
+impl WebhookDispatcher {
+    pub fn new(dispatcher: crate::services::webhook_dispatcher::WebhookDispatcher) -> Self {
+        Self {
+            inner: Arc::new(tokio::sync::Mutex::new(Some(dispatcher))),
+        }
+    }
+
+    pub async fn queue_delivery(
+        &self,
+        webhook_id: uuid::Uuid,
+        event: &str,
+        payload: serde_json::Value,
+        url: &str,
+    ) -> anyhow::Result<uuid::Uuid> {
+        if let Some(d) = self.inner.lock().await.as_ref() {
+            d.queue_delivery(webhook_id, event, payload, url).await
+        } else {
+            Err(anyhow::anyhow!("Webhook dispatcher not initialized"))
+        }
+    }
+
+    pub async fn get_stats(&self) -> anyhow::Result<crate::services::webhook_dispatcher::WebhookStats> {
+        if let Some(d) = self.inner.lock().await.as_ref() {
+            d.get_stats().await
+        } else {
+            Ok(Default::default())
+        }
+    }
+}
+
+/// Metrics collector
+pub struct MetricsCollector {
+    inner: Arc<tokio::sync::Mutex<Option<tokio::task::JoinHandle<()>>>>,
+}
+
+impl MetricsCollector {
+    pub fn new() -> Self {
+        Self {
+            inner: Arc::new(tokio::sync::Mutex::new(None)),
+        }
+    }
+}
+
+impl Default for MetricsCollector {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 /// Create the main application router
-pub fn create_app_router(state: AppState) -> Router<AppState> {
-    let api_router = create_router(state.api_state.clone());
+pub fn create_app_router(state: AppState) -> Router {
+    // Initialize Tera template engine for web UI
+    let _tera = tera::Tera::new("templates/**/*").unwrap_or_else(|_| tera::Tera::default());
 
-    // Create WebState for the web UI
-    let web_config = onedev_web::WebConfig {
-        bind_address: state.config.server.bind_address.clone(),
-        port: state.config.server.port,
-        template_dir: "templates".to_string(),
-        static_dir: "static".to_string(),
-        api_base_url: format!("http://{}:{}", state.config.server.bind_address, state.config.server.port),
-        enable_ssr: true,
-        dev_mode: state.config.server.environment == "development",
-    };
+    // Health check endpoint
+    async fn health_handler() -> &'static str { "OK" }
 
-    let web_state = onedev_web::WebState {
-        api_state: state.api_state.clone(),
-        config: Arc::new(web_config),
-        tera: {
-            let mut tera = tera::Tera::new("templates/**/*").unwrap_or_else(|_| tera::Tera::default());
-            tera.autoescape_on(vec![".html", ".htm"]);
-            tera.register_filter("markdown", onedev_web::markdown_filter);
-            tera.register_filter("datefmt", onedev_web::date_filter);
-            tera.register_filter("truncate", onedev_web::truncate_filter);
-            Arc::new(tera)
-        },
-    };
+    // Metrics placeholder
+    async fn metrics_handler() -> &'static str { "OK" }
+
+    // Hello handler for root
+    async fn hello_handler() -> &'static str { "OneDev Server - Hello Universe!" }
+
+    // Create API router
+    let api_router = create_api_router(state.api_state.clone());
 
     Router::new()
+        .route("/", get(hello_handler))
+        .route("/health", get(health_handler))
+        .route("/metrics", get(metrics_handler))
+        .route("/api/health", get(health_handler))
         .nest("/api", api_router)
-        // Web UI routes (SSR)
-        .nest("/", onedev_web::create_web_router(web_state))
-        // Metrics endpoint
-        .route("/metrics", axum::routing::get(metrics::metrics_handler))
-        // Health check (non-API)
-        .route("/health", axum::routing::get(health_handler))
         .with_state(state)
 }
 
 /// Health check endpoint
-async fn health_handler() -> &'static str {
+pub async fn health_handler() -> &'static str {
     "OK"
 }
 
 /// Create application state from config
 pub async fn create_app_state(config: &AppConfig) -> Result<AppState> {
+    // Initialize logging
+    crate::init_logging(config)?;
+
     // Create database pool
-    let db_pool = Arc::new(onedev_db::create_pool(&config.database_url, config.database_max_connections).await?);
+    let db_pool = Arc::new(create_pool(&config.database.url, config.database.max_connections).await?);
 
     // Run migrations
-    onedev_db::run_migrations(&db_pool).await?;
+    run_migrations(&db_pool).await?;
 
-    // Create core services
-    let auth_service = Arc::new(onedev_auth::services::AuthService::new(
+    // Initialize lifecycle manager
+    let lifecycle = Arc::new(LifecycleManager::new());
+
+    // Initialize API state (services)
+    let api_state = create_api_state(db_pool.clone(), config, lifecycle.clone()).await?;
+
+    // Initialize all services
+    let (
+        build_scheduler,
+        cleanup_service,
+        git_gc_service,
+        search_indexer,
+        webhook_dispatcher,
+        metrics_collector,
+    ) = state::init_services(
         db_pool.clone(),
-        config.jwt_secret.clone(),
-        config.token_expiry_hours,
-    ));
+        Arc::new(config.clone()),
+        api_state.clone(),
+        lifecycle.clone(),
+    ).await?;
 
-    let authorization_service = Arc::new(onedev_api::services::AuthorizationService::new(
-        db_pool.clone(),
-    ));
-
-    let user_service = Arc::new(onedev_api::services::UserService::new(db_pool.clone()));
-    let project_service = Arc::new(onedev_api::services::ProjectService::new(db_pool.clone()));
-    let group_service = Arc::new(onedev_api::services::GroupService::new(db_pool.clone()));
-    let issue_service = Arc::new(onedev_api::services::IssueService::new(db_pool.clone()));
-    let mr_service = Arc::new(onedev_api::services::MergeRequestService::new(db_pool.clone()));
-    let build_service = Arc::new(onedev_api::services::BuildService::new(db_pool.clone()));
-    let git_service = Arc::new(onedev_api::services::GitService::new(db_pool.clone()));
-    let lfs_service = Arc::new(onedev_api::services::LfsService::new(db_pool.clone()));
-    let system_service = Arc::new(onedev_api::services::SystemService::new(db_pool.clone()));
-
-    let api_state = onedev_api::AppState {
-        auth_service,
-        authorization_service,
-        user_service,
-        project_service,
-        group_service,
-        issue_service,
-        mr_service,
-        build_service,
-        git_service,
-        lfs_service,
-        system_service,
-    };
-
-    // Start background workers
-    let background_workers = start_background_workers(db_pool.clone(), config.clone()).await?;
+    // Mark startup complete
+    lifecycle.mark_startup_complete();
 
     Ok(AppState {
-        api_state,
         config: Arc::new(config.clone()),
         db_pool,
-        background_workers: Arc::new(background_workers),
+        api_state,
+        lifecycle,
+        build_scheduler,
+        cleanup_service,
+        git_gc_service,
+        search_indexer,
+        webhook_dispatcher,
+        metrics_collector,
     })
 }
 
-/// Start background workers
-async fn start_background_workers(
-    db_pool: Arc<sqlx::PgPool>,
-    config: AppConfig,
-) -> Result<BackgroundWorkers> {
-    // Build executor (using BuildRunner from onedev-build)
-    let build_executor = {
-        let _db = db_pool.clone();
-        let runner = onedev_build::services::BuildRunner::new();
-        tokio::spawn(async move {
-            // BuildRunner doesn't have a run() method that takes a DB pool
-            // This would normally run queued builds
-            tracing::info!("Build runner started (placeholder)");
-            loop {
-                tokio::time::sleep(tokio::time::Duration::from_secs(60)).await;
-            }
-        })
+/// Create API state with all services
+async fn create_api_state(
+    db_pool: Arc<PgPool>,
+    config: &AppConfig,
+    lifecycle: Arc<LifecycleManager>,
+) -> Result<ApiState> {
+    use onedev_auth::{AuthService, AuthorizationService, SessionService, TokenService, TwoFactorService};
+    use onedev_db::{
+        UserRepository, ProjectRepository, GroupRepository, IssueRepository,
+        PullRequestRepository, BuildRepository, RoleRepository, MembershipRepository,
     };
 
-    // Cleanup worker
-    let cleanup_worker = {
-        let db = db_pool.clone();
-        tokio::spawn(async move {
-            let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(3600));
-            loop {
-                interval.tick().await;
-                tracing::info!("Running cleanup tasks...");
-                // Cleanup old build logs, temp files, etc.
-                if let Err(e) = onedev_db::cleanup_old_data(&db).await {
-                    tracing::error!("Cleanup failed: {}", e);
-                }
-            }
-        })
+    // Create repositories
+    let user_repo = UserRepository::new();
+    let project_repo = ProjectRepository::new();
+    let group_repo = GroupRepository::new();
+    let issue_repo = IssueRepository::new();
+    let mr_repo = PullRequestRepository::new();
+    let build_repo = BuildRepository::new();
+    let role_repo = RoleRepository::new();
+    let membership_repo = MembershipRepository::new();
+
+    // Create auth services
+    let auth_config = onedev_auth::AuthConfig {
+        jwt_secret: config.auth.jwt_secret.clone(),
+        token_expiry_hours: config.auth.token_expiry_hours,
+        refresh_expiry_days: config.auth.refresh_expiry_days,
+        argon2_memory_kb: config.auth.argon2_memory_kb,
+        argon2_iterations: config.auth.argon2_iterations,
+        argon2_parallelism: config.auth.argon2_parallelism,
+        enable_2fa: config.auth.enable_2fa,
+        two_fa_issuer: config.auth.two_fa_issuer.clone(),
+        password_min_length: config.auth.password_min_length,
+        password_require_uppercase: config.auth.password_require_uppercase,
+        password_require_lowercase: config.auth.password_require_lowercase,
+        password_require_digits: config.auth.password_require_digits,
+        password_require_special: config.auth.password_require_special,
+        session_timeout_minutes: config.auth.session_timeout_minutes,
+        max_failed_attempts: config.auth.max_failed_attempts,
+        lockout_duration_minutes: config.auth.lockout_duration_minutes,
     };
 
-    // Webhook worker
-    let webhook_worker = {
-        let db = db_pool.clone();
-        tokio::spawn(async move {
-            let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(30));
-            loop {
-                interval.tick().await;
-                if let Err(e) = onedev_db::process_webhook_queue(&db).await {
-                    tracing::error!("Webhook processing failed: {}", e);
-                }
-            }
-        })
-    };
+    let auth_service = AuthService::new(
+        db_pool.clone(),
+        user_repo.clone(),
+        auth_config,
+        lifecycle.shutdown_rx(),
+    );
+
+    let authorization_service = AuthorizationService::new(
+        db_pool.clone(),
+        user_repo.clone(),
+        project_repo.clone(),
+        role_repo.clone(),
+        membership_repo.clone(),
+        group_repo.clone(),
+    );
+
+    let session_service = SessionService::new(db_pool.clone(), config.auth.session_timeout_minutes);
+    let token_service = TokenService::new(db_pool.clone());
+    let two_factor_service = TwoFactorService::new(db_pool.clone());
+
+    // Create API services
+    let auth_svc = Arc::new(crate::services::auth::AuthService::new(auth_service));
+    let authz_svc = Arc::new(crate::services::authz::AuthorizationService::new(authorization_service));
+    let user_svc = Arc::new(crate::services::UserService::new(user_repo));
+    let project_svc = Arc::new(crate::services::ProjectService::new(project_repo));
+    let group_svc = Arc::new(crate::services::GroupService::new(group_repo));
+    let issue_svc = Arc::new(crate::services::IssueService::new(issue_repo));
+    let mr_svc = Arc::new(crate::services::MergeRequestService::new(mr_repo));
+    let build_svc = Arc::new(crate::services::BuildService::new(build_repo));
+
+    // Create stub services for git, lfs, system
+    let git_svc = Arc::new(crate::services::GitService::new(db_pool.clone()));
+    let lfs_svc = Arc::new(crate::services::LfsService::new(db_pool.clone()));
+    let system_svc = Arc::new(crate::services::SystemService::new(db_pool.clone()));
+
+    Ok(ApiState {
+        auth_service: auth_svc,
+        authorization_service: authz_svc,
+        user_service: user_svc,
+        project_service: project_svc,
+        group_service: group_svc,
+        issue_service: issue_svc,
+        mr_service: mr_svc,
+        build_service: build_svc,
+        git_service: git_svc,
+        lfs_service: lfs_svc,
+        system_service: system_svc,
+    })
+}
+
+/// Initialize all services and return handles
+pub async fn init_services(
+    db_pool: Arc<PgPool>,
+    config: Arc<AppConfig>,
+    api_state: ApiState,
+    lifecycle: Arc<LifecycleManager>,
+) -> anyhow::Result<(
+    Arc<BuildScheduler>,
+    Arc<CleanupService>,
+    Arc<GitGcService>,
+    Arc<SearchIndexer>,
+    Arc<WebhookDispatcher>,
+    Arc<MetricsCollector>,
+)> {
+    // Build scheduler
+    let build_scheduler = Arc::new(BuildScheduler::new(
+        crate::services::build_scheduler::BuildScheduler::new(
+            db_pool.clone(),
+            config.build.clone().into(),
+            lifecycle.shutdown_rx(),
+        )
+    ));
+
+    // Cleanup service
+    let cleanup_service = Arc::new(CleanupService::new(
+        crate::services::cleanup::CleanupService::new(
+            db_pool.clone(),
+            config.cleanup.clone().into(),
+            lifecycle.shutdown_rx(),
+        )
+    ));
+
+    // Git GC service
+    let git_gc_service = Arc::new(GitGcService::new(
+        crate::services::git_gc::GitGcService::new(
+            db_pool.clone(),
+            config.git.clone().into(),
+            lifecycle.shutdown_rx(),
+        )
+    ));
 
     // Search indexer
-    let search_indexer = {
-        let db = db_pool.clone();
-        tokio::spawn(async move {
-            let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(60));
-            loop {
-                interval.tick().await;
-                if let Err(e) = onedev_db::update_search_index(&db).await {
-                    tracing::error!("Search indexing failed: {}", e);
-                }
-            }
-        })
-    };
+    let search_indexer = Arc::new(SearchIndexer::new(
+        crate::services::search_indexer::SearchIndexer::new(
+            db_pool.clone(),
+            config.search.clone().into(),
+            lifecycle.shutdown_rx(),
+        )
+    ));
+
+    // Webhook dispatcher
+    let webhook_dispatcher = Arc::new(WebhookDispatcher::new(
+        crate::services::webhook_dispatcher::WebhookDispatcher::new(
+            db_pool.clone(),
+            config.webhook.clone().into(),
+            lifecycle.shutdown_rx(),
+        )?
+    ));
 
     // Metrics collector
-    let metrics_collector = {
-        let db = db_pool.clone();
-        tokio::spawn(async move {
-            let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(15));
-            loop {
-                interval.tick().await;
-                if let Err(e) = metrics::collect_system_metrics(&db).await {
-                    tracing::error!("Metrics collection failed: {}", e);
-                }
-            }
-        })
-    };
+    let metrics_collector = Arc::new(MetricsCollector::new());
 
-    Ok(BackgroundWorkers {
-        build_executor,
-        cleanup_worker,
-        webhook_worker,
+    Ok((
+        build_scheduler,
+        cleanup_service,
+        git_gc_service,
         search_indexer,
+        webhook_dispatcher,
         metrics_collector,
-    })
+    ))
 }
 
 /// Run the HTTP server
 pub async fn run_server(state: AppState, config: AppConfig) -> Result<()> {
     let app = create_app_router(state);
 
-    // Add middleware
-    let app = app
-        .layer(tower_http::trace::TraceLayer::new_for_http())
-        .layer(tower_http::cors::CorsLayer::permissive())
-        .layer(tower_http::compression::CompressionLayer::new())
-        .layer(tower::ServiceBuilder::new()
-            .layer(tower::limit::ConcurrencyLimitLayer::new(config.max_concurrent_requests))
-            .layer(tower::timeout::TimeoutLayer::new(
-                std::time::Duration::from_secs(config.request_timeout_secs),
-            ))
-        );
-
-    let addr = format!("{}:{}", config.bind_address, config.port);
+    let addr = format!("{}:{}", config.server.bind_address, config.server.port);
     let listener = tokio::net::TcpListener::bind(&addr).await?;
     tracing::info!("OneDev server listening on {}", addr);
 

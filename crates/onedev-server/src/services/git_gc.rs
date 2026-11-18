@@ -5,7 +5,7 @@ use chrono::{DateTime, Utc};
 use gix::Repository;
 use gix_odb::memory::Proxy as OdbProxy;
 use gix_odb::Handle;
-use sqlx::PgPool;
+use sqlx::{PgPool, Row};
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::broadcast;
@@ -107,7 +107,7 @@ impl GitGcService {
         )
             .bind(self.config.gc_interval_hours as i64)
             .bind(self.config.max_repos_per_run as i64)
-            .fetch_all(&self.db_pool).await?;
+            .fetch_all(self.db_pool.as_ref()).await?;
 
         info!("Found {} repositories needing GC", repos.len());
 
@@ -128,7 +128,7 @@ impl GitGcService {
                     sqlx::query("UPDATE projects SET gc_last_run = $1 WHERE id = $2")
                         .bind(Utc::now())
                         .bind(project_id)
-                        .execute(&self.db_pool).await?;
+                        .execute(self.db_pool.as_ref()).await?;
                 }
                 Err(e) => {
                     error!("GC failed for repository {}: {}", project_id, e);
@@ -170,7 +170,7 @@ impl GitGcService {
     pub async fn run_aggressive_gc(&self, project_id: Uuid) -> Result<()> {
         let repo = sqlx::query("SELECT path FROM projects WHERE id = $1")
             .bind(project_id)
-            .fetch_optional(&self.db_pool).await?;
+            .fetch_optional(self.db_pool.as_ref()).await?;
 
         let Some(repo) = repo else {
             return Err(anyhow::anyhow!("Project not found"));
@@ -196,7 +196,7 @@ impl GitGcService {
         sqlx::query("UPDATE projects SET gc_last_run = $1 WHERE id = $2")
             .bind(Utc::now())
             .bind(project_id)
-            .execute(&self.db_pool).await?;
+            .execute(self.db_pool.as_ref()).await?;
 
         info!("Aggressive GC completed for project {}", project_id);
         Ok(())
@@ -206,7 +206,7 @@ impl GitGcService {
     pub async fn get_gc_stats(&self, project_id: Uuid) -> Result<GitGcStats> {
         let repo = sqlx::query("SELECT path, gc_last_run FROM projects WHERE id = $1")
             .bind(project_id)
-            .fetch_optional(&self.db_pool).await?;
+            .fetch_optional(self.db_pool.as_ref()).await?;
 
         let Some(repo) = repo else {
             return Err(anyhow::anyhow!("Project not found"));

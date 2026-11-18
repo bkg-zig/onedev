@@ -16,10 +16,10 @@ async fn main() -> anyhow::Result<()> {
     let config = AppConfig::load()?;
 
     // Initialize Sentry if DSN is configured
-    if let Some(dsn) = &config.sentry_dsn {
+    if let Some(dsn) = &config.server.sentry_dsn {
         let _guard = sentry::init(sentry::ClientOptions {
             dsn: Some(dsn.parse()?),
-            environment: Some(config.environment.clone().into()),
+            environment: Some(config.server.environment.clone().into()),
             release: sentry::release_name!(),
             traces_sample_rate: 0.1,
             ..Default::default()
@@ -28,7 +28,7 @@ async fn main() -> anyhow::Result<()> {
     }
 
     // Initialize OpenTelemetry
-    if config.otel_enabled {
+    if config.observability.tracing_enabled {
         onedev_server::init_otel(&config)?;
     }
 

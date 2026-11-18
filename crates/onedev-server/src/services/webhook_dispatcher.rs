@@ -5,7 +5,7 @@ use chrono::{DateTime, Utc};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use sqlx::PgPool;
+use sqlx::{PgPool, Row};
 use std::sync::Arc;
 use tokio::sync::broadcast;
 use tokio::time::{Duration, Instant};
@@ -153,7 +153,7 @@ impl WebhookDispatcher {
             "#
         )
             .bind(self.config.batch_size as i64)
-            .fetch_all(&self.db_pool).await?;
+            .fetch_all(self.db_pool.as_ref()).await?;
 
         if deliveries.is_empty() {
             return Ok(());
@@ -174,7 +174,7 @@ impl WebhookDispatcher {
                 .bind(attempt)
                 .bind(Utc::now())
                 .bind(delivery_id)
-                .execute(&self.db_pool).await?;
+                .execute(self.db_pool.as_ref()).await?;
 
             // Create webhook payload
             let webhook_payload = WebhookPayload {
@@ -202,7 +202,7 @@ impl WebhookDispatcher {
                         .bind(status_code)
                         .bind(response_body)
                         .bind(delivery_id)
-                        .execute(&self.db_pool).await?;
+                        .execute(self.db_pool.as_ref()).await?;
                 }
                 Err(e) => {
                     warn!("Webhook {} delivery failed (attempt {}): {}", delivery_id, attempt, e);
@@ -219,7 +219,7 @@ impl WebhookDispatcher {
                         )
                             .bind(e.to_string())
                             .bind(delivery_id)
-                            .execute(&self.db_pool).await?;
+                            .execute(self.db_pool.as_ref()).await?;
                     } else {
                         // Schedule retry
                         let delay = self.calculate_backoff(attempt as u32);
@@ -235,7 +235,7 @@ impl WebhookDispatcher {
                             .bind(next_retry)
                             .bind(e.to_string())
                             .bind(delivery_id)
-                            .execute(&self.db_pool).await?;
+                            .execute(self.db_pool.as_ref()).await?;
                     }
                 }
             }
@@ -257,14 +257,14 @@ impl WebhookDispatcher {
         )
             .bind(self.config.max_retries as i32)
             .bind(self.config.batch_size as i64)
-            .fetch_all(&self.db_pool).await?;
+            .fetch_all(self.db_pool.as_ref()).await?;
 
         for delivery in deliveries {
             let id: Uuid = delivery.try_get("id")?;
             // Just update status to Pending, process_pending will pick it up
             sqlx::query("UPDATE webhook_deliveries SET status = 'Pending' WHERE id = $1")
                 .bind(id)
-                .execute(&self.db_pool).await?;
+                .execute(self.db_pool.as_ref()).await?;
         }
 
         Ok(())
@@ -282,7 +282,7 @@ impl WebhookDispatcher {
         // Get webhook secret for signature
         let secret = sqlx::query("SELECT secret FROM webhooks WHERE id = $1")
             .bind(webhook_id)
-            .fetch_optional(&self.db_pool).await?;
+            .fetch_optional(self.db_pool.as_ref()).await?;
 
         let mut request = self.http_client
             .post(url)
@@ -353,7 +353,7 @@ impl WebhookDispatcher {
             .bind(payload)
             .bind(url)
             .bind(Utc::now())
-            .execute(&self.db_pool).await?;
+            .execute(self.db_pool.as_ref()).await?;
 
         Ok(delivery_id)
     }
@@ -369,7 +369,7 @@ impl WebhookDispatcher {
             WHERE created_at > NOW() - INTERVAL '24 hours'
             GROUP BY status
             "#
-        ).fetch_all(&self.db_pool).await?;
+        ).fetch_all(self.db_pool.as_ref()).await?;
 
         let mut by_status = std::collections::HashMap::new();
         for row in stats {
@@ -385,7 +385,7 @@ impl WebhookDispatcher {
             WHERE status = 'Delivered'
             AND created_at > NOW() - INTERVAL '24 hours'
             "#
-        ).fetch_one(&self.db_pool).await?;
+        ).fetch_one(self.db_pool.as_ref()).await?;
 
         let avg_secs: Option<f64> = avg_latency.try_get("avg_secs").ok();
 
