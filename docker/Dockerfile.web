@@ -1,5 +1,5 @@
 # OneDev Web UI (SSR) image
-FROM rust:1.89-slim AS builder
+FROM rust:1.96-slim-bookworm AS builder
 WORKDIR /src
 COPY Cargo.toml Cargo.lock ./
 COPY crates ./crates/
