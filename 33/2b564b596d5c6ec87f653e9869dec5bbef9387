@@ -1,0 +1,14 @@
+scripts/docker-build.sh
+  h_76ea00ebfa3ec3 8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "332b564b596d5c6ec87f653e9869dec5bbef9387",
+  "prompts": {},
+  "humans": {
+    "h_76ea00ebfa3ec3": {
+      "author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}
