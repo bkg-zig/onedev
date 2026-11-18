@@ -1,0 +1,23 @@
+crates/onedev-server/Cargo.toml
+  s_b4d4a7c7a80ee3::t_24b965a8a662c8 28-31
+crates/onedev-server/src/telemetry.rs
+  s_b4d4a7c7a80ee3::t_736e510d7590b1 1,4,32-43,51-52,64,66
+Cargo.toml
+  s_b4d4a7c7a80ee3::t_11b4f697d454f2 106-110
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "751ea130bb1ae088494857b9b7afa5a01a7844c6",
+  "prompts": {},
+  "sessions": {
+    "s_b4d4a7c7a80ee3": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e15302bc6ffeeevu8JM3MfvFlY",
+        "model": "nvidia/nemotron-3-ultra-550b-a55b"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}
