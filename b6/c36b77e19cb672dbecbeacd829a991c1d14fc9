@@ -1,0 +1,38 @@
+crates/onedev-build/src/models.rs
+  s_0de1f439e1761a::t_8837b048d8c48e 124-152,366-405,737-765
+  s_0de1f439e1761a::t_887cf76dad5a93 350,528,616-736,766-767
+  s_0de1f439e1761a::t_fedd644f6def4b 346-347,349
+  s_0de1f439e1761a::t_46ae29305fa036 352-359,361,406-407,410-418,420,422-428,430,433-462,470-480,482-485,488-506,512-527
+  s_0de1f439e1761a::t_3950b03077102e 351,529
+crates/onedev-build/tests/runner_test.rs
+  s_0de1f439e1761a::t_887cf76dad5a93 49,75,95
+  s_0de1f439e1761a::t_a23ce094958b39 25-27
+crates/onedev-build/src/utils.rs
+  s_0de1f439e1761a::t_fedd644f6def4b 5-7,10-18,21,38-138,150-209
+crates/onedev-build/src/services/interpolation.rs
+  s_0de1f439e1761a::t_66e1bfb8830028 671-707
+  s_0de1f439e1761a::t_1aaf4d1515827f 15,39-41,137,145-150,159-174,270-279,355
+crates/onedev-build/src/services/runner.rs
+  s_0de1f439e1761a::t_887cf76dad5a93 532
+crates/onedev-build/src/services/parser.rs
+  s_0de1f439e1761a::t_54b943fbd0e4e1 126-130,133-134,136-141,197-198
+  s_0de1f439e1761a::t_a23ce094958b39 208-210,214-216,218-220,223-226,229,231-233,237-251
+  s_0de1f439e1761a::t_887cf76dad5a93 194,201
+  s_0de1f439e1761a::t_90036ea2f71a6d 211-213,217,221-222,227-228,230,234-236
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "b6c36b77e19cb672dbecbeacd829a991c1d14fc9",
+  "prompts": {},
+  "sessions": {
+    "s_0de1f439e1761a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0f2f81bd-eb11-4834-95c4-07542b095264",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}
