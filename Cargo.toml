@@ -103,10 +103,11 @@ syntect = { version = "5.3", features = ["default", "parsing", "dump-create", "d
 tracing = { version = "0.1", features = ["std", "log", "valuable"] }
 tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "json", "registry"] }
 tracing-appender = { version = "0.2", features = ["non-blocking"] }
-tracing-opentelemetry = { version = "0.29", features = ["metrics"] }
-opentelemetry = { version = "0.29", features = ["trace", "metrics", "logs"] }
-opentelemetry-otlp = { version = "0.29", features = ["tonic", "http", "metrics", "logs", "trace"] }
-opentelemetry_sdk = { version = "0.29", features = ["trace", "metrics", "logs"] }
+# tracing-opentelemetry temporarily disabled due to version conflicts
+# tracing-opentelemetry = { version = "0.34", features = ["trace", "metrics"] }
+# opentelemetry = { version = "0.29", features = ["trace", "metrics", "logs"] }
+# opentelemetry-otlp = { version = "0.29", features = ["tonic", "http", "metrics", "logs", "trace"] }
+# opentelemetry_sdk = { version = "0.29", features = ["trace", "metrics", "logs"] }
 metrics = "0.23"
 metrics-exporter-prometheus = "0.16"
 

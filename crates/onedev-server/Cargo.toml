@@ -25,10 +25,10 @@ anyhow.workspace = true
 thiserror.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
-tracing-opentelemetry.workspace = true
-opentelemetry.workspace = true
-opentelemetry-otlp.workspace = true
-opentelemetry_sdk.workspace = true
+# tracing-opentelemetry temporarily disabled
+# opentelemetry temporarily disabled
+# opentelemetry-otlp temporarily disabled
+# opentelemetry_sdk temporarily disabled
 metrics.workspace = true
 metrics-exporter-prometheus.workspace = true
 config.workspace = true
