@@ -11,8 +11,14 @@
 
 ```bash
 cd /srv/bkg/services/bkg-core-admin/infra/onedev
-docker compose -f docker/compose.yml up -d --build db core web
+docker compose --project-directory . -f docker/compose.yml up -d --build db core web
 ```
+
+> Wichtig: immer mit `--project-directory .` aus dem Repo-Root starten.
+> Ohne den Pin hängt das Projektverzeichnis von der Compose-Version ab
+> (Aufrufverzeichnis vs. Verzeichnis der Compose-Datei) und die
+> Build-Kontexte zeigen ins Leere (`docker/docker not found`,
+> `onedev/pgrust not found`).
 
 ## Was wo läuft
 
