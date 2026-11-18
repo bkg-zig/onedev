@@ -1,0 +1,68 @@
+crates/onedev-db/src/pool.rs
+  s_0de1f439e1761a::t_45634145e58abb 7
+  s_0de1f439e1761a::t_4a8b5cf39e72dc 303,319,321,326
+  s_0de1f439e1761a::t_23c696367742c4 320
+  s_0de1f439e1761a::t_d09535fbd1f332 328
+crates/onedev-server/src/services/build_scheduler.rs
+  s_0de1f439e1761a::t_36730fc5ca681e 14-15,17
+  s_0de1f439e1761a::t_dd8010c217a294 365,369
+  s_0de1f439e1761a::t_e15ab8fbf5df9f 6
+  s_0de1f439e1761a::t_ae2d085636ee70 194,197
+  s_0de1f439e1761a::t_1dae89e12fca6e 424,428,430-431,441-442
+  s_0de1f439e1761a::t_d02c5f4b4865b2 358
+crates/onedev-server/src/metrics.rs
+  s_0de1f439e1761a::t_e42eef62b3d8d0 197,205,213,221
+  s_0de1f439e1761a::t_2b79e5e82e76f4 13
+  s_0de1f439e1761a::t_dc85612ce23053 162,170
+crates/onedev-server/src/lib.rs
+  s_0de1f439e1761a::t_399c3163f52bd0 29,31,46,52-54,61-71,76,80-95,99
+  s_0de1f439e1761a::t_748926ce87c835 39-45,77
+  s_fc4968d509c3df::t_e2d34695b8275b 58-60
+  s_0de1f439e1761a::t_fe0c9532607f68 47
+  s_0de1f439e1761a::t_810239cf8716e8 26-27,30,37-38,48-51,55-57,72-75,78-79,96-98,100-193,196-207,211-213,215-225,228-231,237,243-245,247,250,252-253,255-256,258-271,273-274,279-286,290-299,302-329,332-421,424-439,442,444-447,449,451,458
+crates/onedev-server/src/state.rs
+  s_0de1f439e1761a::t_2d024f7bbf1c6a 1,14-15,18-22
+crates/onedev-server/src/services/search_indexer.rs
+  s_0de1f439e1761a::t_b5cbb298859fdb 5
+  s_0de1f439e1761a::t_6b9199ad731e3c 198,241,280,339,385,430
+  s_0de1f439e1761a::t_d02c5f4b4865b2 190,234,273,326,372,417,457
+crates/onedev-server/src/services/git_gc.rs
+  s_0de1f439e1761a::t_2e68b8f67a87cf 173,209
+  s_0de1f439e1761a::t_d02c5f4b4865b2 110
+  s_0de1f439e1761a::t_b5cbb298859fdb 8
+  s_0de1f439e1761a::t_6b9199ad731e3c 131,199
+crates/onedev-server/src/main.rs
+  s_0de1f439e1761a::t_5ba7948e0d95bd 19,22,31
+crates/onedev-server/src/services/cleanup.rs
+  s_0de1f439e1761a::t_0133df71d565ab 1,31,38-39,44,51-52,56,58-59
+crates/onedev-server/src/services/webhook_dispatcher.rs
+  s_0de1f439e1761a::t_b5cbb298859fdb 8
+  s_0de1f439e1761a::t_d02c5f4b4865b2 156,260,372
+  s_0de1f439e1761a::t_6b9199ad731e3c 177,205,222,238,267,356
+  s_0de1f439e1761a::t_2e68b8f67a87cf 285
+  s_0de1f439e1761a::t_82c85f89e6b89e 388
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "a254d5f17c2639c8df9ec1af864fabe0b47cc1fa",
+  "prompts": {},
+  "sessions": {
+    "s_0de1f439e1761a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0f2f81bd-eb11-4834-95c4-07542b095264",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    },
+    "s_fc4968d509c3df": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e152e6bc4ffejPRtPDKqejzaSv",
+        "model": "combo/best-free"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}
