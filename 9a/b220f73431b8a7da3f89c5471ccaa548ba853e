@@ -1,0 +1,16 @@
+docs/compose-web-test.md
+  h_76ea00ebfa3ec3 20-25,29-31
+scripts/docker-build.sh
+  h_76ea00ebfa3ec3 3,6-16,18-19,26-27,29-31,33-47,49-114,116
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "9ab220f73431b8a7da3f89c5471ccaa548ba853e",
+  "prompts": {},
+  "humans": {
+    "h_76ea00ebfa3ec3": {
+      "author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}
