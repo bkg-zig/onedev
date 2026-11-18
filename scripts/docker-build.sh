@@ -5,7 +5,7 @@
 # Usage:
 #   scripts/docker-build.sh build [service...]  # Images bauen (Standard: db core web)
 #   scripts/docker-build.sh up [service...]    # bauen + starten (Standard: db core web)
-#   scripts/docker-build.sh up-all             # alles: db + core + web + gateway-Profil
+#   scripts/docker-build.sh up-all             # alles: db + core + web
 #   scripts/docker-build.sh down               # stoppen + Container entfernen
 #   scripts/docker-build.sh stop               # nur anhalten
 #   scripts/docker-build.sh start              # angehaltene starten
@@ -56,15 +56,15 @@ case "${1:-}" in
         cmd_up "$@"
         ;;
     up-all)
-        "${COMPOSE[@]}" --profile gateway up -d --build
+        "${COMPOSE[@]}" up -d --build
         ;;
     down)
-        "${COMPOSE[@]}" --profile gateway down "${@:2}"
+        "${COMPOSE[@]}" down "${@:2}"
         ;;
     stop)
         shift
         if [ $# -eq 0 ]; then
-            "${COMPOSE[@]}" --profile gateway stop
+            "${COMPOSE[@]}" stop
         else
             "${COMPOSE[@]}" stop "$@"
         fi
@@ -72,7 +72,7 @@ case "${1:-}" in
     start)
         shift
         if [ $# -eq 0 ]; then
-            "${COMPOSE[@]}" --profile gateway start
+            "${COMPOSE[@]}" start
         else
             "${COMPOSE[@]}" start "$@"
         fi
@@ -80,26 +80,26 @@ case "${1:-}" in
     restart)
         shift
         if [ $# -eq 0 ]; then
-            "${COMPOSE[@]}" --profile gateway restart
+            "${COMPOSE[@]}" restart
         else
             "${COMPOSE[@]}" restart "$@"
         fi
         ;;
     update)
         # Images frisch bauen, Container neu erstellen, alte Images aufräumen.
-        "${COMPOSE[@]}" --profile gateway up -d --build
+        "${COMPOSE[@]}" up -d --build
         docker image prune -f >/dev/null
         ;;
     logs)
         shift
         if [ $# -eq 0 ]; then
-            "${COMPOSE[@]}" --profile gateway logs -f
+            "${COMPOSE[@]}" logs -f
         else
             "${COMPOSE[@]}" logs -f "$@"
         fi
         ;;
     ps|status)
-        "${COMPOSE[@]}" --profile gateway ps
+        "${COMPOSE[@]}" ps
         ;;
     config)
         "${COMPOSE[@]}" config --quiet && echo "Compose-Config OK"

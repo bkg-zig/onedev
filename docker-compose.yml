@@ -8,7 +8,7 @@ services:
     build:
       context: ../supadb/docker
       dockerfile: Dockerfile
-    container_name: bkg-core-admin-db
+    container_name: bkg-core-admin-db-onedev-rs
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
@@ -135,68 +135,6 @@ services:
     networks:
       - bkg-core-admin-network
 
-  # Gateway (ruxen) - runs on separate profile
-  gateway:
-    image: bkg-core-ruxen:mango
-    build:
-      context: ../ruxen
-      dockerfile: contrib/docker/Dockerfile
-    container_name: bkg-core-admin-gateway
-    restart: unless-stopped
-    profiles:
-      - gateway
-    security_opt:
-      - seccomp:../../../infra/ruxen/contrib/docker/seccomp-io_uring.json
-    environment:
-      RUXEN_CONFIG: /etc/ruxen/ruxen.conf
-      RUXEN_ADMIN_PORT: 9999
-    ports:
-      - "${BKG_GATEWAY_PORT:-36697}:8080"
-    volumes:
-      - ./docker/ruxen.conf:/etc/ruxen/ruxen.conf:ro
-      - ruxen_certs:/etc/ruxen/certs
-    depends_on:
-      core:
-        condition: service_started
-    networks:
-      - bkg-core-admin-network
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 512M
-        reservations:
-          cpus: '0.25'
-          memory: 128M
-
-  # OCI Runtime (youki) - sidecar for build execution (disabled - no Dockerfile available)
-  # youki:
-  #   image: bkg-youki:mango
-  #   build:
-  #     context: ../youki
-  #     dockerfile: Dockerfile
-  #   container_name: bkg-core-admin-youki
-  #   restart: unless-stopped
-  #   privileged: true
-  #   pid: host
-  #   volumes:
-  #     - /sys/fs/cgroup:/sys/fs/cgroup:rw
-  #     - /run:/run:rw
-  #     - oci_data:/var/opt/onedev/oci:rw
-  #     - /var/lib/youki:/var/lib/youki
-  #   environment:
-  #     YOUKI_LOG: info
-  #   networks:
-  #     - bkg-core-admin-network
-  #   deploy:
-  #     resources:
-  #       limits:
-  #         cpus: '2'
-  #         memory: 1G
-  #       reservations:
-  #         cpus: '0.5'
-  #         memory: 256M
-
 volumes:
   db_data:
     name: bkg-core-admin-db-data
@@ -212,8 +150,6 @@ volumes:
     name: bkg-core-admin-cache-data
   oci_data:
     name: bkg-core-admin-oci-data
-  ruxen_certs:
-    name: bkg-core-admin-ruxen-certs
 
 networks:
   bkg-core-admin-network:

@@ -42,7 +42,9 @@ Alle Befehle laufen über ein Skript (`scripts/docker-build.sh` —
 | db        | 5432       | 5432       | Postgres (pgrust)             |
 | core      | 46315      | 18080      | API + Server                  |
 | web       | 46316      | 18081      | Web-UI (SSR, Tera + Vanilla-CSS) |
-| gateway   | 36697      | 8080       | ruxen (nur Profil `gateway`)  |
+
+Nur OneDev + DB — kein Admin-Stack (kein Gateway, kein youki).
+
 
 Ports stehen in `docker/ports.env`
 (`BKG_CORE_PORT`, `BKG_WEB_PORT`, `BKG_GATEWAY_PORT`, `BKG_DB_PORT`).
@@ -85,4 +87,4 @@ Aufrufverzeichnis und Dateiverzeichnis fallen zusammen, deshalb lösen
 `docker compose --project-directory . -f docker-compose.yml ...`
 identisch auf — egal welche Compose-Version. Alle `context`-Pfade sind
 relativ zum Root: `.` = Repo-Root, `docker/Dockerfile.*`,
-`../pgrust/...` und `../ruxen` zeigen auf die Nachbar-Repos unter `infra/`.
+`../pgrust/...` zeigt auf das Nachbar-Repo unter `infra/`.
