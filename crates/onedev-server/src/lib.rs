@@ -211,7 +211,7 @@ pub fn create_app_router(state: AppState) -> Router {
     // Create API router
     let api_router = create_api_router(state.api_state.clone());
 
-    Router::new()
+    Router::<AppState>::new()
         .route("/", get(hello_handler))
         .route("/health", get(health_handler))
         .route("/metrics", get(metrics_handler))
