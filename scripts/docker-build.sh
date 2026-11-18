@@ -5,7 +5,7 @@
 # Usage:
 #   scripts/docker-build.sh build [service...]  # Images bauen (Standard: db core web)
 #   scripts/docker-build.sh up [service...]    # bauen + starten (Standard: db core web)
-#   scripts/docker-build.sh up-all             # alles inkl. gateway-Profil
+#   scripts/docker-build.sh up-all             # alles: db + core + web + gateway-Profil
 #   scripts/docker-build.sh down               # stoppen + Container entfernen
 #   scripts/docker-build.sh stop               # nur anhalten
 #   scripts/docker-build.sh start              # angehaltene starten
