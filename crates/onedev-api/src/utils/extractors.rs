@@ -1,10 +1,10 @@
 //! Custom Axum Extractors
 
+use crate::errors::{ApiError, AuthError};
 use axum::{
     extract::{FromRequestParts, Request},
     http::request::Parts,
 };
-use crate::errors::{AuthError, ApiError};
 use onedev_auth::Subject;
 
 /// Extract authenticated subject from request extensions
@@ -18,7 +18,8 @@ where
     type Rejection = AuthError;
 
     async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
-        parts.extensions
+        parts
+            .extensions
             .get::<Subject>()
             .cloned()
             .map(CurrentSubject)
@@ -47,14 +48,14 @@ pub async fn require_user(
 ) -> Result<onedev_auth::UserPrincipal, AuthError> {
     match subject {
         Subject::User(p) => Ok(p),
-        _ => Err(AuthError::Unauthorized("User authentication required".to_string())),
+        _ => Err(AuthError::Unauthorized(
+            "User authentication required".to_string(),
+        )),
     }
 }
 
 /// Require admin access
-pub async fn require_admin(
-    CurrentSubject(subject): CurrentSubject,
-) -> Result<Subject, AuthError> {
+pub async fn require_admin(CurrentSubject(subject): CurrentSubject) -> Result<Subject, AuthError> {
     if subject.is_elevated() {
         Ok(subject)
     } else {
@@ -75,6 +76,8 @@ where
     async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
         // Query parameters are already parsed by axum's Query extractor
         // This is a placeholder - actual implementation would use Query<>
-        Ok(Pagination(crate::models::pagination::OffsetPagination::default()))
+        Ok(Pagination(
+            crate::models::pagination::OffsetPagination::default(),
+        ))
     }
 }

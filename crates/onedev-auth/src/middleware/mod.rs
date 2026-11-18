@@ -1,17 +1,17 @@
 //! Authentication & Authorization Middleware for Axum
 
+use crate::errors::AuthError;
+use crate::models::subject::{CURRENT_SUBJECT, Subject};
+use crate::models::token::{Claims, JwtService};
+use crate::services::AuthService;
+use axum::http::request::Parts;
 use axum::{
     extract::{FromRequestParts, Request, State},
-    http::{header, HeaderMap, StatusCode},
+    http::{HeaderMap, StatusCode, header},
     middleware::Next,
     response::Response,
 };
-use axum::http::request::Parts;
 use axum_extra::extract::CookieJar;
-use crate::models::subject::{Subject, CURRENT_SUBJECT};
-use crate::models::token::{JwtService, Claims};
-use crate::services::AuthService;
-use crate::errors::AuthError;
 use onedev_core::permissions::ProjectPermissionType;
 use std::sync::Arc;
 use tracing::{debug, warn};
@@ -31,7 +31,7 @@ where
         if let Some(subject) = parts.extensions.get::<Subject>() {
             return Ok(CurrentSubject(subject.clone()));
         }
-        
+
         // Default to anonymous
         Ok(CurrentSubject(Subject::Anonymous))
     }
@@ -57,12 +57,12 @@ where
 }
 
 /// Require authenticated user (rejects anonymous)
-pub async fn require_user(
-    CurrentSubject(subject): CurrentSubject,
-) -> Result<Subject, AuthError> {
+pub async fn require_user(CurrentSubject(subject): CurrentSubject) -> Result<Subject, AuthError> {
     match subject {
         Subject::User(_) | Subject::AccessToken(_) => Ok(subject),
-        Subject::Anonymous => Err(AuthError::Unauthorized("Authentication required".to_string())),
+        Subject::Anonymous => Err(AuthError::Unauthorized(
+            "Authentication required".to_string(),
+        )),
     }
 }
 
@@ -72,14 +72,14 @@ pub async fn require_user_principal(
 ) -> Result<crate::models::principal::UserPrincipal, AuthError> {
     match subject {
         Subject::User(p) => Ok(p),
-        _ => Err(AuthError::Unauthorized("User authentication required".to_string())),
+        _ => Err(AuthError::Unauthorized(
+            "User authentication required".to_string(),
+        )),
     }
 }
 
 /// Require admin/root access
-pub async fn require_admin(
-    CurrentSubject(subject): CurrentSubject,
-) -> Result<Subject, AuthError> {
+pub async fn require_admin(CurrentSubject(subject): CurrentSubject) -> Result<Subject, AuthError> {
     if subject.is_elevated() {
         Ok(subject)
     } else {
@@ -96,7 +96,7 @@ pub async fn auth_middleware(
     next: Next,
 ) -> Result<Response, AuthError> {
     let token = extract_token(&headers, &cookies);
-    
+
     let subject = if let Some(token) = token {
         // Try JWT first
         if let Ok(claims) = auth_service.jwt_service().validate_access_token(&token) {
@@ -117,11 +117,11 @@ pub async fn auth_middleware(
 
     // Set subject in request extensions for extractors
     request.extensions_mut().insert(subject.clone());
-    
+
     // Also set in task-local for internal use
-    Ok(CURRENT_SUBJECT.scope(subject, async {
-        next.run(request).await
-    }).await)
+    Ok(CURRENT_SUBJECT
+        .scope(subject, async { next.run(request).await })
+        .await)
 }
 
 /// Extract token from Authorization header or cookie
@@ -161,7 +161,8 @@ pub fn permission_middleware(
     permission: onedev_core::permissions::ProjectPermissionType,
     project_id: i64,
 ) -> axum::middleware::FromFnLayer<
-    impl Fn(Request, Next) -> std::pin::Pin<Box<dyn std::future::Future<Output = Response> + Send>> + Clone,
+    impl Fn(Request, Next) -> std::pin::Pin<Box<dyn std::future::Future<Output = Response> + Send>>
+    + Clone,
     (),
     (Request, Next),
 > {
@@ -186,7 +187,11 @@ pub async fn auth_rate_limit(
 pub fn cors_middleware() -> tower_http::cors::CorsLayer {
     tower_http::cors::CorsLayer::new()
         .allow_origin(tower_http::cors::Any)
-        .allow_methods([axum::http::Method::GET, axum::http::Method::POST, axum::http::Method::OPTIONS])
+        .allow_methods([
+            axum::http::Method::GET,
+            axum::http::Method::POST,
+            axum::http::Method::OPTIONS,
+        ])
         .allow_headers([header::AUTHORIZATION, header::CONTENT_TYPE, header::COOKIE])
         .allow_credentials(true)
 }

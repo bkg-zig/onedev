@@ -1,13 +1,13 @@
 //! API Error Handling
 
 use axum::{
+    Json,
     http::StatusCode,
     response::{IntoResponse, Response},
-    Json,
 };
 use serde::Serialize;
-use utoipa::ToSchema;
 use thiserror::Error;
+use utoipa::ToSchema;
 
 /// RFC 7807 Problem Details
 #[derive(Debug, Serialize, ToSchema)]
@@ -128,10 +128,26 @@ impl IntoResponse for ApiError {
             ApiError::NotFound(msg) => (StatusCode::NOT_FOUND, "Not Found", msg.as_str()),
             ApiError::BadRequest(msg) => (StatusCode::BAD_REQUEST, "Bad Request", msg.as_str()),
             ApiError::Conflict(msg) => (StatusCode::CONFLICT, "Conflict", msg.as_str()),
-            ApiError::UnprocessableEntity(msg) => (StatusCode::UNPROCESSABLE_ENTITY, "Unprocessable Entity", msg.as_str()),
-            ApiError::TooManyRequests(msg) => (StatusCode::TOO_MANY_REQUESTS, "Too Many Requests", msg.as_str()),
-            ApiError::Internal(msg) => (StatusCode::INTERNAL_SERVER_ERROR, "Internal Server Error", msg.as_str()),
-            ApiError::ServiceUnavailable(msg) => (StatusCode::SERVICE_UNAVAILABLE, "Service Unavailable", msg.as_str()),
+            ApiError::UnprocessableEntity(msg) => (
+                StatusCode::UNPROCESSABLE_ENTITY,
+                "Unprocessable Entity",
+                msg.as_str(),
+            ),
+            ApiError::TooManyRequests(msg) => (
+                StatusCode::TOO_MANY_REQUESTS,
+                "Too Many Requests",
+                msg.as_str(),
+            ),
+            ApiError::Internal(msg) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Internal Server Error",
+                msg.as_str(),
+            ),
+            ApiError::ServiceUnavailable(msg) => (
+                StatusCode::SERVICE_UNAVAILABLE,
+                "Service Unavailable",
+                msg.as_str(),
+            ),
         };
 
         let problem = ProblemDetails::new(status, title, detail);
@@ -142,25 +158,91 @@ impl IntoResponse for ApiError {
 impl IntoResponse for AuthError {
     fn into_response(self) -> Response {
         let (status, title, detail) = match &self {
-            AuthError::Unauthorized(msg) => (StatusCode::UNAUTHORIZED, "Unauthorized", msg.as_str()),
+            AuthError::Unauthorized(msg) => {
+                (StatusCode::UNAUTHORIZED, "Unauthorized", msg.as_str())
+            }
             AuthError::Forbidden(msg) => (StatusCode::FORBIDDEN, "Forbidden", msg.as_str()),
-            AuthError::InvalidCredentials => (StatusCode::UNAUTHORIZED, "Invalid Credentials", "Invalid username or password"),
-            AuthError::TokenExpired => (StatusCode::UNAUTHORIZED, "Token Expired", "Authentication token has expired"),
-            AuthError::TokenInvalid => (StatusCode::UNAUTHORIZED, "Invalid Token", "Authentication token is invalid"),
-            AuthError::TokenRevoked => (StatusCode::UNAUTHORIZED, "Token Revoked", "Authentication token has been revoked"),
-            AuthError::TwoFactorRequired => (StatusCode::UNAUTHORIZED, "Two-Factor Required", "Two-factor authentication is required"),
-            AuthError::InvalidTwoFactorCode => (StatusCode::UNAUTHORIZED, "Invalid 2FA Code", "Invalid two-factor authentication code"),
-            AuthError::TwoFactorNotEnabled => (StatusCode::BAD_REQUEST, "2FA Not Enabled", "Two-factor authentication is not enabled"),
-            AuthError::InvalidBackupCode => (StatusCode::UNAUTHORIZED, "Invalid Backup Code", "Invalid backup code"),
+            AuthError::InvalidCredentials => (
+                StatusCode::UNAUTHORIZED,
+                "Invalid Credentials",
+                "Invalid username or password",
+            ),
+            AuthError::TokenExpired => (
+                StatusCode::UNAUTHORIZED,
+                "Token Expired",
+                "Authentication token has expired",
+            ),
+            AuthError::TokenInvalid => (
+                StatusCode::UNAUTHORIZED,
+                "Invalid Token",
+                "Authentication token is invalid",
+            ),
+            AuthError::TokenRevoked => (
+                StatusCode::UNAUTHORIZED,
+                "Token Revoked",
+                "Authentication token has been revoked",
+            ),
+            AuthError::TwoFactorRequired => (
+                StatusCode::UNAUTHORIZED,
+                "Two-Factor Required",
+                "Two-factor authentication is required",
+            ),
+            AuthError::InvalidTwoFactorCode => (
+                StatusCode::UNAUTHORIZED,
+                "Invalid 2FA Code",
+                "Invalid two-factor authentication code",
+            ),
+            AuthError::TwoFactorNotEnabled => (
+                StatusCode::BAD_REQUEST,
+                "2FA Not Enabled",
+                "Two-factor authentication is not enabled",
+            ),
+            AuthError::InvalidBackupCode => (
+                StatusCode::UNAUTHORIZED,
+                "Invalid Backup Code",
+                "Invalid backup code",
+            ),
             AuthError::UserNotFound => (StatusCode::NOT_FOUND, "User Not Found", "User not found"),
-            AuthError::UserDisabled => (StatusCode::FORBIDDEN, "User Disabled", "User account is disabled"),
-            AuthError::UserLocked => (StatusCode::FORBIDDEN, "User Locked", "User account is locked"),
-            AuthError::SessionNotFound => (StatusCode::UNAUTHORIZED, "Session Not Found", "Session not found"),
-            AuthError::SessionExpired => (StatusCode::UNAUTHORIZED, "Session Expired", "Session has expired"),
-            AuthError::AccessTokenNotFound => (StatusCode::UNAUTHORIZED, "Access Token Not Found", "Access token not found"),
-            AuthError::InsufficientPermissions(msg) => (StatusCode::FORBIDDEN, "Insufficient Permissions", msg.as_str()),
-            AuthError::RateLimited => (StatusCode::TOO_MANY_REQUESTS, "Rate Limited", "Too many requests"),
-            AuthError::Internal(msg) => (StatusCode::INTERNAL_SERVER_ERROR, "Internal Server Error", msg.as_str()),
+            AuthError::UserDisabled => (
+                StatusCode::FORBIDDEN,
+                "User Disabled",
+                "User account is disabled",
+            ),
+            AuthError::UserLocked => (
+                StatusCode::FORBIDDEN,
+                "User Locked",
+                "User account is locked",
+            ),
+            AuthError::SessionNotFound => (
+                StatusCode::UNAUTHORIZED,
+                "Session Not Found",
+                "Session not found",
+            ),
+            AuthError::SessionExpired => (
+                StatusCode::UNAUTHORIZED,
+                "Session Expired",
+                "Session has expired",
+            ),
+            AuthError::AccessTokenNotFound => (
+                StatusCode::UNAUTHORIZED,
+                "Access Token Not Found",
+                "Access token not found",
+            ),
+            AuthError::InsufficientPermissions(msg) => (
+                StatusCode::FORBIDDEN,
+                "Insufficient Permissions",
+                msg.as_str(),
+            ),
+            AuthError::RateLimited => (
+                StatusCode::TOO_MANY_REQUESTS,
+                "Rate Limited",
+                "Too many requests",
+            ),
+            AuthError::Internal(msg) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Internal Server Error",
+                msg.as_str(),
+            ),
         };
 
         let problem = ProblemDetails::new(status, title, detail);

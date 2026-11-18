@@ -1,9 +1,9 @@
 //! Group Repository
 
 use crate::{
-    models::group::{DbGroup, DbCreateGroup, DbUpdateGroup, GroupQueryBuilder},
-    repositories::Repository,
     DbPool, DbResult,
+    models::group::{DbCreateGroup, DbGroup, DbUpdateGroup, GroupQueryBuilder},
+    repositories::Repository,
 };
 use async_trait::async_trait;
 use sqlx::FromRow;
@@ -16,7 +16,12 @@ impl GroupRepository {
     }
 
     /// Find group by path (and optional parent)
-    pub async fn find_by_path(&self, pool: &DbPool, path: &str, parent_id: Option<i64>) -> DbResult<Option<DbGroup>> {
+    pub async fn find_by_path(
+        &self,
+        pool: &DbPool,
+        path: &str,
+        parent_id: Option<i64>,
+    ) -> DbResult<Option<DbGroup>> {
         let row = sqlx::query(GroupQueryBuilder::select_by_path())
             .bind(path)
             .bind(parent_id)
@@ -53,7 +58,10 @@ impl GroupRepository {
         let mut param_idx = 1;
 
         if let Some(_term) = term {
-            conditions.push(format!("(name ILIKE ${} OR path ILIKE ${} OR description ILIKE ${})", param_idx, param_idx, param_idx));
+            conditions.push(format!(
+                "(name ILIKE ${} OR path ILIKE ${} OR description ILIKE ${})",
+                param_idx, param_idx, param_idx
+            ));
             param_idx += 1;
         }
 
@@ -97,7 +105,10 @@ impl GroupRepository {
         q = q.bind((page * per_page) as i64);
 
         let rows = q.fetch_all(pool).await?;
-        let groups = rows.into_iter().map(|r| DbGroup::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let groups = rows
+            .into_iter()
+            .map(|r| DbGroup::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(groups)
     }
 }
@@ -126,10 +137,12 @@ impl Repository<DbGroup, DbCreateGroup, DbUpdateGroup> for GroupRepository {
             .fetch_one(pool)
             .await?;
 
-        self.find_by_id(pool, id).await?.ok_or_else(|| crate::DbError::NotFound {
-            entity_type: "Group".to_string(),
-            id: id.to_string(),
-        })
+        self.find_by_id(pool, id)
+            .await?
+            .ok_or_else(|| crate::DbError::NotFound {
+                entity_type: "Group".to_string(),
+                id: id.to_string(),
+            })
     }
 
     async fn find_by_id(&self, pool: &DbPool, id: i64) -> DbResult<Option<DbGroup>> {
@@ -176,7 +189,10 @@ impl Repository<DbGroup, DbCreateGroup, DbUpdateGroup> for GroupRepository {
         .fetch_all(pool)
         .await?;
 
-        let groups = rows.into_iter().map(|r| DbGroup::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let groups = rows
+            .into_iter()
+            .map(|r| DbGroup::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(groups)
     }
 

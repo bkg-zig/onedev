@@ -1,10 +1,10 @@
 //! OpenAPI Documentation Setup
 
+use std::collections::BTreeMap;
+use utoipa::openapi::OpenApi;
 use utoipa::openapi::path::{HttpMethod, Operation, PathItemBuilder, PathsBuilder};
 use utoipa::openapi::security::{ApiKey, ApiKeyValue, SecurityScheme};
-use utoipa::openapi::OpenApi;
 use utoipa::{Modify, PartialSchema};
-use std::collections::BTreeMap;
 
 /// Add Bearer token security scheme to OpenAPI
 pub struct SecurityAddon;
@@ -74,21 +74,42 @@ fn build_paths() -> utoipa::openapi::Paths {
         ("/projects/{project_id}/issues/{id}", HttpMethod::Delete),
         ("/projects/{project_id}/merge-requests", HttpMethod::Get),
         ("/projects/{project_id}/merge-requests", HttpMethod::Post),
-        ("/projects/{project_id}/merge-requests/{id}", HttpMethod::Get),
-        ("/projects/{project_id}/merge-requests/{id}", HttpMethod::Patch),
-        ("/projects/{project_id}/merge-requests/{id}", HttpMethod::Delete),
+        (
+            "/projects/{project_id}/merge-requests/{id}",
+            HttpMethod::Get,
+        ),
+        (
+            "/projects/{project_id}/merge-requests/{id}",
+            HttpMethod::Patch,
+        ),
+        (
+            "/projects/{project_id}/merge-requests/{id}",
+            HttpMethod::Delete,
+        ),
         ("/projects/{project_id}/builds", HttpMethod::Get),
         ("/projects/{project_id}/builds", HttpMethod::Post),
         ("/projects/{project_id}/builds/{id}", HttpMethod::Get),
         ("/git/{project_path}/info/refs", HttpMethod::Get),
         ("/git/{project_path}/git-upload-pack", HttpMethod::Post),
         ("/git/{project_path}/git-receive-pack", HttpMethod::Post),
-        ("/git/{project_path}/info/lfs/objects/batch", HttpMethod::Post),
-        ("/git/{project_path}/info/lfs/objects/{oid}", HttpMethod::Get),
-        ("/git/{project_path}/info/lfs/objects/{oid}", HttpMethod::Put),
+        (
+            "/git/{project_path}/info/lfs/objects/batch",
+            HttpMethod::Post,
+        ),
+        (
+            "/git/{project_path}/info/lfs/objects/{oid}",
+            HttpMethod::Get,
+        ),
+        (
+            "/git/{project_path}/info/lfs/objects/{oid}",
+            HttpMethod::Put,
+        ),
         ("/git/{project_path}/info/lfs/locks", HttpMethod::Get),
         ("/git/{project_path}/info/lfs/locks", HttpMethod::Post),
-        ("/git/{project_path}/info/lfs/locks/{id}", HttpMethod::Delete),
+        (
+            "/git/{project_path}/info/lfs/locks/{id}",
+            HttpMethod::Delete,
+        ),
         ("/health", HttpMethod::Get),
         ("/ready", HttpMethod::Get),
         ("/version", HttpMethod::Get),

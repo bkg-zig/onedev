@@ -1,9 +1,11 @@
 //! Build Repository
 
 use crate::{
-    models::build::{DbBuild, DbCreateBuild, DbUpdateBuild, DbBuildJob, DbBuildStep, BuildQueryBuilder},
-    repositories::Repository,
     DbPool, DbResult,
+    models::build::{
+        BuildQueryBuilder, DbBuild, DbBuildJob, DbBuildStep, DbCreateBuild, DbUpdateBuild,
+    },
+    repositories::Repository,
 };
 use async_trait::async_trait;
 use sqlx::FromRow;
@@ -16,7 +18,13 @@ impl BuildRepository {
     }
 
     /// Find by project ID
-    pub async fn find_by_project_id(&self, pool: &DbPool, project_id: i64, limit: i64, offset: i64) -> DbResult<Vec<DbBuild>> {
+    pub async fn find_by_project_id(
+        &self,
+        pool: &DbPool,
+        project_id: i64,
+        limit: i64,
+        offset: i64,
+    ) -> DbResult<Vec<DbBuild>> {
         let rows = sqlx::query(BuildQueryBuilder::select_by_project_id())
             .bind(project_id)
             .bind(limit)
@@ -24,12 +32,20 @@ impl BuildRepository {
             .fetch_all(pool)
             .await?;
 
-        let builds = rows.into_iter().map(|r| DbBuild::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let builds = rows
+            .into_iter()
+            .map(|r| DbBuild::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(builds)
     }
 
     /// Find by project and number
-    pub async fn find_by_project_and_number(&self, pool: &DbPool, project_id: i64, number: i32) -> DbResult<Option<DbBuild>> {
+    pub async fn find_by_project_and_number(
+        &self,
+        pool: &DbPool,
+        project_id: i64,
+        number: i32,
+    ) -> DbResult<Option<DbBuild>> {
         let row = sqlx::query(BuildQueryBuilder::select_by_project_and_number())
             .bind(project_id)
             .bind(number)
@@ -45,14 +61,17 @@ impl BuildRepository {
             .fetch_all(pool)
             .await?;
 
-        let builds = rows.into_iter().map(|r| DbBuild::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let builds = rows
+            .into_iter()
+            .map(|r| DbBuild::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(builds)
     }
 
     /// Get next build number for project
     pub async fn next_number(&self, pool: &DbPool, project_id: i64) -> DbResult<i32> {
         let max: Option<i32> = sqlx::query_scalar(
-            "SELECT COALESCE(MAX(number), 0) + 1 FROM builds WHERE project_id = $1"
+            "SELECT COALESCE(MAX(number), 0) + 1 FROM builds WHERE project_id = $1",
         )
         .bind(project_id)
         .fetch_one(pool)
@@ -86,10 +105,12 @@ impl Repository<DbBuild, DbCreateBuild, DbUpdateBuild> for BuildRepository {
             .fetch_one(pool)
             .await?;
 
-        self.find_by_id(pool, id).await?.ok_or_else(|| crate::DbError::NotFound {
-            entity_type: "Build".to_string(),
-            id: id.to_string(),
-        })
+        self.find_by_id(pool, id)
+            .await?
+            .ok_or_else(|| crate::DbError::NotFound {
+                entity_type: "Build".to_string(),
+                id: id.to_string(),
+            })
     }
 
     async fn find_by_id(&self, pool: &DbPool, id: i64) -> DbResult<Option<DbBuild>> {
@@ -126,15 +147,16 @@ impl Repository<DbBuild, DbCreateBuild, DbUpdateBuild> for BuildRepository {
     }
 
     async fn list(&self, pool: &DbPool, limit: i64, offset: i64) -> DbResult<Vec<DbBuild>> {
-        let rows = sqlx::query(
-            "SELECT * FROM builds ORDER BY created_at DESC LIMIT $1 OFFSET $2"
-        )
-        .bind(limit)
-        .bind(offset)
-        .fetch_all(pool)
-        .await?;
+        let rows = sqlx::query("SELECT * FROM builds ORDER BY created_at DESC LIMIT $1 OFFSET $2")
+            .bind(limit)
+            .bind(offset)
+            .fetch_all(pool)
+            .await?;
 
-        let builds = rows.into_iter().map(|r| DbBuild::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let builds = rows
+            .into_iter()
+            .map(|r| DbBuild::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(builds)
     }
 
@@ -154,15 +176,21 @@ impl BuildJobRepository {
     }
 
     /// Find by build ID
-    pub async fn find_by_build_id(&self, pool: &DbPool, build_id: i64) -> DbResult<Vec<DbBuildJob>> {
-        let rows = sqlx::query(
-            "SELECT * FROM build_jobs WHERE build_id = $1 ORDER BY order_num ASC"
-        )
-        .bind(build_id)
-        .fetch_all(pool)
-        .await?;
+    pub async fn find_by_build_id(
+        &self,
+        pool: &DbPool,
+        build_id: i64,
+    ) -> DbResult<Vec<DbBuildJob>> {
+        let rows =
+            sqlx::query("SELECT * FROM build_jobs WHERE build_id = $1 ORDER BY order_num ASC")
+                .bind(build_id)
+                .fetch_all(pool)
+                .await?;
 
-        let jobs = rows.into_iter().map(|r| DbBuildJob::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let jobs = rows
+            .into_iter()
+            .map(|r| DbBuildJob::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(jobs)
     }
 }
@@ -198,10 +226,12 @@ impl Repository<DbBuildJob, DbBuildJob, DbBuildJob> for BuildJobRepository {
         .fetch_one(pool)
         .await?;
 
-        self.find_by_id(pool, id).await?.ok_or_else(|| crate::DbError::NotFound {
-            entity_type: "BuildJob".to_string(),
-            id: id.to_string(),
-        })
+        self.find_by_id(pool, id)
+            .await?
+            .ok_or_else(|| crate::DbError::NotFound {
+                entity_type: "BuildJob".to_string(),
+                id: id.to_string(),
+            })
     }
 
     async fn find_by_id(&self, pool: &DbPool, id: i64) -> DbResult<Option<DbBuildJob>> {
@@ -250,13 +280,17 @@ impl Repository<DbBuildJob, DbBuildJob, DbBuildJob> for BuildJobRepository {
     }
 
     async fn list(&self, pool: &DbPool, limit: i64, offset: i64) -> DbResult<Vec<DbBuildJob>> {
-        let rows = sqlx::query("SELECT * FROM build_jobs ORDER BY created_at DESC LIMIT $1 OFFSET $2")
-            .bind(limit)
-            .bind(offset)
-            .fetch_all(pool)
-            .await?;
+        let rows =
+            sqlx::query("SELECT * FROM build_jobs ORDER BY created_at DESC LIMIT $1 OFFSET $2")
+                .bind(limit)
+                .bind(offset)
+                .fetch_all(pool)
+                .await?;
 
-        let jobs = rows.into_iter().map(|r| DbBuildJob::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let jobs = rows
+            .into_iter()
+            .map(|r| DbBuildJob::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(jobs)
     }
 
@@ -277,14 +311,16 @@ impl BuildStepRepository {
 
     /// Find by job ID
     pub async fn find_by_job_id(&self, pool: &DbPool, job_id: i64) -> DbResult<Vec<DbBuildStep>> {
-        let rows = sqlx::query(
-            "SELECT * FROM build_steps WHERE job_id = $1 ORDER BY order_num ASC"
-        )
-        .bind(job_id)
-        .fetch_all(pool)
-        .await?;
+        let rows =
+            sqlx::query("SELECT * FROM build_steps WHERE job_id = $1 ORDER BY order_num ASC")
+                .bind(job_id)
+                .fetch_all(pool)
+                .await?;
 
-        let steps = rows.into_iter().map(|r| DbBuildStep::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let steps = rows
+            .into_iter()
+            .map(|r| DbBuildStep::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(steps)
     }
 }
@@ -320,10 +356,12 @@ impl Repository<DbBuildStep, DbBuildStep, DbBuildStep> for BuildStepRepository {
         .fetch_one(pool)
         .await?;
 
-        self.find_by_id(pool, id).await?.ok_or_else(|| crate::DbError::NotFound {
-            entity_type: "BuildStep".to_string(),
-            id: id.to_string(),
-        })
+        self.find_by_id(pool, id)
+            .await?
+            .ok_or_else(|| crate::DbError::NotFound {
+                entity_type: "BuildStep".to_string(),
+                id: id.to_string(),
+            })
     }
 
     async fn find_by_id(&self, pool: &DbPool, id: i64) -> DbResult<Option<DbBuildStep>> {
@@ -371,13 +409,17 @@ impl Repository<DbBuildStep, DbBuildStep, DbBuildStep> for BuildStepRepository {
     }
 
     async fn list(&self, pool: &DbPool, limit: i64, offset: i64) -> DbResult<Vec<DbBuildStep>> {
-        let rows = sqlx::query("SELECT * FROM build_steps ORDER BY created_at DESC LIMIT $1 OFFSET $2")
-            .bind(limit)
-            .bind(offset)
-            .fetch_all(pool)
-            .await?;
+        let rows =
+            sqlx::query("SELECT * FROM build_steps ORDER BY created_at DESC LIMIT $1 OFFSET $2")
+                .bind(limit)
+                .bind(offset)
+                .fetch_all(pool)
+                .await?;
 
-        let steps = rows.into_iter().map(|r| DbBuildStep::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let steps = rows
+            .into_iter()
+            .map(|r| DbBuildStep::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(steps)
     }
 

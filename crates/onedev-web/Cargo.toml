@@ -17,12 +17,17 @@ markdown.workspace = true
 pulldown-cmark.workspace = true
 syntect.workspace = true
 axum.workspace = true
-tower-http.workspace = true
+axum-extra.workspace = true
+tower-http = { workspace = true, features = ["fs"] }
+tower.workspace = true
+figment.workspace = true
+digest.workspace = true
 tokio.workspace = true
 anyhow.workspace = true
 thiserror.workspace = true
 tracing.workspace = true
 chrono.workspace = true
+time.workspace = true
 uuid.workspace = true
 serde.workspace = true
 serde_json.workspace = true
@@ -38,3 +43,9 @@ minify-html = "0.17"
 css-minify = "0.2"
 js-sys = "0.3"
 wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
+md5.workspace = true
+html-escape = "0.2"
+rand = { version = "0.9", features = ["std", "os_rng"] }
+axum-macros = "0.5"
+reqwest = { version = "0.12", features = ["json", "rustls-tls", "cookies", "gzip", "brotli"] }
+sqlx.workspace = true

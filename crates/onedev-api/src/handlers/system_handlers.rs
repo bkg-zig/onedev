@@ -1,12 +1,8 @@
 //! System HTTP Handlers
 
-use axum::{
-    extract::State,
-    http::StatusCode,
-    response::Json,
-};
-use serde::Serialize;
 use crate::AppState;
+use axum::{extract::State, http::StatusCode, response::Json};
+use serde::Serialize;
 
 /// Health check response
 #[derive(Debug, Serialize)]
@@ -42,9 +38,7 @@ pub struct VersionResponse {
 }
 
 /// GET /health
-pub async fn health(
-    State(_state): State<crate::AppState>,
-) -> Json<HealthResponse> {
+pub async fn health(State(_state): State<crate::AppState>) -> Json<HealthResponse> {
     Json(HealthResponse {
         status: "healthy".to_string(),
         timestamp: chrono::Utc::now(),
@@ -69,20 +63,20 @@ pub async fn ready(
             message: None,
         },
     ];
-    
+
     let ready = checks.iter().all(|c| c.status == "ok");
-    
+
     Ok(Json(ReadyResponse { ready, checks }))
 }
 
 /// GET /version
-pub async fn version(
-    State(_state): State<crate::AppState>,
-) -> Json<VersionResponse> {
+pub async fn version(State(_state): State<crate::AppState>) -> Json<VersionResponse> {
     Json(VersionResponse {
         version: env!("CARGO_PKG_VERSION").to_string(),
         git_commit: option_env!("GIT_COMMIT").map(String::from),
         build_date: option_env!("BUILD_DATE").map(String::from),
-        rust_version: option_env!("RUSTC_VERSION").unwrap_or("unknown").to_string(),
+        rust_version: option_env!("RUSTC_VERSION")
+            .unwrap_or("unknown")
+            .to_string(),
     })
 }

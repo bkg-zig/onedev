@@ -35,19 +35,15 @@ pub fn validate(spec: &BuildSpec) -> BuildResult<()> {
         if !names.insert(job.name.as_str()) {
             return Err(BuildError::Spec(format!("duplicate job name: {}", job.name)));
         }
-        if job.executor != "host" {
-            return Err(BuildError::Spec(format!(
-                "job {}: unsupported executor '{}' (only 'host' is implemented)",
-                job.name, job.executor
-            )));
-        }
         if job.steps.is_empty() {
             return Err(BuildError::Spec(format!("job {} has no steps", job.name)));
         }
         for step in &job.steps {
-            if step.run.trim().is_empty() {
+            if step.step_type == "CommandStep"
+                && step.commands().map_or(true, |commands| commands.trim().is_empty())
+            {
                 return Err(BuildError::Spec(format!(
-                    "job {} has a step with an empty run command",
+                    "job {} has a CommandStep without commands",
                     job.name
                 )));
             }
@@ -55,7 +51,7 @@ pub fn validate(spec: &BuildSpec) -> BuildResult<()> {
     }
 
     for job in &spec.jobs {
-        for need in &job.needs {
+        for need in &job.needs() {
             if need == &job.name {
                 return Err(BuildError::Spec(format!("job {} depends on itself", job.name)));
             }
@@ -74,10 +70,14 @@ pub fn validate(spec: &BuildSpec) -> BuildResult<()> {
 
 /// Job names in dependency order (dependencies first).
 pub fn execution_order(spec: &BuildSpec) -> BuildResult<Vec<String>> {
-    let needs: HashMap<&str, &[String]> = spec
+    let needs_owned: HashMap<String, Vec<String>> = spec
         .jobs
         .iter()
-        .map(|job| (job.name.as_str(), job.needs.as_slice()))
+        .map(|job| (job.name.clone(), job.needs()))
+        .collect();
+    let needs: HashMap<&str, &[String]> = needs_owned
+        .iter()
+        .map(|(name, deps)| (name.as_str(), deps.as_slice()))
         .collect();
 
     let mut ordered = Vec::with_capacity(spec.jobs.len());
@@ -137,8 +137,8 @@ pub fn jobs_for_event(spec: &BuildSpec, event: &TriggerEvent) -> BuildResult<Vec
             let mut added = false;
             for job in &spec.jobs {
                 if !selected.contains(job.name.as_str())
-                    && !job.needs.is_empty()
-                    && job.needs.iter().all(|need| selected.contains(need.as_str()))
+                    && !job.needs().is_empty()
+                    && job.needs().iter().all(|need| selected.contains(need.as_str()))
                 {
                     selected.insert(job.name.as_str());
                     added = true;
@@ -161,18 +161,26 @@ mod tests {
     use super::*;
 
     const SPEC: &str = r#"
-version: 1
+version: 59
 jobs:
   - name: build
     steps:
-      - run: cargo build
+      - type: CommandStep
+        name: compile
+        interpreter:
+          type: PosixInterpreter
+          commands: cargo build
     triggers:
-      - type: push
-        branches: [main]
+      - type: BranchUpdateTrigger
+        branches: main
   - name: test
-    needs: [build]
+    jobDependencies:
+      - jobName: build
     steps:
-      - run: cargo test
+      - type: CommandStep
+        interpreter:
+          type: PosixInterpreter
+          commands: cargo test
 "#;
 
     #[test]
@@ -183,9 +191,9 @@ jobs:
 
     #[test]
     fn rejects_cycles_and_unknown_needs() {
-        let cyclic = SPEC.replace("needs: [build]", "needs: [test]");
+        let cyclic = SPEC.replace("jobName: build", "jobName: test");
         assert!(parse_buildspec(&cyclic).is_err());
-        let unknown = SPEC.replace("needs: [build]", "needs: [nope]");
+        let unknown = SPEC.replace("jobName: build", "jobName: nope");
         assert!(parse_buildspec(&unknown).is_err());
     }
 

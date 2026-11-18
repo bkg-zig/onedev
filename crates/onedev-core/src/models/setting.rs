@@ -25,7 +25,7 @@ pub struct SystemSetting {
     pub password_require_lowercase: bool,
     pub password_require_digit: bool,
     pub password_require_symbol: bool,
-    pub session_timeout: u32, // minutes
+    pub session_timeout: u32,     // minutes
     pub remember_me_timeout: u32, // days
     pub max_failed_login_attempts: u32,
     pub lockout_duration: u32, // minutes
@@ -127,9 +127,9 @@ pub struct SecuritySetting {
     pub two_factor_required_for_admin: bool,
     pub two_factor_required_for_all: bool,
     pub password_min_length: u32,
-    pub password_max_age: u32, // days, 0 = never expire
-    pub password_history: u32, // number of previous passwords to remember
-    pub session_timeout: u32, // minutes
+    pub password_max_age: u32,    // days, 0 = never expire
+    pub password_history: u32,    // number of previous passwords to remember
+    pub session_timeout: u32,     // minutes
     pub remember_me_timeout: u32, // days
     pub max_failed_login_attempts: u32,
     pub lockout_duration: u32, // minutes
@@ -205,7 +205,18 @@ pub struct UserPreferences {
     pub web_notifications: WebNotificationPrefs,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default, strum::EnumString, strum::Display)]
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    Serialize,
+    Deserialize,
+    Default,
+    strum::EnumString,
+    strum::Display,
+)]
 #[serde(rename_all = "lowercase")]
 #[strum(serialize_all = "lowercase")]
 pub enum Theme {
@@ -268,7 +279,9 @@ pub struct WebNotificationPrefs {
 }
 
 /// Settings key for storage
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, strum::EnumString, strum::Display)]
+#[derive(
+    Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, strum::EnumString, strum::Display,
+)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum SettingKey {

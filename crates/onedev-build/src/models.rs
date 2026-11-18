@@ -1,22 +1,9 @@
-//! Build-spec model (`.onedev-buildspec.yml`), OneDev-style.
+//! Build-spec model — 1-to-1 port of the Vanilla `.onedev-buildspec.yml`
+//! format (`io.onedev.server.buildspec`, v17.2.1).
 //!
 //! OneDev has no pipelines/stages/runners: a spec is a set of named jobs,
-//! each with steps, triggers and dependencies on other jobs. This is the
-//! format the parser accepts (a validated subset of the vanilla format):
-//!
-//! ```yaml
-//! version: 1
-//! jobs:
-//!   - name: test
-//!     steps:
-//!       - name: unit tests
-//!         run: cargo test
-//!     triggers:
-//!       - type: push
-//!         branches: [main]
-//!     needs: [build]
-//!     artifacts: [target/debug/app]
-//! ```
+//! each with typed steps (`type: CommandStep`, ...), typed triggers
+//! (`type: BranchUpdateTrigger`, ...) and job dependencies.
 
 use std::collections::HashMap;
 
@@ -24,81 +11,302 @@ use serde::{Deserialize, Serialize};
 
 /// A parsed `.onedev-buildspec.yml`.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
 pub struct BuildSpec {
     pub version: Option<u32>,
     #[serde(default)]
-    pub variables: HashMap<String, String>,
+    pub imports: Vec<SpecImport>,
+    #[serde(default)]
     pub jobs: Vec<JobSpec>,
+    /// Project properties referenced as `@property:name@` (kept raw).
+    #[serde(default)]
+    pub properties: Vec<serde_json::Value>,
 }
 
-/// One named job of a build spec.
+/// `imports:` entry — reuse jobs/templates of another project.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SpecImport {
+    pub project_path: String,
+    pub revision: Option<String>,
+}
+
+/// One named job (`io.onedev.server.buildspec.job.Job`).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct JobSpec {
     pub name: String,
-    pub steps: Vec<StepSpec>,
+    #[serde(default)]
+    pub execute_in_sandbox: bool,
+    pub job_executor: Option<String>,
+    pub sandbox_template: Option<String>,
+    #[serde(default)]
+    pub steps: Vec<Step>,
+    #[serde(default)]
+    pub param_specs: Vec<ParamSpec>,
+    #[serde(default)]
+    pub job_dependencies: Vec<JobDependency>,
+    #[serde(default)]
+    pub project_dependencies: Vec<serde_json::Value>,
+    #[serde(default)]
+    pub required_services: Vec<String>,
     #[serde(default)]
     pub triggers: Vec<Trigger>,
-    /// Names of jobs that must succeed before this job runs.
+    /// Seconds; vanilla default is 14400 (4h).
+    #[serde(default = "default_timeout")]
+    pub timeout: u64,
     #[serde(default)]
-    pub needs: Vec<String>,
+    pub post_build_actions: Vec<serde_json::Value>,
+    pub sequential_group: Option<String>,
+    #[serde(default = "default_retry_condition")]
+    pub retry_condition: String,
+    #[serde(default = "default_max_attempts")]
+    pub max_attempts: u32,
+    #[serde(default = "default_retry_delay")]
+    pub retry_delay: u32,
     #[serde(default)]
     pub env: HashMap<String, String>,
-    /// Executor key; only `host` is implemented (see port-review 05, MVP).
-    #[serde(default = "default_executor")]
-    pub executor: String,
-    #[serde(default)]
-    pub retries: u32,
-    pub timeout_seconds: Option<u64>,
-    /// Paths or globs, relative to the work dir, copied to the artifact store.
-    #[serde(default)]
-    pub artifacts: Vec<String>,
-    #[serde(default)]
-    pub allow_failure: bool,
 }
 
-fn default_executor() -> String {
-    "host".to_owned()
+fn default_timeout() -> u64 {
+    14400
+}
+fn default_retry_condition() -> String {
+    "never".to_owned()
+}
+fn default_max_attempts() -> u32 {
+    3
+}
+fn default_retry_delay() -> u32 {
+    30
 }
 
-/// One command step of a job.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct StepSpec {
-    pub name: Option<String>,
-    pub run: String,
-}
+impl JobSpec {
+    /// Names of jobs this job depends on.
+    pub fn needs(&self) -> Vec<String> {
+        self.job_dependencies
+            .iter()
+            .map(|dependency| dependency.job_name.clone())
+            .collect()
+    }
 
-impl StepSpec {
-    pub fn display_name(&self) -> &str {
-        self.name.as_deref().unwrap_or(&self.run)
+    /// Artifact patterns published by this job's steps.
+    pub fn artifact_patterns(&self) -> Vec<String> {
+        self.steps
+            .iter()
+            .filter(|step| step.step_type == "PublishArtifactStep")
+            .filter_map(|step| step.artifacts.clone())
+            .collect()
     }
 }
 
-/// What starts a job.
+/// Job parameter specification (subset; unknown fields are preserved).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ParamSpec {
+    pub name: String,
+    #[serde(rename = "type")]
+    pub param_type: Option<String>,
+    #[serde(flatten)]
+    pub extra: serde_json::Map<String, serde_json::Value>,
+}
+
+/// Dependency on another job (`JobDependency`).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct JobDependency {
+    pub job_name: String,
+    #[serde(default = "default_true")]
+    pub require_successful: bool,
+    #[serde(default = "default_artifacts")]
+    pub artifacts: String,
+    pub destination_path: Option<String>,
+}
+
+fn default_true() -> bool {
+    true
+}
+fn default_artifacts() -> String {
+    "**".to_owned()
+}
+
+/// When a step runs relative to previous steps.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "UPPERCASE")]
+pub enum ExecuteCondition {
+    #[default]
+    Successful,
+    Always,
+    Failed,
+}
+
+/// One step of a job. `type` is the Vanilla step class name
+/// (`CheckoutStep`, `CommandStep`, ...); fields of the concrete classes
+/// are flattened, unknown fields are preserved in `extra`.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Step {
+    #[serde(rename = "type")]
+    pub step_type: String,
+    pub name: Option<String>,
+    #[serde(default)]
+    pub condition: ExecuteCondition,
+    #[serde(default)]
+    pub optional: bool,
+
+    // CommandStep
+    pub run_in_container: Option<bool>,
+    pub image: Option<String>,
+    pub interpreter: Option<Interpreter>,
+    pub run_as: Option<String>,
+    pub use_tty: Option<bool>,
+    /// Simple `run:` form (also accepted by the parser for hand-written specs).
+    pub run: Option<String>,
+
+    // CheckoutStep
+    pub with_lfs: Option<bool>,
+    pub with_submodules: Option<bool>,
+    pub clone_depth: Option<u32>,
+    pub checkout_path: Option<String>,
+
+    // PublishArtifactStep
+    pub source_path: Option<String>,
+    pub artifacts: Option<String>,
+
+    // UseTemplateStep
+    pub template_name: Option<String>,
+
+    #[serde(flatten)]
+    pub extra: serde_json::Map<String, serde_json::Value>,
+}
+
+impl Step {
+    pub fn display_name(&self) -> &str {
+        self.name.as_deref().unwrap_or(&self.step_type)
+    }
+
+    /// Shell commands of a `CommandStep` (via its interpreter).
+    pub fn commands(&self) -> Option<&str> {
+        if let Some(run) = &self.run {
+            return Some(run);
+        }
+        self.interpreter.as_ref().map(|i| i.commands.as_str())
+    }
+}
+
+/// Command interpreter (`PosixInterpreter`, `WindowsBatchInterpreter`,
+/// `PowerShellInterpreter`).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Interpreter {
+    #[serde(rename = "type")]
+    pub interpreter_type: String,
+    #[serde(default = "default_shell")]
+    pub shell: String,
+    pub powershell: Option<String>,
+    #[serde(default)]
+    pub commands: String,
+}
+
+fn default_shell() -> String {
+    "sh".to_owned()
+}
+
+/// What starts a job — the Vanilla trigger class names.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(tag = "type", rename_all = "snake_case")]
+#[serde(tag = "type")]
 pub enum Trigger {
-    /// Branch or tag push; empty `branches` matches any branch.
-    Push {
+    BranchUpdateTrigger {
         #[serde(default)]
-        branches: Vec<String>,
+        branches: Option<String>,
+        #[serde(default)]
+        paths: Option<String>,
+        #[serde(default)]
+        projects: Option<String>,
     },
-    PullRequest,
-    Schedule {
-        cron: String,
+    TagCreateTrigger {
+        #[serde(default)]
+        tags: Option<String>,
+        #[serde(default)]
+        branches: Option<String>,
+        #[serde(default)]
+        projects: Option<String>,
     },
-    Manual,
+    PullRequestUpdateTrigger {
+        #[serde(default)]
+        branches: Option<String>,
+        #[serde(default)]
+        paths: Option<String>,
+        #[serde(default)]
+        projects: Option<String>,
+    },
+    PullRequestMergeTrigger {
+        #[serde(default)]
+        branches: Option<String>,
+        #[serde(default)]
+        paths: Option<String>,
+        #[serde(default)]
+        projects: Option<String>,
+    },
+    PullRequestDiscardTrigger {
+        #[serde(default)]
+        branches: Option<String>,
+        #[serde(default)]
+        projects: Option<String>,
+    },
+    ScheduleTrigger {
+        #[serde(rename = "cronExpression", default)]
+        cron: Option<String>,
+        #[serde(default)]
+        branches: Option<String>,
+        #[serde(default)]
+        projects: Option<String>,
+    },
+    DependencyFinishedTrigger {
+        #[serde(default)]
+        projects: Option<String>,
+    },
+    IssueInStateTrigger {
+        #[serde(default)]
+        state: Option<String>,
+        #[serde(default)]
+        projects: Option<String>,
+    },
+}
+
+/// Space-separated pattern match (empty/`None` matches everything).
+fn patterns_match(patterns: Option<&str>, value: &str) -> bool {
+    match patterns {
+        None => true,
+        Some(patterns) => {
+            let patterns = patterns.trim();
+            patterns.is_empty()
+                || patterns
+                    .split_whitespace()
+                    .any(|pattern| crate::utils::glob_matches(pattern, value))
+        }
+    }
 }
 
 impl Trigger {
     /// Whether this trigger fires for the given event.
     pub fn matches(&self, event: &TriggerEvent) -> bool {
         match (self, event) {
-            (Trigger::Push { branches }, TriggerEvent::Push { branch }) => {
-                branches.is_empty() || branches.iter().any(|b| b == branch)
+            (Trigger::BranchUpdateTrigger { branches, .. }, TriggerEvent::Push { branch }) => {
+                patterns_match(branches.as_deref(), branch)
             }
-            (Trigger::PullRequest, TriggerEvent::PullRequest) => true,
-            (Trigger::Schedule { .. }, TriggerEvent::Schedule) => true,
-            (Trigger::Manual, TriggerEvent::Manual) => true,
+            (Trigger::TagCreateTrigger { tags, .. }, TriggerEvent::Tag { tag }) => {
+                patterns_match(tags.as_deref(), tag)
+            }
+            (
+                Trigger::PullRequestUpdateTrigger { .. }
+                | Trigger::PullRequestMergeTrigger { .. }
+                | Trigger::PullRequestDiscardTrigger { .. },
+                TriggerEvent::PullRequest,
+            ) => true,
+            (Trigger::ScheduleTrigger { .. }, TriggerEvent::Schedule) => true,
+            (Trigger::DependencyFinishedTrigger { .. }, TriggerEvent::DependencyFinished) => true,
+            (Trigger::IssueInStateTrigger { .. }, TriggerEvent::Manual) => false,
             _ => false,
         }
     }
@@ -108,8 +316,10 @@ impl Trigger {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TriggerEvent {
     Push { branch: String },
+    Tag { tag: String },
     PullRequest,
     Schedule,
+    DependencyFinished,
     Manual,
 }
 

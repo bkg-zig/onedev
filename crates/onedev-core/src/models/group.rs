@@ -3,7 +3,9 @@
 use super::*;
 
 /// Group visibility
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display,
+)]
 #[serde(rename_all = "lowercase")]
 #[strum(serialize_all = "lowercase")]
 pub enum GroupVisibility {
@@ -22,7 +24,7 @@ pub struct Group {
     pub description: Option<String>,
     pub visibility: GroupVisibility,
     pub parent_id: Option<i64>, // For nested groups
-    pub owner_id: i64, // User who created the group
+    pub owner_id: i64,          // User who created the group
     pub avatar_url: Option<String>,
     // Settings
     pub require_two_factor: bool,
@@ -41,7 +43,9 @@ pub struct Group {
     pub deleted_at: Option<DateTime<Utc>>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display,
+)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum ProjectCreationLevel {
@@ -51,7 +55,9 @@ pub enum ProjectCreationLevel {
     Developer,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display,
+)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum SubgroupCreationLevel {
@@ -59,7 +65,9 @@ pub enum SubgroupCreationLevel {
     Maintainer,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display,
+)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum VisibilityLevel {
@@ -68,7 +76,9 @@ pub enum VisibilityLevel {
     Public,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display,
+)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum LdapAccess {
@@ -149,7 +159,19 @@ pub struct GroupMember {
     pub user: Option<UserRef>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, strum::EnumString, strum::Display)]
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Serialize,
+    Deserialize,
+    strum::EnumString,
+    strum::Display,
+)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum AccessLevel {
@@ -191,7 +213,11 @@ impl Group {
     }
 
     pub fn web_url(&self, base_url: &str) -> String {
-        format!("{}/groups/{}", base_url.trim_end_matches('/'), self.full_path())
+        format!(
+            "{}/groups/{}",
+            base_url.trim_end_matches('/'),
+            self.full_path()
+        )
     }
 
     pub fn is_public(&self) -> bool {

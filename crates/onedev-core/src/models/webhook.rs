@@ -21,7 +21,7 @@ pub struct Webhook {
     // Retry policy
     pub max_retries: u32,
     pub retry_interval: u32, // seconds
-    pub timeout: u32, // seconds
+    pub timeout: u32,        // seconds
     // Status
     pub last_delivery_at: Option<DateTime<Utc>>,
     pub last_delivery_status: Option<WebhookDeliveryStatus>,
@@ -32,7 +32,9 @@ pub struct Webhook {
     pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]
+#[derive(
+    Debug, Clone, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display,
+)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum WebhookEvent {
@@ -93,7 +95,9 @@ pub enum WebhookEvent {
     Custom(String),
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display,
+)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum WebhookDeliveryStatus {

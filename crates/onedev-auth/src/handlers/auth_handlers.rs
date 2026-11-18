@@ -1,17 +1,17 @@
 //! Authentication HTTP Handlers
 
-use axum::{
-    extract::{State, Json},
-    http::StatusCode,
-    response::Response,
-};
-use serde::{Deserialize, Serialize};
-use crate::services::AuthService;
+use crate::errors::{AuthError, ProblemDetails};
 use crate::models::subject::Subject;
 use crate::models::token::TokenPair;
 use crate::models::two_factor::TwoFactorSetup;
-use crate::errors::{AuthError, ProblemDetails};
+use crate::services::AuthService;
+use axum::{
+    extract::{Json, State},
+    http::StatusCode,
+    response::Response,
+};
 use onedev_db::repositories::Repository;
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
 /// Login request
@@ -67,21 +67,25 @@ pub async fn login(
     Json(request): Json<LoginRequest>,
 ) -> Result<Json<LoginResponse>, AuthError> {
     let remember_me = request.remember_me.unwrap_or(false);
-    
+
     // If TOTP code provided, verify 2FA
     if let Some(code) = request.totp_code {
         // This would be called after initial login returns requires_two_factor
         // For now, we'll handle it in the verify_2fa endpoint
-        return Err(AuthError::Unauthorized("Use /verify-2fa endpoint for 2FA".to_string()));
+        return Err(AuthError::Unauthorized(
+            "Use /verify-2fa endpoint for 2FA".to_string(),
+        ));
     }
 
-    let result = auth_service.authenticate_password(
-        &request.username,
-        &request.password,
-        remember_me,
-        None, // user_agent
-        None, // ip_address
-    ).await?;
+    let result = auth_service
+        .authenticate_password(
+            &request.username,
+            &request.password,
+            remember_me,
+            None, // user_agent
+            None, // ip_address
+        )
+        .await?;
 
     let response = LoginResponse {
         subject: result.subject.principal_string(),
@@ -100,15 +104,17 @@ pub async fn verify_two_factor(
     Json(request): Json<VerifyTwoFactorRequest>,
 ) -> Result<Json<LoginResponse>, AuthError> {
     let remember_me = request.remember_me.unwrap_or(false);
-    
-    let result = auth_service.verify_two_factor(
-        request.user_id,
-        &request.code,
-        request.backup_code.as_deref(),
-        remember_me,
-        None,
-        None,
-    ).await?;
+
+    let result = auth_service
+        .verify_two_factor(
+            request.user_id,
+            &request.code,
+            request.backup_code.as_deref(),
+            remember_me,
+            None,
+            None,
+        )
+        .await?;
 
     let response = LoginResponse {
         subject: result.subject.principal_string(),
@@ -132,7 +138,8 @@ pub async fn logout(
             if request.all_sessions.unwrap_or(false) {
                 auth_service.revoke_all_sessions(principal.user_id).await?;
             } else if let Some(session_id) = request.session_id {
-                let session_uuid = session_id.parse()
+                let session_uuid = session_id
+                    .parse()
                     .map_err(|_| AuthError::Internal("Invalid session ID".to_string()))?;
                 auth_service.revoke_session(session_uuid).await?;
             }
@@ -145,14 +152,12 @@ pub async fn logout(
             return Err(AuthError::Unauthorized("Not authenticated".to_string()));
         }
     }
-    
+
     Ok(StatusCode::NO_CONTENT)
 }
 
 /// GET /api/auth/me
-pub async fn current_user(
-    subject: Subject,
-) -> Result<Json<CurrentUserResponse>, AuthError> {
+pub async fn current_user(subject: Subject) -> Result<Json<CurrentUserResponse>, AuthError> {
     let response = match subject {
         Subject::User(principal) => CurrentUserResponse {
             subject: principal.principal_string(),
@@ -179,7 +184,7 @@ pub async fn current_user(
             two_factor_enabled: false,
         },
     };
-    
+
     Ok(Json(response))
 }
 
@@ -188,29 +193,36 @@ pub async fn refresh_token(
     State(crate::router::AuthState { auth_service, .. }): State<crate::router::AuthState>,
     Json(request): Json<RefreshTokenRequest>,
 ) -> Result<Json<TokenPair>, AuthError> {
-    let claims = auth_service.jwt_service().validate_refresh_token(&request.refresh_token)?;
-    
+    let claims = auth_service
+        .jwt_service()
+        .validate_refresh_token(&request.refresh_token)?;
+
     // Verify it's a refresh token
     if claims.typ != crate::models::token::TokenType::Refresh {
         return Err(AuthError::TokenInvalid);
     }
-    
+
     // Get user ID from claims
     let user_id = claims.user_id.ok_or(AuthError::TokenInvalid)?;
-    
+
     // Get user to verify still active
-    let user = auth_service.user_repo.find_by_id(&auth_service.db_pool, user_id).await?
+    let user = auth_service
+        .user_repo
+        .find_by_id(&auth_service.db_pool, user_id)
+        .await?
         .ok_or(AuthError::UserNotFound)?
         .to_core();
-    
+
     if !matches!(user.status, onedev_core::models::user::UserStatus::Active) {
         return Err(AuthError::UserDisabled);
     }
-    
+
     // Generate new token pair
     let scopes = vec!["api".to_string(), "read_repository".to_string()];
-    let token_pair = auth_service.jwt_service().create_access_token(user_id, &user.name, scopes)?;
-    
+    let token_pair = auth_service
+        .jwt_service()
+        .create_access_token(user_id, &user.name, scopes)?;
+
     Ok(Json(token_pair))
 }
 

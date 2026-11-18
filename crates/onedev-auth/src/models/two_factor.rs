@@ -1,14 +1,14 @@
 //! Two-Factor Authentication (TOTP) support
 
-use totp_lite::{totp_custom, Sha1, Sha256, Sha512};
-use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
+use crate::models::password::hash_password;
+use percent_encoding::{NON_ALPHANUMERIC, utf8_percent_encode};
 use qrcode::QrCode;
 use qrcode::render::svg;
-use serde::{Deserialize, Serialize};
-use secrecy::{SecretString, ExposeSecret};
-use thiserror::Error;
 use rand::RngCore;
-use crate::models::password::hash_password;
+use secrecy::{ExposeSecret, SecretString};
+use serde::{Deserialize, Serialize};
+use thiserror::Error;
+use totp_lite::{Sha1, Sha256, Sha512, totp_custom};
 
 const BASE32_ALPHABET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 
@@ -140,23 +140,23 @@ impl TwoFactorService {
     pub fn generate_backup_codes(count: usize) -> Vec<String> {
         const CHARSET: &[u8] = b"ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // No confusing chars
         let mut codes = Vec::with_capacity(count);
-        
+
         for _ in 0..count {
             let mut code = String::with_capacity(8);
             let mut bytes = [0u8; 8];
             rand::rng().fill_bytes(&mut bytes);
-            
+
             for &b in &bytes {
                 code.push(CHARSET[(b as usize) % CHARSET.len()] as char);
             }
-            
+
             // Format as XXXX-XXXX
             if code.len() == 8 {
                 code.insert(4, '-');
             }
             codes.push(code);
         }
-        
+
         codes
     }
 
@@ -164,7 +164,7 @@ impl TwoFactorService {
     pub fn create_setup(&self, username: &str, issuer: &str) -> TwoFactorSetup {
         let secret = Self::generate_secret();
         let backup_codes = Self::generate_backup_codes(10);
-        
+
         // Build otpauth URI
         let encoded_issuer = utf8_percent_encode(issuer, NON_ALPHANUMERIC);
         let encoded_account = utf8_percent_encode(username, NON_ALPHANUMERIC);
@@ -208,10 +208,13 @@ impl TwoFactorService {
             return false;
         }
 
-        let timestamp = timestamp.unwrap_or_else(|| std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_secs() / self.config.period);
+        let timestamp = timestamp.unwrap_or_else(|| {
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_secs()
+                / self.config.period
+        });
 
         // Check current period and skew periods before/after
         for i in 0..=self.config.skew {
@@ -224,9 +227,24 @@ impl TwoFactorService {
             };
 
             let expected = match self.config.algorithm {
-                TotpAlgorithm::Sha1 => totp_custom::<Sha1>(self.config.period, self.config.digits as u32, &self.decode_secret(secret), check_time),
-                TotpAlgorithm::Sha256 => totp_custom::<Sha256>(self.config.period, self.config.digits as u32, &self.decode_secret(secret), check_time),
-                TotpAlgorithm::Sha512 => totp_custom::<Sha512>(self.config.period, self.config.digits as u32, &self.decode_secret(secret), check_time),
+                TotpAlgorithm::Sha1 => totp_custom::<Sha1>(
+                    self.config.period,
+                    self.config.digits as u32,
+                    &self.decode_secret(secret),
+                    check_time,
+                ),
+                TotpAlgorithm::Sha256 => totp_custom::<Sha256>(
+                    self.config.period,
+                    self.config.digits as u32,
+                    &self.decode_secret(secret),
+                    check_time,
+                ),
+                TotpAlgorithm::Sha512 => totp_custom::<Sha512>(
+                    self.config.period,
+                    self.config.digits as u32,
+                    &self.decode_secret(secret),
+                    check_time,
+                ),
             };
 
             if expected == code {
@@ -237,9 +255,24 @@ impl TwoFactorService {
             if i > 0 {
                 let future_time = timestamp + i;
                 let expected = match self.config.algorithm {
-                    TotpAlgorithm::Sha1 => totp_custom::<Sha1>(self.config.period, self.config.digits as u32, &self.decode_secret(secret), future_time),
-                    TotpAlgorithm::Sha256 => totp_custom::<Sha256>(self.config.period, self.config.digits as u32, &self.decode_secret(secret), future_time),
-                    TotpAlgorithm::Sha512 => totp_custom::<Sha512>(self.config.period, self.config.digits as u32, &self.decode_secret(secret), future_time),
+                    TotpAlgorithm::Sha1 => totp_custom::<Sha1>(
+                        self.config.period,
+                        self.config.digits as u32,
+                        &self.decode_secret(secret),
+                        future_time,
+                    ),
+                    TotpAlgorithm::Sha256 => totp_custom::<Sha256>(
+                        self.config.period,
+                        self.config.digits as u32,
+                        &self.decode_secret(secret),
+                        future_time,
+                    ),
+                    TotpAlgorithm::Sha512 => totp_custom::<Sha512>(
+                        self.config.period,
+                        self.config.digits as u32,
+                        &self.decode_secret(secret),
+                        future_time,
+                    ),
                 };
                 if expected == code {
                     return true;
@@ -253,8 +286,11 @@ impl TwoFactorService {
     /// Verify a backup code (and remove it from the list)
     pub fn verify_backup_code(&self, provided_code: &str, stored_codes: &mut Vec<String>) -> bool {
         let provided = provided_code.replace('-', "").to_uppercase();
-        
-        if let Some(pos) = stored_codes.iter().position(|c| c.replace('-', "").to_uppercase() == provided) {
+
+        if let Some(pos) = stored_codes
+            .iter()
+            .position(|c| c.replace('-', "").to_uppercase() == provided)
+        {
             stored_codes.remove(pos);
             true
         } else {
@@ -264,15 +300,20 @@ impl TwoFactorService {
 
     /// Hash backup codes for storage (bcrypt)
     pub fn hash_backup_codes(codes: &[String]) -> Vec<String> {
-        codes.iter()
+        codes
+            .iter()
             .map(|c| hash_password(c).expect("Failed to hash backup code"))
             .collect()
     }
 
     /// Verify a backup code against hashed codes
-    pub fn verify_hashed_backup_code(&self, provided_code: &str, hashed_codes: &mut Vec<String>) -> bool {
+    pub fn verify_hashed_backup_code(
+        &self,
+        provided_code: &str,
+        hashed_codes: &mut Vec<String>,
+    ) -> bool {
         let provided = provided_code.replace('-', "").to_uppercase();
-        
+
         for (i, hashed) in hashed_codes.iter().enumerate() {
             if crate::models::password::verify_password(&provided, hashed).unwrap_or(false) {
                 hashed_codes.remove(i);
@@ -287,12 +328,28 @@ impl TwoFactorService {
         let timestamp = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
-            .as_secs() / self.config.period;
+            .as_secs()
+            / self.config.period;
 
         match self.config.algorithm {
-            TotpAlgorithm::Sha1 => totp_custom::<Sha1>(self.config.period, self.config.digits as u32, &self.decode_secret(secret), timestamp),
-            TotpAlgorithm::Sha256 => totp_custom::<Sha256>(self.config.period, self.config.digits as u32, &self.decode_secret(secret), timestamp),
-            TotpAlgorithm::Sha512 => totp_custom::<Sha512>(self.config.period, self.config.digits as u32, &self.decode_secret(secret), timestamp),
+            TotpAlgorithm::Sha1 => totp_custom::<Sha1>(
+                self.config.period,
+                self.config.digits as u32,
+                &self.decode_secret(secret),
+                timestamp,
+            ),
+            TotpAlgorithm::Sha256 => totp_custom::<Sha256>(
+                self.config.period,
+                self.config.digits as u32,
+                &self.decode_secret(secret),
+                timestamp,
+            ),
+            TotpAlgorithm::Sha512 => totp_custom::<Sha512>(
+                self.config.period,
+                self.config.digits as u32,
+                &self.decode_secret(secret),
+                timestamp,
+            ),
         }
     }
 

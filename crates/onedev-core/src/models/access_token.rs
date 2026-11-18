@@ -3,7 +3,18 @@
 use super::*;
 
 /// Access token type
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, strum::EnumString, strum::Display)]
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    Hash,
+    Serialize,
+    Deserialize,
+    strum::EnumString,
+    strum::Display,
+)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum AccessTokenType {
@@ -56,7 +67,7 @@ pub struct AccessToken {
     pub id: i64,
     pub uuid: Uuid,
     pub name: String,
-    pub token_hash: String, // SHA256 hash of the token
+    pub token_hash: String,   // SHA256 hash of the token
     pub token_prefix: String, // First 8 chars for identification
     pub token_type: AccessTokenType,
     pub scopes: TokenScope,
@@ -149,7 +160,7 @@ pub struct TokenValidation {
 
 impl AccessToken {
     pub fn is_expired(&self) -> bool {
-        self.expires_at.map_or(false, |exp| exp < Utc::now())
+        self.expires_at.is_some_and(|exp| exp < Utc::now())
     }
 
     pub fn is_active(&self) -> bool {
@@ -163,10 +174,10 @@ impl AccessToken {
     pub fn generate_raw_token() -> String {
         // Format: onedev_<type>_<random>
         let token_type_prefix = match rand::random::<u8>() % 4 {
-            0 => "pat",    // Personal Access Token
-            1 => "dpt",    // Deploy Token
-            2 => "rnt",    // Runner Token
-            _ => "tmp",    // Temporary
+            0 => "pat", // Personal Access Token
+            1 => "dpt", // Deploy Token
+            2 => "rnt", // Runner Token
+            _ => "tmp", // Temporary
         };
         let random_part: String = (0..32)
             .map(|_| {
@@ -201,25 +212,29 @@ impl AccessToken {
 impl AccessTokenType {
     pub fn default_scopes(&self) -> TokenScope {
         match self {
-            AccessTokenType::Personal => TokenScope::API
-                | TokenScope::READ_REPOSITORY
-                | TokenScope::READ_REGISTRY
-                | TokenScope::READ_PACKAGE
-                | TokenScope::READ_USER,
-            AccessTokenType::Deploy => TokenScope::READ_REPOSITORY
-                | TokenScope::WRITE_REPOSITORY
-                | TokenScope::READ_REGISTRY
-                | TokenScope::WRITE_REGISTRY
-                | TokenScope::READ_PACKAGE
-                | TokenScope::WRITE_PACKAGE
-                | TokenScope::RUN_BUILDS,
-            AccessTokenType::Runner => TokenScope::READ_REPOSITORY
-                | TokenScope::RUN_BUILDS
-                | TokenScope::MANAGE_BUILDS,
+            AccessTokenType::Personal => {
+                TokenScope::API
+                    | TokenScope::READ_REPOSITORY
+                    | TokenScope::READ_REGISTRY
+                    | TokenScope::READ_PACKAGE
+                    | TokenScope::READ_USER
+            }
+            AccessTokenType::Deploy => {
+                TokenScope::READ_REPOSITORY
+                    | TokenScope::WRITE_REPOSITORY
+                    | TokenScope::READ_REGISTRY
+                    | TokenScope::WRITE_REGISTRY
+                    | TokenScope::READ_PACKAGE
+                    | TokenScope::WRITE_PACKAGE
+                    | TokenScope::RUN_BUILDS
+            }
+            AccessTokenType::Runner => {
+                TokenScope::READ_REPOSITORY | TokenScope::RUN_BUILDS | TokenScope::MANAGE_BUILDS
+            }
             AccessTokenType::Temporary => TokenScope::API,
-            AccessTokenType::OAuth => TokenScope::API
-                | TokenScope::READ_USER
-                | TokenScope::READ_REPOSITORY,
+            AccessTokenType::OAuth => {
+                TokenScope::API | TokenScope::READ_USER | TokenScope::READ_REPOSITORY
+            }
             AccessTokenType::ServiceAccount => TokenScope::all(),
         }
     }

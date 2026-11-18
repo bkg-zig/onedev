@@ -1,15 +1,15 @@
 //! Custom Extractors for Authentication & Authorization
 
+use crate::errors::AuthError;
+use crate::models::principal::{AccessTokenPrincipal, UserPrincipal};
+use crate::models::subject::{CURRENT_SUBJECT, Subject};
+use crate::models::token::{Claims, JwtService, TokenType};
+use crate::services::AuthService;
 use axum::{
     extract::{FromRequestParts, Request, State},
-    http::{header, HeaderMap, StatusCode, request::Parts},
+    http::{HeaderMap, StatusCode, header, request::Parts},
 };
 use axum_extra::extract::CookieJar;
-use crate::models::subject::{Subject, CURRENT_SUBJECT};
-use crate::models::principal::{UserPrincipal, AccessTokenPrincipal};
-use crate::models::token::{JwtService, Claims, TokenType};
-use crate::services::AuthService;
-use crate::errors::AuthError;
 use onedev_core::permissions::ProjectPermissionType;
 use std::sync::Arc;
 
@@ -54,7 +54,9 @@ where
                 Subject::Anonymous => {}
             }
         }
-        Err(AuthError::Unauthorized("Authentication required".to_string()))
+        Err(AuthError::Unauthorized(
+            "Authentication required".to_string(),
+        ))
     }
 }
 
@@ -74,7 +76,9 @@ where
                 return Ok(RequireUser(p.clone()));
             }
         }
-        Err(AuthError::Unauthorized("User authentication required".to_string()))
+        Err(AuthError::Unauthorized(
+            "User authentication required".to_string(),
+        ))
     }
 }
 
@@ -123,12 +127,15 @@ where
     type Rejection = AuthError;
 
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
-        let subject = parts.extensions.get::<Subject>().cloned()
+        let subject = parts
+            .extensions
+            .get::<Subject>()
+            .cloned()
             .unwrap_or(Subject::Anonymous);
-        
+
         // Note: Actual permission check would require AuthorizationService from state
         // This extractor mainly provides the subject for the handler to check
-        
+
         Ok(RequireProjectPermission {
             permission: ProjectPermissionType::ViewProject,
             project_id: 0,
@@ -175,14 +182,17 @@ where
 #[macro_export]
 macro_rules! require_permission {
     ($subject:expr, $authz:expr, $project_id:expr, $perm:expr) => {{
-        use $crate::services::AuthorizationService;
         use onedev_core::permissions::Permission;
-        
-        let result = $authz.check_project_permission(&$subject, $project_id, $perm).await?;
+        use $crate::services::AuthorizationService;
+
+        let result = $authz
+            .check_project_permission(&$subject, $project_id, $perm)
+            .await?;
         if result != $crate::services::authorization_service::PermissionCheck::Granted {
-            return Err($crate::errors::AuthError::InsufficientPermissions(
-                format!("Missing permission: {}", $perm.name())
-            ));
+            return Err($crate::errors::AuthError::InsufficientPermissions(format!(
+                "Missing permission: {}",
+                $perm.name()
+            )));
         }
     }};
 }
@@ -193,7 +203,11 @@ macro_rules! require_user {
     ($subject:expr) => {{
         match &$subject {
             $crate::models::subject::Subject::User(p) => p.clone(),
-            _ => return Err($crate::errors::AuthError::Unauthorized("User authentication required".to_string())),
+            _ => {
+                return Err($crate::errors::AuthError::Unauthorized(
+                    "User authentication required".to_string(),
+                ));
+            }
         }
     }};
 }
@@ -203,7 +217,9 @@ macro_rules! require_user {
 macro_rules! require_admin {
     ($subject:expr) => {{
         if !$subject.is_elevated() {
-            return Err($crate::errors::AuthError::Forbidden("Admin access required".to_string()));
+            return Err($crate::errors::AuthError::Forbidden(
+                "Admin access required".to_string(),
+            ));
         }
     }};
 }

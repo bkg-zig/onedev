@@ -1,10 +1,12 @@
 //! Two-Factor Service - Wrapper for 2FA operations with database
 
-use crate::models::two_factor::{TwoFactorService as TwoFactorModel, TwoFactorSetup, TotpConfig, TotpAlgorithm};
+use crate::models::two_factor::{
+    TotpAlgorithm, TotpConfig, TwoFactorService as TwoFactorModel, TwoFactorSetup,
+};
+use onedev_core::models::user::User;
 use onedev_db::models::user::DbUpdateUser;
 use onedev_db::repositories::{Repository, UserRepository};
 use onedev_db::{DbPool, DbResult};
-use onedev_core::models::user::User;
 
 /// Two-factor authentication service with database integration
 pub struct TwoFactorService {
@@ -24,7 +26,10 @@ impl TwoFactorService {
 
     /// Create 2FA setup for a user
     pub async fn create_setup(&self, user_id: i64, issuer: &str) -> Result<TwoFactorSetup, String> {
-        let user = self.user_repo.find_by_id(&self.db_pool, user_id).await
+        let user = self
+            .user_repo
+            .find_by_id(&self.db_pool, user_id)
+            .await
             .map_err(|e| format!("Database error: {}", e))?
             .ok_or("User not found")?;
 
@@ -36,8 +41,17 @@ impl TwoFactorService {
     }
 
     /// Enable 2FA for a user
-    pub async fn enable(&self, user_id: i64, code: &str, secret: &str, backup_codes: Vec<String>) -> Result<(), String> {
-        let mut user = self.user_repo.find_by_id(&self.db_pool, user_id).await
+    pub async fn enable(
+        &self,
+        user_id: i64,
+        code: &str,
+        secret: &str,
+        backup_codes: Vec<String>,
+    ) -> Result<(), String> {
+        let mut user = self
+            .user_repo
+            .find_by_id(&self.db_pool, user_id)
+            .await
             .map_err(|e| format!("Database error: {}", e))?
             .ok_or("User not found")?;
 
@@ -54,25 +68,41 @@ impl TwoFactorService {
         user.two_factor_secret = Some(secret.to_string());
         user.backup_codes = hashed_backup_codes;
 
-        self.user_repo.update(&self.db_pool, user.id, DbUpdateUser {
-            two_factor_enabled: Some(user.two_factor_enabled),
-            two_factor_secret: user.two_factor_secret.clone(),
-            backup_codes: Some(user.backup_codes.clone()),
-            ..Default::default()
-        }).await
+        self.user_repo
+            .update(
+                &self.db_pool,
+                user.id,
+                DbUpdateUser {
+                    two_factor_enabled: Some(user.two_factor_enabled),
+                    two_factor_secret: user.two_factor_secret.clone(),
+                    backup_codes: Some(user.backup_codes.clone()),
+                    ..Default::default()
+                },
+            )
+            .await
             .map_err(|e| format!("Database error: {}", e))?;
 
         Ok(())
     }
 
     /// Disable 2FA for a user
-    pub async fn disable(&self, user_id: i64, password: &str, password_hash: &str) -> Result<(), String> {
-        let mut user = self.user_repo.find_by_id(&self.db_pool, user_id).await
+    pub async fn disable(
+        &self,
+        user_id: i64,
+        password: &str,
+        password_hash: &str,
+    ) -> Result<(), String> {
+        let mut user = self
+            .user_repo
+            .find_by_id(&self.db_pool, user_id)
+            .await
             .map_err(|e| format!("Database error: {}", e))?
             .ok_or("User not found")?;
 
         // Verify password
-        if !crate::models::password::verify_password(password, password_hash).map_err(|e| e.to_string())? {
+        if !crate::models::password::verify_password(password, password_hash)
+            .map_err(|e| e.to_string())?
+        {
             return Err("Invalid password".to_string());
         }
 
@@ -81,19 +111,30 @@ impl TwoFactorService {
         user.two_factor_secret = None;
         user.backup_codes = Vec::new();
 
-        self.user_repo.update(&self.db_pool, user.id, DbUpdateUser {
-            two_factor_enabled: Some(user.two_factor_enabled),
-            two_factor_secret: user.two_factor_secret.clone(),
-            backup_codes: Some(user.backup_codes.clone()),
-            ..Default::default()
-        }).await
+        self.user_repo
+            .update(
+                &self.db_pool,
+                user.id,
+                DbUpdateUser {
+                    two_factor_enabled: Some(user.two_factor_enabled),
+                    two_factor_secret: user.two_factor_secret.clone(),
+                    backup_codes: Some(user.backup_codes.clone()),
+                    ..Default::default()
+                },
+            )
+            .await
             .map_err(|e| format!("Database error: {}", e))?;
 
         Ok(())
     }
 
     /// Verify 2FA code for login
-    pub async fn verify_login(&self, user: &User, code: &str, backup_code: Option<&str>) -> Result<bool, String> {
+    pub async fn verify_login(
+        &self,
+        user: &User,
+        code: &str,
+        backup_code: Option<&str>,
+    ) -> Result<bool, String> {
         if !user.two_factor_enabled {
             return Ok(true); // 2FA not enabled
         }
@@ -109,10 +150,16 @@ impl TwoFactorService {
         if let Some(bc) = backup_code {
             let mut codes = user.backup_codes.clone();
             if self.model.verify_hashed_backup_code(bc, &mut codes) {
-                self.user_repo.update(&self.db_pool, user.id, DbUpdateUser {
-                    backup_codes: Some(codes),
-                    ..Default::default()
-                }).await
+                self.user_repo
+                    .update(
+                        &self.db_pool,
+                        user.id,
+                        DbUpdateUser {
+                            backup_codes: Some(codes),
+                            ..Default::default()
+                        },
+                    )
+                    .await
                     .map_err(|e| format!("Database error: {}", e))?;
                 return Ok(true);
             }
@@ -122,8 +169,16 @@ impl TwoFactorService {
     }
 
     /// Regenerate backup codes
-    pub async fn regenerate_backup_codes(&self, user_id: i64, password: &str, password_hash: &str) -> Result<Vec<String>, String> {
-        let mut user = self.user_repo.find_by_id(&self.db_pool, user_id).await
+    pub async fn regenerate_backup_codes(
+        &self,
+        user_id: i64,
+        password: &str,
+        password_hash: &str,
+    ) -> Result<Vec<String>, String> {
+        let mut user = self
+            .user_repo
+            .find_by_id(&self.db_pool, user_id)
+            .await
             .map_err(|e| format!("Database error: {}", e))?
             .ok_or("User not found")?;
 
@@ -132,7 +187,9 @@ impl TwoFactorService {
         }
 
         // Verify password
-        if !crate::models::password::verify_password(password, password_hash).map_err(|e| e.to_string())? {
+        if !crate::models::password::verify_password(password, password_hash)
+            .map_err(|e| e.to_string())?
+        {
             return Err("Invalid password".to_string());
         }
 
@@ -141,12 +198,18 @@ impl TwoFactorService {
         let hashed_backup_codes = TwoFactorModel::hash_backup_codes(&backup_codes);
 
         user.backup_codes = hashed_backup_codes;
-        self.user_repo.update(&self.db_pool, user.id, DbUpdateUser {
-            two_factor_enabled: Some(user.two_factor_enabled),
-            two_factor_secret: user.two_factor_secret.clone(),
-            backup_codes: Some(user.backup_codes.clone()),
-            ..Default::default()
-        }).await
+        self.user_repo
+            .update(
+                &self.db_pool,
+                user.id,
+                DbUpdateUser {
+                    two_factor_enabled: Some(user.two_factor_enabled),
+                    two_factor_secret: user.two_factor_secret.clone(),
+                    backup_codes: Some(user.backup_codes.clone()),
+                    ..Default::default()
+                },
+            )
+            .await
             .map_err(|e| format!("Database error: {}", e))?;
 
         Ok(backup_codes)

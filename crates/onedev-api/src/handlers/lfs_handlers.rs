@@ -1,14 +1,14 @@
 //! Git LFS HTTP Handlers
 
+use crate::AppState;
+use crate::errors::AuthError;
 use axum::{
-    extract::{State, Path, Query, Json, Multipart},
+    body::Body,
+    extract::{Json, Multipart, Path, Query, State},
     http::{HeaderMap, StatusCode, header},
     response::{IntoResponse, Response},
-    body::Body,
 };
 use serde::{Deserialize, Serialize};
-use crate::errors::AuthError;
-use crate::AppState;
 
 /// LFS errors
 #[derive(Debug, thiserror::Error)]
@@ -29,18 +29,21 @@ impl IntoResponse for LfsError {
     fn into_response(self) -> Response {
         let (status, message) = match self {
             LfsError::NotFound => (StatusCode::NOT_FOUND, "Object not found".to_string()),
-            LfsError::Unauthorized => (StatusCode::UNAUTHORIZED, "Authentication required".to_string()),
+            LfsError::Unauthorized => (
+                StatusCode::UNAUTHORIZED,
+                "Authentication required".to_string(),
+            ),
             LfsError::Forbidden(msg) => (StatusCode::FORBIDDEN, msg),
             LfsError::BadRequest(msg) => (StatusCode::BAD_REQUEST, msg),
             LfsError::Internal(msg) => (StatusCode::INTERNAL_SERVER_ERROR, msg),
         };
-        
+
         let mut response = Response::builder()
             .status(status)
             .header(header::CONTENT_TYPE, "application/vnd.git-lfs+json")
             .body(Body::from(message))
             .unwrap();
-        
+
         response
     }
 }

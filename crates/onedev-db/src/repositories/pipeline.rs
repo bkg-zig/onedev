@@ -1,9 +1,12 @@
 //! Pipeline Repository
 
 use crate::{
-    models::pipeline::{DbPipeline, DbCreatePipeline, DbUpdatePipeline, DbPipelineSchedule, PipelineQueryBuilder, PipelineScheduleQueryBuilder},
-    repositories::Repository,
     DbPool, DbResult,
+    models::pipeline::{
+        DbCreatePipeline, DbPipeline, DbPipelineSchedule, DbUpdatePipeline, PipelineQueryBuilder,
+        PipelineScheduleQueryBuilder,
+    },
+    repositories::Repository,
 };
 use async_trait::async_trait;
 use sqlx::FromRow;
@@ -16,18 +19,29 @@ impl PipelineRepository {
     }
 
     /// Find by project ID
-    pub async fn find_by_project_id(&self, pool: &DbPool, project_id: i64) -> DbResult<Vec<DbPipeline>> {
+    pub async fn find_by_project_id(
+        &self,
+        pool: &DbPool,
+        project_id: i64,
+    ) -> DbResult<Vec<DbPipeline>> {
         let rows = sqlx::query(PipelineQueryBuilder::select_by_project_id())
             .bind(project_id)
             .fetch_all(pool)
             .await?;
 
-        let pipelines = rows.into_iter().map(|r| DbPipeline::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let pipelines = rows
+            .into_iter()
+            .map(|r| DbPipeline::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(pipelines)
     }
 
     /// Find default by project
-    pub async fn find_default_by_project(&self, pool: &DbPool, project_id: i64) -> DbResult<Option<DbPipeline>> {
+    pub async fn find_default_by_project(
+        &self,
+        pool: &DbPool,
+        project_id: i64,
+    ) -> DbResult<Option<DbPipeline>> {
         let row = sqlx::query(PipelineQueryBuilder::select_default_by_project())
             .bind(project_id)
             .fetch_optional(pool)
@@ -65,10 +79,12 @@ impl Repository<DbPipeline, DbCreatePipeline, DbUpdatePipeline> for PipelineRepo
             .fetch_one(pool)
             .await?;
 
-        self.find_by_id(pool, id).await?.ok_or_else(|| crate::DbError::NotFound {
-            entity_type: "Pipeline".to_string(),
-            id: id.to_string(),
-        })
+        self.find_by_id(pool, id)
+            .await?
+            .ok_or_else(|| crate::DbError::NotFound {
+                entity_type: "Pipeline".to_string(),
+                id: id.to_string(),
+            })
     }
 
     async fn find_by_id(&self, pool: &DbPool, id: i64) -> DbResult<Option<DbPipeline>> {
@@ -80,7 +96,12 @@ impl Repository<DbPipeline, DbCreatePipeline, DbUpdatePipeline> for PipelineRepo
         Ok(row.map(|r| DbPipeline::from_row(&r)).transpose()?)
     }
 
-    async fn update(&self, pool: &DbPool, id: i64, update: DbUpdatePipeline) -> DbResult<DbPipeline> {
+    async fn update(
+        &self,
+        pool: &DbPool,
+        id: i64,
+        update: DbUpdatePipeline,
+    ) -> DbResult<DbPipeline> {
         // If setting as default, unset other defaults
         if update.is_default == Some(true) {
             let current = self.find_by_id(pool, id).await?;
@@ -116,15 +137,17 @@ impl Repository<DbPipeline, DbCreatePipeline, DbUpdatePipeline> for PipelineRepo
     }
 
     async fn list(&self, pool: &DbPool, limit: i64, offset: i64) -> DbResult<Vec<DbPipeline>> {
-        let rows = sqlx::query(
-            "SELECT * FROM pipelines ORDER BY created_at DESC LIMIT $1 OFFSET $2"
-        )
-        .bind(limit)
-        .bind(offset)
-        .fetch_all(pool)
-        .await?;
+        let rows =
+            sqlx::query("SELECT * FROM pipelines ORDER BY created_at DESC LIMIT $1 OFFSET $2")
+                .bind(limit)
+                .bind(offset)
+                .fetch_all(pool)
+                .await?;
 
-        let pipelines = rows.into_iter().map(|r| DbPipeline::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let pipelines = rows
+            .into_iter()
+            .map(|r| DbPipeline::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(pipelines)
     }
 
@@ -144,13 +167,20 @@ impl PipelineScheduleRepository {
     }
 
     /// Find by pipeline ID
-    pub async fn find_by_pipeline_id(&self, pool: &DbPool, pipeline_id: i64) -> DbResult<Vec<DbPipelineSchedule>> {
+    pub async fn find_by_pipeline_id(
+        &self,
+        pool: &DbPool,
+        pipeline_id: i64,
+    ) -> DbResult<Vec<DbPipelineSchedule>> {
         let rows = sqlx::query(PipelineScheduleQueryBuilder::select_by_pipeline_id())
             .bind(pipeline_id)
             .fetch_all(pool)
             .await?;
 
-        let schedules = rows.into_iter().map(|r| DbPipelineSchedule::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let schedules = rows
+            .into_iter()
+            .map(|r| DbPipelineSchedule::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(schedules)
     }
 
@@ -160,12 +190,20 @@ impl PipelineScheduleRepository {
             .fetch_all(pool)
             .await?;
 
-        let schedules = rows.into_iter().map(|r| DbPipelineSchedule::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let schedules = rows
+            .into_iter()
+            .map(|r| DbPipelineSchedule::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(schedules)
     }
 
     /// Update next run time
-    pub async fn update_next_run(&self, pool: &DbPool, id: i64, next_run_at: chrono::DateTime<chrono::Utc>) -> DbResult<()> {
+    pub async fn update_next_run(
+        &self,
+        pool: &DbPool,
+        id: i64,
+        next_run_at: chrono::DateTime<chrono::Utc>,
+    ) -> DbResult<()> {
         sqlx::query(
             "UPDATE pipeline_schedules SET next_run_at = $2, last_run_at = NOW(), updated_at = NOW() WHERE id = $1"
         )
@@ -178,8 +216,14 @@ impl PipelineScheduleRepository {
 }
 
 #[async_trait]
-impl Repository<DbPipelineSchedule, DbPipelineSchedule, DbPipelineSchedule> for PipelineScheduleRepository {
-    async fn create(&self, pool: &DbPool, create: DbPipelineSchedule) -> DbResult<DbPipelineSchedule> {
+impl Repository<DbPipelineSchedule, DbPipelineSchedule, DbPipelineSchedule>
+    for PipelineScheduleRepository
+{
+    async fn create(
+        &self,
+        pool: &DbPool,
+        create: DbPipelineSchedule,
+    ) -> DbResult<DbPipelineSchedule> {
         let uuid = uuid::Uuid::new_v4();
         let now = chrono::Utc::now();
 
@@ -197,10 +241,12 @@ impl Repository<DbPipelineSchedule, DbPipelineSchedule, DbPipelineSchedule> for 
             .fetch_one(pool)
             .await?;
 
-        self.find_by_id(pool, id).await?.ok_or_else(|| crate::DbError::NotFound {
-            entity_type: "PipelineSchedule".to_string(),
-            id: id.to_string(),
-        })
+        self.find_by_id(pool, id)
+            .await?
+            .ok_or_else(|| crate::DbError::NotFound {
+                entity_type: "PipelineSchedule".to_string(),
+                id: id.to_string(),
+            })
     }
 
     async fn find_by_id(&self, pool: &DbPool, id: i64) -> DbResult<Option<DbPipelineSchedule>> {
@@ -212,7 +258,12 @@ impl Repository<DbPipelineSchedule, DbPipelineSchedule, DbPipelineSchedule> for 
         Ok(row.map(|r| DbPipelineSchedule::from_row(&r)).transpose()?)
     }
 
-    async fn update(&self, pool: &DbPool, id: i64, update: DbPipelineSchedule) -> DbResult<DbPipelineSchedule> {
+    async fn update(
+        &self,
+        pool: &DbPool,
+        id: i64,
+        update: DbPipelineSchedule,
+    ) -> DbResult<DbPipelineSchedule> {
         let row = sqlx::query(PipelineScheduleQueryBuilder::update())
             .bind(id)
             .bind(&update.cron_expression)
@@ -236,16 +287,24 @@ impl Repository<DbPipelineSchedule, DbPipelineSchedule, DbPipelineSchedule> for 
         Ok(())
     }
 
-    async fn list(&self, pool: &DbPool, limit: i64, offset: i64) -> DbResult<Vec<DbPipelineSchedule>> {
+    async fn list(
+        &self,
+        pool: &DbPool,
+        limit: i64,
+        offset: i64,
+    ) -> DbResult<Vec<DbPipelineSchedule>> {
         let rows = sqlx::query(
-            "SELECT * FROM pipeline_schedules ORDER BY created_at DESC LIMIT $1 OFFSET $2"
+            "SELECT * FROM pipeline_schedules ORDER BY created_at DESC LIMIT $1 OFFSET $2",
         )
         .bind(limit)
         .bind(offset)
         .fetch_all(pool)
         .await?;
 
-        let schedules = rows.into_iter().map(|r| DbPipelineSchedule::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let schedules = rows
+            .into_iter()
+            .map(|r| DbPipelineSchedule::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(schedules)
     }
 

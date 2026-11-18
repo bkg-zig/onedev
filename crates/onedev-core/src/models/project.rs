@@ -3,7 +3,9 @@
 use super::*;
 
 /// Project visibility
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display,
+)]
 #[serde(rename_all = "lowercase")]
 #[strum(serialize_all = "lowercase")]
 pub enum ProjectVisibility {
@@ -13,7 +15,9 @@ pub enum ProjectVisibility {
 }
 
 /// Project status
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display,
+)]
 #[serde(rename_all = "lowercase")]
 #[strum(serialize_all = "lowercase")]
 pub enum ProjectStatus {
@@ -68,7 +72,9 @@ pub struct Project {
 }
 
 /// Owner type for project ownership
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display,
+)]
 #[serde(rename_all = "lowercase")]
 #[strum(serialize_all = "lowercase")]
 pub enum OwnerType {
@@ -194,14 +200,23 @@ impl Project {
     }
 
     pub fn git_http_url(&self, base_url: &str) -> String {
-        format!("{}/{}.git", base_url.trim_end_matches('/'), self.full_path())
+        format!(
+            "{}/{}.git",
+            base_url.trim_end_matches('/'),
+            self.full_path()
+        )
     }
 
     pub fn git_ssh_url(&self, ssh_host: &str, ssh_port: u16) -> String {
         if ssh_port == 22 {
             format!("git@{}:{}.git", ssh_host, self.full_path())
         } else {
-            format!("ssh://git@{}:{}/{}.git", ssh_host, ssh_port, self.full_path())
+            format!(
+                "ssh://git@{}:{}/{}.git",
+                ssh_host,
+                ssh_port,
+                self.full_path()
+            )
         }
     }
 }

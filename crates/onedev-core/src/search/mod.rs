@@ -145,7 +145,18 @@ pub struct EntitySearchCriteria {
     pub pagination: Pagination,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, strum::EnumString, strum::Display)]
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    Default,
+    Serialize,
+    Deserialize,
+    strum::EnumString,
+    strum::Display,
+)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum EntityType {
@@ -209,16 +220,28 @@ pub trait SearchIndex: Send + Sync {
     fn index_name(&self) -> &str;
     fn index_document(&self, doc: serde_json::Value) -> Result<(), SearchError>;
     fn delete_document(&self, id: &str) -> Result<(), SearchError>;
-    fn search(&self, criteria: &SearchCriteria) -> Result<SearchResult<serde_json::Value>, SearchError>;
+    fn search(
+        &self,
+        criteria: &SearchCriteria,
+    ) -> Result<SearchResult<serde_json::Value>, SearchError>;
     fn refresh(&self) -> Result<(), SearchError>;
 }
 
 /// Search service trait
 #[async_trait::async_trait]
 pub trait SearchService: Send + Sync {
-    async fn search_code(&self, criteria: &CodeSearchCriteria) -> Result<SearchResult<CodeSearchResult>, SearchError>;
-    async fn search_entities(&self, criteria: &EntitySearchCriteria) -> Result<SearchResult<serde_json::Value>, SearchError>;
-    async fn search_commits(&self, criteria: &CommitSearchCriteria) -> Result<SearchResult<CommitSearchResult>, SearchError>;
+    async fn search_code(
+        &self,
+        criteria: &CodeSearchCriteria,
+    ) -> Result<SearchResult<CodeSearchResult>, SearchError>;
+    async fn search_entities(
+        &self,
+        criteria: &EntitySearchCriteria,
+    ) -> Result<SearchResult<serde_json::Value>, SearchError>;
+    async fn search_commits(
+        &self,
+        criteria: &CommitSearchCriteria,
+    ) -> Result<SearchResult<CommitSearchResult>, SearchError>;
     async fn index_project(&self, project_id: i64) -> Result<(), SearchError>;
     async fn delete_project_index(&self, project_id: i64) -> Result<(), SearchError>;
     async fn reindex_all(&self) -> Result<(), SearchError>;
@@ -249,22 +272,33 @@ impl<T> QueryBuilder<T> {
     }
 
     pub fn filter_exists(mut self, field: impl Into<String>, exists: bool) -> Self {
-        self.criteria.filters.insert(field.into(), FilterValue::Exists(exists));
+        self.criteria
+            .filters
+            .insert(field.into(), FilterValue::Exists(exists));
         self
     }
 
     pub fn filter_range(mut self, field: impl Into<String>, range: RangeFilter) -> Self {
-        self.criteria.filters.insert(field.into(), FilterValue::Range(range));
+        self.criteria
+            .filters
+            .insert(field.into(), FilterValue::Range(range));
         self
     }
 
     pub fn sort(mut self, field: impl Into<String>, order: SortOrder) -> Self {
-        self.criteria.sort = Some(SortSpec { field: field.into(), order });
+        self.criteria.sort = Some(SortSpec {
+            field: field.into(),
+            order,
+        });
         self
     }
 
     pub fn paginate(mut self, page: u32, per_page: u32) -> Self {
-        self.criteria.pagination = Pagination { page, per_page, cursor: None };
+        self.criteria.pagination = Pagination {
+            page,
+            per_page,
+            cursor: None,
+        };
         self
     }
 

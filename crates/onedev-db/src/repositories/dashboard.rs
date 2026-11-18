@@ -1,9 +1,12 @@
 //! Dashboard Repository
 
 use crate::{
-    models::dashboard::{DbDashboard, DbCreateDashboard, DbUpdateDashboard, DbDashboardShare, DashboardQueryBuilder, DashboardShareQueryBuilder},
-    repositories::Repository,
     DbPool, DbResult,
+    models::dashboard::{
+        DashboardQueryBuilder, DashboardShareQueryBuilder, DbCreateDashboard, DbDashboard,
+        DbDashboardShare, DbUpdateDashboard,
+    },
+    repositories::Repository,
 };
 use async_trait::async_trait;
 use sqlx::FromRow;
@@ -16,19 +19,32 @@ impl DashboardRepository {
     }
 
     /// Find by owner
-    pub async fn find_by_owner(&self, pool: &DbPool, owner_id: i64, owner_type: crate::models::dashboard::DbDashboardOwnerType) -> DbResult<Vec<DbDashboard>> {
+    pub async fn find_by_owner(
+        &self,
+        pool: &DbPool,
+        owner_id: i64,
+        owner_type: crate::models::dashboard::DbDashboardOwnerType,
+    ) -> DbResult<Vec<DbDashboard>> {
         let rows = sqlx::query(DashboardQueryBuilder::select_by_owner())
             .bind(owner_id)
             .bind(owner_type)
             .fetch_all(pool)
             .await?;
 
-        let dashboards = rows.into_iter().map(|r| DbDashboard::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let dashboards = rows
+            .into_iter()
+            .map(|r| DbDashboard::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(dashboards)
     }
 
     /// Find default by owner
-    pub async fn find_default_by_owner(&self, pool: &DbPool, owner_id: i64, owner_type: crate::models::dashboard::DbDashboardOwnerType) -> DbResult<Option<DbDashboard>> {
+    pub async fn find_default_by_owner(
+        &self,
+        pool: &DbPool,
+        owner_id: i64,
+        owner_type: crate::models::dashboard::DbDashboardOwnerType,
+    ) -> DbResult<Option<DbDashboard>> {
         let row = sqlx::query(DashboardQueryBuilder::select_default_by_owner())
             .bind(owner_id)
             .bind(owner_type)
@@ -68,10 +84,12 @@ impl Repository<DbDashboard, DbCreateDashboard, DbUpdateDashboard> for Dashboard
             .fetch_one(pool)
             .await?;
 
-        self.find_by_id(pool, id).await?.ok_or_else(|| crate::DbError::NotFound {
-            entity_type: "Dashboard".to_string(),
-            id: id.to_string(),
-        })
+        self.find_by_id(pool, id)
+            .await?
+            .ok_or_else(|| crate::DbError::NotFound {
+                entity_type: "Dashboard".to_string(),
+                id: id.to_string(),
+            })
     }
 
     async fn find_by_id(&self, pool: &DbPool, id: i64) -> DbResult<Option<DbDashboard>> {
@@ -83,7 +101,12 @@ impl Repository<DbDashboard, DbCreateDashboard, DbUpdateDashboard> for Dashboard
         Ok(row.map(|r| DbDashboard::from_row(&r)).transpose()?)
     }
 
-    async fn update(&self, pool: &DbPool, id: i64, update: DbUpdateDashboard) -> DbResult<DbDashboard> {
+    async fn update(
+        &self,
+        pool: &DbPool,
+        id: i64,
+        update: DbUpdateDashboard,
+    ) -> DbResult<DbDashboard> {
         // If setting as default, unset other defaults
         if update.is_default == Some(true) {
             let current = self.find_by_id(pool, id).await?;
@@ -119,15 +142,17 @@ impl Repository<DbDashboard, DbCreateDashboard, DbUpdateDashboard> for Dashboard
     }
 
     async fn list(&self, pool: &DbPool, limit: i64, offset: i64) -> DbResult<Vec<DbDashboard>> {
-        let rows = sqlx::query(
-            "SELECT * FROM dashboards ORDER BY created_at DESC LIMIT $1 OFFSET $2"
-        )
-        .bind(limit)
-        .bind(offset)
-        .fetch_all(pool)
-        .await?;
+        let rows =
+            sqlx::query("SELECT * FROM dashboards ORDER BY created_at DESC LIMIT $1 OFFSET $2")
+                .bind(limit)
+                .bind(offset)
+                .fetch_all(pool)
+                .await?;
 
-        let dashboards = rows.into_iter().map(|r| DbDashboard::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let dashboards = rows
+            .into_iter()
+            .map(|r| DbDashboard::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(dashboards)
     }
 
@@ -147,18 +172,30 @@ impl DashboardShareRepository {
     }
 
     /// Find by dashboard ID
-    pub async fn find_by_dashboard_id(&self, pool: &DbPool, dashboard_id: i64) -> DbResult<Vec<DbDashboardShare>> {
+    pub async fn find_by_dashboard_id(
+        &self,
+        pool: &DbPool,
+        dashboard_id: i64,
+    ) -> DbResult<Vec<DbDashboardShare>> {
         let rows = sqlx::query(DashboardShareQueryBuilder::select_by_dashboard_id())
             .bind(dashboard_id)
             .fetch_all(pool)
             .await?;
 
-        let shares = rows.into_iter().map(|r| DbDashboardShare::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let shares = rows
+            .into_iter()
+            .map(|r| DbDashboardShare::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(shares)
     }
 
     /// Find by dashboard and user
-    pub async fn find_by_dashboard_and_user(&self, pool: &DbPool, dashboard_id: i64, user_id: i64) -> DbResult<Option<DbDashboardShare>> {
+    pub async fn find_by_dashboard_and_user(
+        &self,
+        pool: &DbPool,
+        dashboard_id: i64,
+        user_id: i64,
+    ) -> DbResult<Option<DbDashboardShare>> {
         let row = sqlx::query(DashboardShareQueryBuilder::select_by_dashboard_and_user())
             .bind(dashboard_id)
             .bind(user_id)
@@ -184,10 +221,12 @@ impl Repository<DbDashboardShare, DbDashboardShare, DbDashboardShare> for Dashbo
             .fetch_one(pool)
             .await?;
 
-        self.find_by_id(pool, id).await?.ok_or_else(|| crate::DbError::NotFound {
-            entity_type: "DashboardShare".to_string(),
-            id: id.to_string(),
-        })
+        self.find_by_id(pool, id)
+            .await?
+            .ok_or_else(|| crate::DbError::NotFound {
+                entity_type: "DashboardShare".to_string(),
+                id: id.to_string(),
+            })
     }
 
     async fn find_by_id(&self, pool: &DbPool, id: i64) -> DbResult<Option<DbDashboardShare>> {
@@ -199,7 +238,12 @@ impl Repository<DbDashboardShare, DbDashboardShare, DbDashboardShare> for Dashbo
         Ok(row.map(|r| DbDashboardShare::from_row(&r)).transpose()?)
     }
 
-    async fn update(&self, pool: &DbPool, id: i64, update: DbDashboardShare) -> DbResult<DbDashboardShare> {
+    async fn update(
+        &self,
+        pool: &DbPool,
+        id: i64,
+        update: DbDashboardShare,
+    ) -> DbResult<DbDashboardShare> {
         let row = sqlx::query(DashboardShareQueryBuilder::update())
             .bind(id)
             .bind(update.permission)
@@ -217,16 +261,24 @@ impl Repository<DbDashboardShare, DbDashboardShare, DbDashboardShare> for Dashbo
         Ok(())
     }
 
-    async fn list(&self, pool: &DbPool, limit: i64, offset: i64) -> DbResult<Vec<DbDashboardShare>> {
+    async fn list(
+        &self,
+        pool: &DbPool,
+        limit: i64,
+        offset: i64,
+    ) -> DbResult<Vec<DbDashboardShare>> {
         let rows = sqlx::query(
-            "SELECT * FROM dashboard_shares ORDER BY created_at DESC LIMIT $1 OFFSET $2"
+            "SELECT * FROM dashboard_shares ORDER BY created_at DESC LIMIT $1 OFFSET $2",
         )
         .bind(limit)
         .bind(offset)
         .fetch_all(pool)
         .await?;
 
-        let shares = rows.into_iter().map(|r| DbDashboardShare::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let shares = rows
+            .into_iter()
+            .map(|r| DbDashboardShare::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(shares)
     }
 

@@ -1,9 +1,9 @@
 //! Workspace Repository
 
 use crate::{
-    models::workspace::{DbWorkspace, DbCreateWorkspace, DbUpdateWorkspace, WorkspaceQueryBuilder},
-    repositories::Repository,
     DbPool, DbResult,
+    models::workspace::{DbCreateWorkspace, DbUpdateWorkspace, DbWorkspace, WorkspaceQueryBuilder},
+    repositories::Repository,
 };
 use async_trait::async_trait;
 use sqlx::FromRow;
@@ -16,7 +16,13 @@ impl WorkspaceRepository {
     }
 
     /// Find by project ID
-    pub async fn find_by_project_id(&self, pool: &DbPool, project_id: i64, limit: i64, offset: i64) -> DbResult<Vec<DbWorkspace>> {
+    pub async fn find_by_project_id(
+        &self,
+        pool: &DbPool,
+        project_id: i64,
+        limit: i64,
+        offset: i64,
+    ) -> DbResult<Vec<DbWorkspace>> {
         let rows = sqlx::query(WorkspaceQueryBuilder::select_by_project_id())
             .bind(project_id)
             .bind(limit)
@@ -24,12 +30,21 @@ impl WorkspaceRepository {
             .fetch_all(pool)
             .await?;
 
-        let workspaces = rows.into_iter().map(|r| DbWorkspace::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let workspaces = rows
+            .into_iter()
+            .map(|r| DbWorkspace::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(workspaces)
     }
 
     /// Find by creator ID
-    pub async fn find_by_creator_id(&self, pool: &DbPool, creator_id: i64, limit: i64, offset: i64) -> DbResult<Vec<DbWorkspace>> {
+    pub async fn find_by_creator_id(
+        &self,
+        pool: &DbPool,
+        creator_id: i64,
+        limit: i64,
+        offset: i64,
+    ) -> DbResult<Vec<DbWorkspace>> {
         let rows = sqlx::query(WorkspaceQueryBuilder::select_by_creator_id())
             .bind(creator_id)
             .bind(limit)
@@ -37,18 +52,28 @@ impl WorkspaceRepository {
             .fetch_all(pool)
             .await?;
 
-        let workspaces = rows.into_iter().map(|r| DbWorkspace::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let workspaces = rows
+            .into_iter()
+            .map(|r| DbWorkspace::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(workspaces)
     }
 
     /// Find by agent ID
-    pub async fn find_by_agent_id(&self, pool: &DbPool, agent_id: i64) -> DbResult<Vec<DbWorkspace>> {
+    pub async fn find_by_agent_id(
+        &self,
+        pool: &DbPool,
+        agent_id: i64,
+    ) -> DbResult<Vec<DbWorkspace>> {
         let rows = sqlx::query(WorkspaceQueryBuilder::select_by_agent_id())
             .bind(agent_id)
             .fetch_all(pool)
             .await?;
 
-        let workspaces = rows.into_iter().map(|r| DbWorkspace::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let workspaces = rows
+            .into_iter()
+            .map(|r| DbWorkspace::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(workspaces)
     }
 }
@@ -74,10 +99,12 @@ impl Repository<DbWorkspace, DbCreateWorkspace, DbUpdateWorkspace> for Workspace
             .fetch_one(pool)
             .await?;
 
-        self.find_by_id(pool, id).await?.ok_or_else(|| crate::DbError::NotFound {
-            entity_type: "Workspace".to_string(),
-            id: id.to_string(),
-        })
+        self.find_by_id(pool, id)
+            .await?
+            .ok_or_else(|| crate::DbError::NotFound {
+                entity_type: "Workspace".to_string(),
+                id: id.to_string(),
+            })
     }
 
     async fn find_by_id(&self, pool: &DbPool, id: i64) -> DbResult<Option<DbWorkspace>> {
@@ -89,7 +116,12 @@ impl Repository<DbWorkspace, DbCreateWorkspace, DbUpdateWorkspace> for Workspace
         Ok(row.map(|r| DbWorkspace::from_row(&r)).transpose()?)
     }
 
-    async fn update(&self, pool: &DbPool, id: i64, update: DbUpdateWorkspace) -> DbResult<DbWorkspace> {
+    async fn update(
+        &self,
+        pool: &DbPool,
+        id: i64,
+        update: DbUpdateWorkspace,
+    ) -> DbResult<DbWorkspace> {
         let row = sqlx::query(WorkspaceQueryBuilder::update())
             .bind(id)
             .bind(update.status)
@@ -114,15 +146,17 @@ impl Repository<DbWorkspace, DbCreateWorkspace, DbUpdateWorkspace> for Workspace
     }
 
     async fn list(&self, pool: &DbPool, limit: i64, offset: i64) -> DbResult<Vec<DbWorkspace>> {
-        let rows = sqlx::query(
-            "SELECT * FROM workspaces ORDER BY created_at DESC LIMIT $1 OFFSET $2"
-        )
-        .bind(limit)
-        .bind(offset)
-        .fetch_all(pool)
-        .await?;
+        let rows =
+            sqlx::query("SELECT * FROM workspaces ORDER BY created_at DESC LIMIT $1 OFFSET $2")
+                .bind(limit)
+                .bind(offset)
+                .fetch_all(pool)
+                .await?;
 
-        let workspaces = rows.into_iter().map(|r| DbWorkspace::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let workspaces = rows
+            .into_iter()
+            .map(|r| DbWorkspace::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(workspaces)
     }
 

@@ -28,7 +28,9 @@ pub struct AuditEvent {
 }
 
 /// Entity types for audit
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]
+#[derive(
+    Debug, Clone, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display,
+)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum EntityType {
@@ -79,7 +81,9 @@ pub enum EntityType {
 }
 
 /// Audit actions
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]
+#[derive(
+    Debug, Clone, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display,
+)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum AuditAction {
@@ -154,7 +158,9 @@ pub enum AuditAction {
 }
 
 /// Actor type
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display,
+)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum ActorType {

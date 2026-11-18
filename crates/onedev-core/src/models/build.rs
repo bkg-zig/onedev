@@ -3,7 +3,9 @@
 use super::*;
 
 /// Build status
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display,
+)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum BuildStatus {
@@ -20,7 +22,9 @@ pub enum BuildStatus {
 }
 
 /// Build stage
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display,
+)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum BuildStage {
@@ -44,7 +48,7 @@ pub struct Build {
     pub job_name: String,
     pub status: BuildStatus,
     pub stage: BuildStage,
-    pub ref_name: String,        // branch, tag, ref
+    pub ref_name: String, // branch, tag, ref
     pub ref_type: RefType,
     pub commit_sha: String,
     pub commit_message: Option<String>,
@@ -85,7 +89,9 @@ pub struct Build {
     pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display,
+)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum RefType {
@@ -96,7 +102,9 @@ pub enum RefType {
     Pipeline,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display,
+)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum BuildTrigger {
@@ -111,7 +119,9 @@ pub enum BuildTrigger {
     MergeTrain,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display,
+)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum ExecutorType {
@@ -135,7 +145,9 @@ pub struct Artifact {
     pub artifact_type: ArtifactType,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display,
+)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum ArtifactType {
@@ -297,7 +309,9 @@ pub struct RuleSpec {
     pub variables: Option<HashMap<String, String>>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display,
+)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum RuleWhen {
@@ -315,7 +329,9 @@ pub struct RetrySpec {
     pub when: Vec<RetryWhen>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display,
+)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum RetryWhen {
@@ -345,7 +361,9 @@ pub struct JobArtifactsSpec {
     pub access: Option<ArtifactAccess>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display,
+)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum ArtifactWhen {
@@ -354,7 +372,9 @@ pub enum ArtifactWhen {
     Always,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display,
+)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum ArtifactAccess {
@@ -399,7 +419,18 @@ pub struct JobCacheSpec {
     pub when: Option<CacheWhen>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, strum::EnumString, strum::Display)]
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    Default,
+    Serialize,
+    Deserialize,
+    strum::EnumString,
+    strum::Display,
+)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum CachePolicy {
@@ -409,7 +440,9 @@ pub enum CachePolicy {
     PullPush,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display,
+)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum CacheWhen {
@@ -445,7 +478,9 @@ pub struct KubernetesEnvironmentSpec {
     pub namespace: Option<String>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display,
+)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum EnvironmentAction {
@@ -456,7 +491,9 @@ pub enum EnvironmentAction {
     Access,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display,
+)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum EnvironmentTier {
@@ -473,7 +510,9 @@ pub struct DeploySpec {
     pub strategy: Option<DeployStrategy>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display,
+)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum DeployStrategy {
@@ -549,11 +588,24 @@ pub struct ServiceSpec {
 
 impl Build {
     pub fn is_running(&self) -> bool {
-        matches!(self.status, BuildStatus::Running | BuildStatus::Pending | BuildStatus::WaitingForResource | BuildStatus::Preparing)
+        matches!(
+            self.status,
+            BuildStatus::Running
+                | BuildStatus::Pending
+                | BuildStatus::WaitingForResource
+                | BuildStatus::Preparing
+        )
     }
 
     pub fn is_finished(&self) -> bool {
-        matches!(self.status, BuildStatus::Success | BuildStatus::Failed | BuildStatus::Canceled | BuildStatus::Skipped | BuildStatus::Manual)
+        matches!(
+            self.status,
+            BuildStatus::Success
+                | BuildStatus::Failed
+                | BuildStatus::Canceled
+                | BuildStatus::Skipped
+                | BuildStatus::Manual
+        )
     }
 
     pub fn is_success(&self) -> bool {

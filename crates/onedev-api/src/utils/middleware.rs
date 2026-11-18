@@ -1,14 +1,14 @@
 //! HTTP Middleware
 
+use crate::AppState;
+use crate::errors::AuthError;
 use axum::{
-    extract::{State, Request},
-    http::{header, HeaderMap, StatusCode},
+    extract::{Request, State},
+    http::{HeaderMap, StatusCode, header},
     middleware::Next,
     response::Response,
 };
 use axum_extra::extract::CookieJar;
-use crate::AppState;
-use crate::errors::AuthError;
 use onedev_auth::Subject;
 use onedev_auth::models::token::JwtService;
 
@@ -21,7 +21,7 @@ pub async fn auth_middleware(
     next: Next,
 ) -> Result<Response, AuthError> {
     let token = extract_token(&headers, &cookies);
-    
+
     let subject = if let Some(token) = token {
         // authenticate_token tries JWT validation first, then PAT lookup
         match state.auth_service.inner().authenticate_token(&token).await {
@@ -34,11 +34,11 @@ pub async fn auth_middleware(
 
     // Set subject in request extensions for extractors
     request.extensions_mut().insert(subject.clone());
-    
+
     // Also set in task-local for internal use
-    Ok(onedev_auth::CURRENT_SUBJECT.scope(subject, async {
-        next.run(request).await
-    }).await)
+    Ok(onedev_auth::CURRENT_SUBJECT
+        .scope(subject, async { next.run(request).await })
+        .await)
 }
 
 /// Extract token from Authorization header or cookie
@@ -103,17 +103,13 @@ pub async fn rate_limit_middleware(
 }
 
 /// Request ID middleware
-pub async fn request_id_middleware(
-    mut request: Request,
-    next: Next,
-) -> Response {
+pub async fn request_id_middleware(mut request: Request, next: Next) -> Response {
     let request_id = uuid::Uuid::new_v4().to_string();
     request.extensions_mut().insert(request_id.clone());
-    
+
     let mut response = next.run(request).await;
-    response.headers_mut().insert(
-        "X-Request-ID",
-        request_id.parse().unwrap(),
-    );
+    response
+        .headers_mut()
+        .insert("X-Request-ID", request_id.parse().unwrap());
     response
 }

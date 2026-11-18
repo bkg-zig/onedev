@@ -112,8 +112,16 @@ impl SessionRepository {
         Ok(result.rows_affected())
     }
 
-    pub async fn list_filtered(&self, pool: &DbPool, query: SessionQuery) -> DbResult<Vec<Session>> {
-        let per_page = if query.per_page == 0 { 20 } else { query.per_page };
+    pub async fn list_filtered(
+        &self,
+        pool: &DbPool,
+        query: SessionQuery,
+    ) -> DbResult<Vec<Session>> {
+        let per_page = if query.per_page == 0 {
+            20
+        } else {
+            query.per_page
+        };
         let offset = i64::from(query.page.saturating_mul(per_page));
         let rows = sqlx::query(&format!(
             "SELECT {SELECT_COLUMNS}

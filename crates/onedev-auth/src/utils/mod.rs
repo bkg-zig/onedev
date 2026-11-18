@@ -1,9 +1,9 @@
 //! Utility functions for authentication
 
 use base64::{Engine as _, engine::general_purpose};
-use rand::RngCore;
-use secrecy::{SecretString, ExposeSecret};
 use chrono::{DateTime, Utc};
+use rand::RngCore;
+use secrecy::{ExposeSecret, SecretString};
 use uuid::Uuid;
 
 /// Generate a secure random string
@@ -12,7 +12,7 @@ pub fn generate_random_string(length: usize) -> String {
     let mut result = String::with_capacity(length);
     let mut bytes = vec![0u8; length];
     rand::rng().fill_bytes(&mut bytes);
-    
+
     for &b in &bytes {
         result.push(CHARSET[(b as usize) % CHARSET.len()] as char);
     }
@@ -34,9 +34,15 @@ pub fn generate_uuid_v7() -> Uuid {
 /// Parse a principal string (u:<id> or a:<id>)
 pub fn parse_principal(principal: &str) -> Option<(PrincipalType, i64)> {
     if let Some(id_str) = principal.strip_prefix("u:") {
-        id_str.parse::<i64>().ok().map(|id| (PrincipalType::User, id))
+        id_str
+            .parse::<i64>()
+            .ok()
+            .map(|id| (PrincipalType::User, id))
     } else if let Some(id_str) = principal.strip_prefix("a:") {
-        id_str.parse::<i64>().ok().map(|id| (PrincipalType::AccessToken, id))
+        id_str
+            .parse::<i64>()
+            .ok()
+            .map(|id| (PrincipalType::AccessToken, id))
     } else {
         None
     }
@@ -73,11 +79,11 @@ pub fn constant_time_eq(a: &str, b: &str) -> bool {
 pub fn secret_eq(a: &SecretString, b: &SecretString) -> bool {
     let a_bytes = a.expose_secret().as_bytes();
     let b_bytes = b.expose_secret().as_bytes();
-    
+
     if a_bytes.len() != b_bytes.len() {
         return false;
     }
-    
+
     let mut result = 0u8;
     for (ca, cb) in a_bytes.iter().zip(b_bytes.iter()) {
         result |= ca ^ cb;
@@ -110,12 +116,14 @@ pub fn sanitize_for_log(input: &str) -> String {
         ("key", "***"),
         ("authorization", "***"),
     ];
-    
+
     let mut result = input.to_string();
     for (pattern, replacement) in patterns {
         let regex = regex::Regex::new(&format!(r#"(?i){}=["']?[^"'\s]+"#, pattern)).ok();
         if let Some(re) = regex {
-            result = re.replace_all(&result, format!("{}=\"{}\"", pattern, replacement)).to_string();
+            result = re
+                .replace_all(&result, format!("{}=\"{}\"", pattern, replacement))
+                .to_string();
         }
     }
     result
@@ -129,21 +137,21 @@ pub fn extract_client_ip(headers: &axum::http::HeaderMap) -> Option<String> {
             return Some(ip.split(',').next().unwrap_or(ip).trim().to_string());
         }
     }
-    
+
     // Check X-Real-IP
     if let Some(real_ip) = headers.get("X-Real-IP") {
         if let Ok(ip) = real_ip.to_str() {
             return Some(ip.to_string());
         }
     }
-    
+
     // Check CF-Connecting-IP (Cloudflare)
     if let Some(cf_ip) = headers.get("CF-Connecting-IP") {
         if let Ok(ip) = cf_ip.to_str() {
             return Some(ip.to_string());
         }
     }
-    
+
     None
 }
 
@@ -151,9 +159,9 @@ pub fn extract_client_ip(headers: &axum::http::HeaderMap) -> Option<String> {
 pub fn parse_user_agent(user_agent: &str) -> UserAgentInfo {
     // Simple parsing - in production you'd use a proper UA parser
     let mut info = UserAgentInfo::default();
-    
+
     let ua_lower = user_agent.to_lowercase();
-    
+
     // Browser detection
     if ua_lower.contains("firefox") {
         info.browser = Some("Firefox".to_string());
@@ -164,7 +172,7 @@ pub fn parse_user_agent(user_agent: &str) -> UserAgentInfo {
     } else if ua_lower.contains("edg") {
         info.browser = Some("Edge".to_string());
     }
-    
+
     // OS detection
     if ua_lower.contains("windows") {
         info.os = Some("Windows".to_string());
@@ -177,7 +185,7 @@ pub fn parse_user_agent(user_agent: &str) -> UserAgentInfo {
     } else if ua_lower.contains("ios") || ua_lower.contains("iphone") {
         info.os = Some("iOS".to_string());
     }
-    
+
     // Device type
     if ua_lower.contains("mobile") {
         info.device_type = Some("Mobile".to_string());
@@ -186,7 +194,7 @@ pub fn parse_user_agent(user_agent: &str) -> UserAgentInfo {
     } else {
         info.device_type = Some("Desktop".to_string());
     }
-    
+
     info.raw = user_agent.to_string();
     info
 }

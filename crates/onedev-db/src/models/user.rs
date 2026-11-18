@@ -2,7 +2,7 @@
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use sqlx::{FromRow, Row};
+use sqlx::FromRow;
 use uuid::Uuid;
 
 /// User type in the database
@@ -49,7 +49,9 @@ impl From<DbUserStatus> for onedev_core::models::user::UserStatus {
         match s {
             DbUserStatus::Active => onedev_core::models::user::UserStatus::Active,
             DbUserStatus::Disabled => onedev_core::models::user::UserStatus::Disabled,
-            DbUserStatus::PendingVerification => onedev_core::models::user::UserStatus::PendingVerification,
+            DbUserStatus::PendingVerification => {
+                onedev_core::models::user::UserStatus::PendingVerification
+            }
             DbUserStatus::Locked => onedev_core::models::user::UserStatus::Locked,
         }
     }
@@ -60,7 +62,9 @@ impl From<onedev_core::models::user::UserStatus> for DbUserStatus {
         match s {
             onedev_core::models::user::UserStatus::Active => DbUserStatus::Active,
             onedev_core::models::user::UserStatus::Disabled => DbUserStatus::Disabled,
-            onedev_core::models::user::UserStatus::PendingVerification => DbUserStatus::PendingVerification,
+            onedev_core::models::user::UserStatus::PendingVerification => {
+                DbUserStatus::PendingVerification
+            }
             onedev_core::models::user::UserStatus::Locked => DbUserStatus::Locked,
         }
     }
@@ -188,7 +192,10 @@ impl DbUser {
 
 impl DbCreateUser {
     /// Create from core CreateUser
-    pub fn from_core(create: &onedev_core::models::user::CreateUser, password_hash: Option<String>) -> Self {
+    pub fn from_core(
+        create: &onedev_core::models::user::CreateUser,
+        password_hash: Option<String>,
+    ) -> Self {
         Self {
             name: create.name.clone(),
             full_name: create.full_name.clone(),

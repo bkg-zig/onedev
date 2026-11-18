@@ -267,6 +267,168 @@ impl RepositoryService {
         Ok(commits)
     }
 
+    /// Blame a file at a revision, grouped by commit (vanilla `BlameCommit`).
+    pub fn blame(&self, project_path: &str, revision: &str, path: &str) -> GitResult<Vec<crate::models::BlameCommit>> {
+        let repo = self.repository_path(project_path)?;
+        if !repo.is_dir() {
+            return Err(GitError::NotFound(repo.display().to_string()));
+        }
+        let out = run_git(
+            &self.config.git_binary,
+            &repo,
+            &["blame", "--porcelain", revision, "--", path],
+            None,
+        )?;
+        let text = String::from_utf8_lossy(&out);
+
+        let mut commits: Vec<crate::models::BlameCommit> = Vec::new();
+        let mut current_id = String::new();
+        let mut author_name = String::new();
+        let mut author_email = String::new();
+        let mut author_time: i64 = 0;
+        let mut summary = String::new();
+
+        let mut push_current = |commits: &mut Vec<crate::models::BlameCommit>,
+                                 id: &str,
+                                 name: &str,
+                                 email: &str,
+                                 time: i64,
+                                 summary: &str,
+                                 line_no: u32| {
+            if let Some(existing) = commits.iter_mut().find(|c| c.commit_id == id) {
+                existing.lines.push(line_no);
+            } else if !id.is_empty() {
+                commits.push(crate::models::BlameCommit {
+                    commit_id: id.to_owned(),
+                    author: GitSignature {
+                        name: name.to_owned(),
+                        email: email.to_owned(),
+                        timestamp: time,
+                    },
+                    message: summary.to_owned(),
+                    lines: vec![line_no],
+                });
+            }
+        };
+
+        let mut pending_line: u32 = 0;
+        for line in text.lines() {
+            if line.starts_with('\t') {
+                push_current(
+                    &mut commits,
+                    &current_id.clone(),
+                    &author_name.clone(),
+                    &author_email.clone(),
+                    author_time,
+                    &summary.clone(),
+                    pending_line,
+                );
+            } else if let Some((meta, _)) = line.split_once(' ') {
+                match meta {
+                    "author" => author_name = line[meta.len() + 1..].to_owned(),
+                    "author-mail" => {
+                        author_email = line[meta.len() + 1..]
+                            .trim_matches(|c| c == '<' || c == '>')
+                            .to_owned()
+                    }
+                    "author-time" => author_time = line[meta.len() + 1..].parse().unwrap_or(0),
+                    "summary" => summary = line[meta.len() + 1..].to_owned(),
+                    _ => {
+                        // Header: "<oid> <orig-line> <final-line> <num-lines>"
+                        let parts: Vec<&str> = line.split_whitespace().collect();
+                        if parts.len() == 4 && parts[0].len() >= 40 {
+                            current_id = parts[0].to_owned();
+                            pending_line = parts[2].parse().unwrap_or(0);
+                        }
+                    }
+                }
+            }
+        }
+        Ok(commits)
+    }
+
+    /// Submodules of a repository at a revision (`.gitmodules` + gitlinks).
+    pub fn submodules(&self, project_path: &str, revision: &str) -> GitResult<Vec<crate::models::Submodule>> {
+        let gitlinks: Vec<(String, String)> = self
+            .list_tree(project_path, revision, "")?
+            .into_iter()
+            .filter(|entry| entry.kind == TreeEntryKind::Submodule)
+            .map(|entry| (entry.path, entry.object_id))
+            .collect();
+        if gitlinks.is_empty() {
+            return Ok(Vec::new());
+        }
+
+        let mut urls: std::collections::HashMap<String, (String, String)> = Default::default();
+        if let Ok(blob) = self.read_blob(project_path, revision, ".gitmodules") {
+            if let Some(text) = blob.text() {
+                let mut current: Option<String> = None;
+                for line in text.lines() {
+                    let line = line.trim();
+                    if let Some(rest) = line.strip_prefix("[submodule \"") {
+                        current = Some(rest.trim_end_matches("\"]").to_owned());
+                    } else if let (Some(name), Some((key, value))) =
+                        (&current, line.split_once('='))
+                    {
+                        let entry = urls.entry(name.clone()).or_default();
+                        match key.trim() {
+                            "path" => entry.0 = value.trim().to_owned(),
+                            "url" => entry.1 = value.trim().to_owned(),
+                            _ => {}
+                        }
+                    }
+                }
+            }
+        }
+
+        Ok(gitlinks
+            .into_iter()
+            .map(|(path, commit_id)| {
+                let (name, url) = urls
+                    .iter()
+                    .find(|(_, (p, _))| p == &path)
+                    .map(|(name, (_, url))| (name.clone(), url.clone()))
+                    .unwrap_or_else(|| (path.clone(), String::new()));
+                crate::models::Submodule {
+                    name,
+                    path,
+                    url,
+                    commit_id,
+                }
+            })
+            .collect())
+    }
+
+    /// Last commit that touched each direct child of `path` at `revision`
+    /// (vanilla file-browser column, `LastCommitsOfChildren`).
+    pub fn last_commits_of_children(
+        &self,
+        project_path: &str,
+        revision: &str,
+        path: &str,
+    ) -> GitResult<Vec<crate::models::ChildCommit>> {
+        let entries = self.list_tree(project_path, revision, path)?;
+        let repo = self.repository_path(project_path)?;
+        let mut children = Vec::with_capacity(entries.len());
+        for entry in entries {
+            let out = run_git(
+                &self.config.git_binary,
+                &repo,
+                &["log", "-1", "--format=%H", revision, "--", &entry.path],
+                None,
+            )?;
+            let commit_id = String::from_utf8_lossy(&out).trim().to_owned();
+            if commit_id.is_empty() {
+                continue;
+            }
+            children.push(crate::models::ChildCommit {
+                path: entry.path,
+                commit: self.resolve_commit(project_path, &commit_id)?,
+            });
+        }
+        Ok(children)
+    }
+
     /// Compare two revisions: commits in `to` but not in `from`, plus changed files.
     pub fn compare(&self, project_path: &str, from: &str, to: &str) -> GitResult<CompareResult> {
         let ancestors: std::collections::HashSet<String> = self

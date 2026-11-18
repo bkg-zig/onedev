@@ -1,20 +1,25 @@
 //! Authorization Service - Permission checking and access control
 
+use crate::models::principal::{AccessTokenPrincipal, UserPrincipal};
 use crate::models::subject::Subject;
-use crate::models::principal::{UserPrincipal, AccessTokenPrincipal};
-use onedev_core::models::user::UserRef;
+use dashmap::DashMap;
+use onedev_core::models::group::GroupRef;
 use onedev_core::models::project::ProjectRef;
 use onedev_core::models::role::{CodePrivilege, Role};
-use onedev_core::models::group::GroupRef;
-use onedev_core::permissions::{Permission, ProjectPermissionType, SystemPermission, BasePermission};
-use onedev_db::repositories::{UserRepository, ProjectRepository, RoleRepository, MembershipRepository, GroupRepository, UserAuthorizationRepository, Repository};
-use onedev_db::DbPool;
+use onedev_core::models::user::UserRef;
+use onedev_core::permissions::{
+    BasePermission, Permission, ProjectPermissionType, SystemPermission,
+};
 use onedev_db::DbError;
-use dashmap::DashMap;
+use onedev_db::DbPool;
+use onedev_db::repositories::{
+    GroupRepository, MembershipRepository, ProjectRepository, Repository, RoleRepository,
+    UserAuthorizationRepository, UserRepository,
+};
 use std::sync::Arc;
 use std::time::Duration;
-use tokio::sync::RwLock;
 use thiserror::Error;
+use tokio::sync::RwLock;
 
 /// Authorization errors
 #[derive(Debug, Error)]
@@ -87,15 +92,16 @@ impl AuthorizationService {
 
         let roles = self.subject_project_roles(subject, project_id).await?;
         let granted: Vec<(i64, &Role)> = roles.iter().map(|role| (project_id, role)).collect();
-        let required = onedev_core::permissions::ProjectPrivilege::new(
-            project_id,
-            permission.to_privilege(),
-        );
+        let required =
+            onedev_core::permissions::ProjectPrivilege::new(project_id, permission.to_privilege());
 
         if onedev_core::permissions::PermissionChecker::check_roles(&granted, &required, &[]) {
             Ok(PermissionCheck::Granted)
         } else {
-            Ok(PermissionCheck::Denied(format!("Missing permission: {}", permission.name())))
+            Ok(PermissionCheck::Denied(format!(
+                "Missing permission: {}",
+                permission.name()
+            )))
         }
     }
 
@@ -128,7 +134,10 @@ impl AuthorizationService {
             }
             Subject::Anonymous => {}
         }
-        for authz in repo.find_base_authorizations(&self.db_pool, project_id).await? {
+        for authz in repo
+            .find_base_authorizations(&self.db_pool, project_id)
+            .await?
+        {
             role_ids.push(authz.role_id);
         }
 
@@ -151,16 +160,26 @@ impl AuthorizationService {
         let user_id = match subject {
             Subject::User(p) => p.user_id,
             Subject::AccessToken(p) if p.can_impersonate() => p.effective_user_id(),
-            _ => return Ok(PermissionCheck::Denied("System permissions require user authentication".to_string())),
+            _ => {
+                return Ok(PermissionCheck::Denied(
+                    "System permissions require user authentication".to_string(),
+                ));
+            }
         };
 
         // Check if user is admin
         let is_admin = self.is_system_admin(user_id).await?;
-        
-        if is_admin || permission == SystemPermission::ViewAllProjects || permission == SystemPermission::ViewAllGroups {
+
+        if is_admin
+            || permission == SystemPermission::ViewAllProjects
+            || permission == SystemPermission::ViewAllGroups
+        {
             Ok(PermissionCheck::Granted)
         } else {
-            Ok(PermissionCheck::Denied(format!("Missing system permission: {}", permission.name())))
+            Ok(PermissionCheck::Denied(format!(
+                "Missing system permission: {}",
+                permission.name()
+            )))
         }
     }
 
@@ -172,10 +191,15 @@ impl AuthorizationService {
         permissions: &[ProjectPermissionType],
     ) -> Result<PermissionCheck, AuthzError> {
         for required in permissions {
-            if self.check_project_permission(subject, project_id, *required).await?
+            if self
+                .check_project_permission(subject, project_id, *required)
+                .await?
                 != PermissionCheck::Granted
             {
-                return Ok(PermissionCheck::Denied(format!("Missing permission: {}", required.name())));
+                return Ok(PermissionCheck::Denied(format!(
+                    "Missing permission: {}",
+                    required.name()
+                )));
             }
         }
 
@@ -183,32 +207,62 @@ impl AuthorizationService {
     }
 
     /// Check if subject can access a project (any permission)
-    pub async fn can_access_project(&self, subject: &Subject, project_id: i64) -> Result<bool, AuthzError> {
-        let result = self.check_project_permission(subject, project_id, ProjectPermissionType::ViewProject).await?;
+    pub async fn can_access_project(
+        &self,
+        subject: &Subject,
+        project_id: i64,
+    ) -> Result<bool, AuthzError> {
+        let result = self
+            .check_project_permission(subject, project_id, ProjectPermissionType::ViewProject)
+            .await?;
         Ok(result == PermissionCheck::Granted)
     }
 
     /// Check if subject can read code in a project
-    pub async fn can_read_code(&self, subject: &Subject, project_id: i64) -> Result<bool, AuthzError> {
-        let result = self.check_project_permission(subject, project_id, ProjectPermissionType::ReadCode).await?;
+    pub async fn can_read_code(
+        &self,
+        subject: &Subject,
+        project_id: i64,
+    ) -> Result<bool, AuthzError> {
+        let result = self
+            .check_project_permission(subject, project_id, ProjectPermissionType::ReadCode)
+            .await?;
         Ok(result == PermissionCheck::Granted)
     }
 
     /// Check if subject can write code in a project
-    pub async fn can_write_code(&self, subject: &Subject, project_id: i64) -> Result<bool, AuthzError> {
-        let result = self.check_project_permission(subject, project_id, ProjectPermissionType::WriteCode).await?;
+    pub async fn can_write_code(
+        &self,
+        subject: &Subject,
+        project_id: i64,
+    ) -> Result<bool, AuthzError> {
+        let result = self
+            .check_project_permission(subject, project_id, ProjectPermissionType::WriteCode)
+            .await?;
         Ok(result == PermissionCheck::Granted)
     }
 
     /// Check if subject can manage a project
-    pub async fn can_manage_project(&self, subject: &Subject, project_id: i64) -> Result<bool, AuthzError> {
-        let result = self.check_project_permission(subject, project_id, ProjectPermissionType::ManageProject).await?;
+    pub async fn can_manage_project(
+        &self,
+        subject: &Subject,
+        project_id: i64,
+    ) -> Result<bool, AuthzError> {
+        let result = self
+            .check_project_permission(subject, project_id, ProjectPermissionType::ManageProject)
+            .await?;
         Ok(result == PermissionCheck::Granted)
     }
 
     /// Check if subject is project admin
-    pub async fn is_project_admin(&self, subject: &Subject, project_id: i64) -> Result<bool, AuthzError> {
-        let result = self.check_project_permission(subject, project_id, ProjectPermissionType::AdminProject).await?;
+    pub async fn is_project_admin(
+        &self,
+        subject: &Subject,
+        project_id: i64,
+    ) -> Result<bool, AuthzError> {
+        let result = self
+            .check_project_permission(subject, project_id, ProjectPermissionType::AdminProject)
+            .await?;
         Ok(result == PermissionCheck::Granted)
     }
 
@@ -255,11 +309,14 @@ impl AuthorizationService {
             }
         }
 
-        self.cache.insert(cache_key, CachedAuthzInfo {
-            permissions: permissions.clone(),
-            roles,
-            expires_at: std::time::Instant::now() + self.cache_ttl,
-        });
+        self.cache.insert(
+            cache_key,
+            CachedAuthzInfo {
+                permissions: permissions.clone(),
+                roles,
+                expires_at: std::time::Instant::now() + self.cache_ttl,
+            },
+        );
 
         Ok(permissions)
     }
@@ -267,12 +324,21 @@ impl AuthorizationService {
     /// Check if user is system admin
     async fn is_system_admin(&self, user_id: i64) -> Result<bool, AuthzError> {
         let user = self.user_repo.find_by_id(&self.db_pool, user_id).await?;
-        Ok(user.map(|u| u.id == onedev_core::models::user::ROOT_USER_ID || u.id == onedev_core::models::user::SYSTEM_USER_ID).unwrap_or(false))
+        Ok(user
+            .map(|u| {
+                u.id == onedev_core::models::user::ROOT_USER_ID
+                    || u.id == onedev_core::models::user::SYSTEM_USER_ID
+            })
+            .unwrap_or(false))
     }
 
     /// Get a user's roles in a project (vanilla: a user can hold
     /// several roles on the same project).
-    pub async fn get_user_project_roles(&self, user_id: i64, project_id: i64) -> Result<Vec<Role>, AuthzError> {
+    pub async fn get_user_project_roles(
+        &self,
+        user_id: i64,
+        project_id: i64,
+    ) -> Result<Vec<Role>, AuthzError> {
         let repo = UserAuthorizationRepository::new();
         let authz = repo
             .find_by_user_and_project(&self.db_pool, user_id, project_id)
@@ -281,7 +347,11 @@ impl AuthorizationService {
 
         let mut roles = Vec::with_capacity(authz.len());
         for row in authz {
-            if let Some(db_role) = self.role_repo.find_by_id(&self.db_pool, row.role_id).await? {
+            if let Some(db_role) = self
+                .role_repo
+                .find_by_id(&self.db_pool, row.role_id)
+                .await?
+            {
                 roles.push(db_role.to_core());
             }
         }
@@ -294,7 +364,8 @@ impl AuthorizationService {
         subject: &Subject,
         project_id: i64,
     ) -> Result<Vec<ProjectPermissionType>, AuthzError> {
-        self.get_subject_project_permissions(subject, project_id).await
+        self.get_subject_project_permissions(subject, project_id)
+            .await
     }
 
     /// Invalidate cache for a subject/project

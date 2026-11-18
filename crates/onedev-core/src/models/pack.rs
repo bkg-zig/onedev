@@ -3,7 +3,9 @@
 use super::*;
 
 /// Package type
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display,
+)]
 #[serde(rename_all = "lowercase")]
 #[strum(serialize_all = "lowercase")]
 pub enum PackageType {
@@ -23,7 +25,9 @@ pub enum PackageType {
 }
 
 /// Package status
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display,
+)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum PackageStatus {
@@ -74,7 +78,9 @@ pub struct PackageFile {
     pub created_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display,
+)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum PackageFileType {
@@ -267,7 +273,15 @@ pub struct GenericMetadata {
 impl Package {
     pub fn reference(&self) -> String {
         match self.package_type {
-            PackageType::Maven => format!("{}:{}:{}", self.metadata.get("group_id").and_then(|v| v.as_str()).unwrap_or(""), self.name, self.version),
+            PackageType::Maven => format!(
+                "{}:{}:{}",
+                self.metadata
+                    .get("group_id")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or(""),
+                self.name,
+                self.version
+            ),
             PackageType::Npm => format!("{}@{}", self.name, self.version),
             PackageType::PyPI => format!("{}=={}", self.name, self.version),
             PackageType::Docker => format!("{}:{}", self.name, self.version),
@@ -280,6 +294,8 @@ impl Package {
     }
 
     pub fn primary_file(&self) -> Option<&PackageFile> {
-        self.files.iter().find(|f| f.file_type == PackageFileType::Primary)
+        self.files
+            .iter()
+            .find(|f| f.file_type == PackageFileType::Primary)
     }
 }

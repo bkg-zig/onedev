@@ -1,9 +1,9 @@
 //! Agent Repository
 
 use crate::{
-    models::agent::{DbAgent, DbCreateAgent, DbUpdateAgent, AgentQueryBuilder},
-    repositories::Repository,
     DbPool, DbResult,
+    models::agent::{AgentQueryBuilder, DbAgent, DbCreateAgent, DbUpdateAgent},
+    repositories::Repository,
 };
 use async_trait::async_trait;
 use sqlx::FromRow;
@@ -16,7 +16,11 @@ impl AgentRepository {
     }
 
     /// Find by token hash
-    pub async fn find_by_token_hash(&self, pool: &DbPool, token_hash: &str) -> DbResult<Option<DbAgent>> {
+    pub async fn find_by_token_hash(
+        &self,
+        pool: &DbPool,
+        token_hash: &str,
+    ) -> DbResult<Option<DbAgent>> {
         let row = sqlx::query(AgentQueryBuilder::select_by_token_hash())
             .bind(token_hash)
             .fetch_optional(pool)
@@ -31,12 +35,21 @@ impl AgentRepository {
             .fetch_all(pool)
             .await?;
 
-        let agents = rows.into_iter().map(|r| DbAgent::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let agents = rows
+            .into_iter()
+            .map(|r| DbAgent::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(agents)
     }
 
     /// Update agent status and current jobs
-    pub async fn update_status(&self, pool: &DbPool, id: i64, status: crate::models::agent::DbAgentStatus, current_jobs: i32) -> DbResult<()> {
+    pub async fn update_status(
+        &self,
+        pool: &DbPool,
+        id: i64,
+        status: crate::models::agent::DbAgentStatus,
+        current_jobs: i32,
+    ) -> DbResult<()> {
         sqlx::query(AgentQueryBuilder::update_status())
             .bind(id)
             .bind(status)
@@ -48,10 +61,12 @@ impl AgentRepository {
 
     /// Increment current jobs
     pub async fn increment_jobs(&self, pool: &DbPool, id: i64) -> DbResult<()> {
-        sqlx::query("UPDATE agents SET current_jobs = current_jobs + 1, updated_at = NOW() WHERE id = $1")
-            .bind(id)
-            .execute(pool)
-            .await?;
+        sqlx::query(
+            "UPDATE agents SET current_jobs = current_jobs + 1, updated_at = NOW() WHERE id = $1",
+        )
+        .bind(id)
+        .execute(pool)
+        .await?;
         Ok(())
     }
 
@@ -86,10 +101,12 @@ impl Repository<DbAgent, DbCreateAgent, DbUpdateAgent> for AgentRepository {
             .fetch_one(pool)
             .await?;
 
-        self.find_by_id(pool, id).await?.ok_or_else(|| crate::DbError::NotFound {
-            entity_type: "Agent".to_string(),
-            id: id.to_string(),
-        })
+        self.find_by_id(pool, id)
+            .await?
+            .ok_or_else(|| crate::DbError::NotFound {
+                entity_type: "Agent".to_string(),
+                id: id.to_string(),
+            })
     }
 
     async fn find_by_id(&self, pool: &DbPool, id: i64) -> DbResult<Option<DbAgent>> {
@@ -138,7 +155,10 @@ impl Repository<DbAgent, DbCreateAgent, DbUpdateAgent> for AgentRepository {
         .fetch_all(pool)
         .await?;
 
-        let agents = rows.into_iter().map(|r| DbAgent::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let agents = rows
+            .into_iter()
+            .map(|r| DbAgent::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(agents)
     }
 

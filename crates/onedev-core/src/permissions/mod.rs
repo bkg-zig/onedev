@@ -34,7 +34,8 @@ impl<P: Permission> Permission for ProjectPermission<P> {
 
     fn implies(&self, other: &dyn Permission) -> bool {
         if let Some(other_proj) = other.as_any().downcast_ref::<ProjectPermission<P>>() {
-            self.project_id == other_proj.project_id && self.permission.implies(&other_proj.permission)
+            self.project_id == other_proj.project_id
+                && self.permission.implies(&other_proj.permission)
         } else {
             false
         }
@@ -51,7 +52,10 @@ impl<P: Permission> Permission for ProjectPermission<P> {
 
 impl<P: Permission> ProjectPermission<P> {
     pub fn new(project_id: i64, permission: P) -> Self {
-        Self { project_id, permission }
+        Self {
+            project_id,
+            permission,
+        }
     }
 }
 
@@ -111,13 +115,13 @@ impl Permission for BasePermission {
 
     fn implies(&self, other: &dyn Permission) -> bool {
         if let Some(other_base) = other.as_any().downcast_ref::<BasePermission>() {
-            match (self, other_base) {
-                (BasePermission::Admin, _) => true,
-                (BasePermission::Write, BasePermission::Read) => true,
-                (BasePermission::Write, BasePermission::Write) => true,
-                (BasePermission::Read, BasePermission::Read) => true,
-                _ => false,
-            }
+            matches!(
+                (self, other_base),
+                (BasePermission::Admin, _)
+                    | (BasePermission::Write, BasePermission::Read)
+                    | (BasePermission::Write, BasePermission::Write)
+                    | (BasePermission::Read, BasePermission::Read)
+            )
         } else {
             false
         }
@@ -606,7 +610,12 @@ impl Permission for SystemPermission {
     }
 
     fn is_write(&self) -> bool {
-        !matches!(self, SystemPermission::ViewAuditLog | SystemPermission::ViewAllProjects | SystemPermission::ViewAllGroups)
+        !matches!(
+            self,
+            SystemPermission::ViewAuditLog
+                | SystemPermission::ViewAllProjects
+                | SystemPermission::ViewAllGroups
+        )
     }
 
     fn required_roles(&self) -> Vec<&'static str> {
@@ -642,12 +651,10 @@ impl PermissionChecker {
         ancestors_of_required: &[i64],
     ) -> bool {
         roles_on_project.iter().any(|(project_id, role)| {
-            role.permissions()
-                .iter()
-                .any(|privilege| {
-                    ProjectPrivilege::new(*project_id, privilege.clone())
-                        .implies(required, ancestors_of_required)
-                })
+            role.permissions().iter().any(|privilege| {
+                ProjectPrivilege::new(*project_id, privilege.clone())
+                    .implies(required, ancestors_of_required)
+            })
         })
     }
 

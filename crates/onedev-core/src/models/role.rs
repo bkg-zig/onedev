@@ -37,20 +37,19 @@ pub enum PackPrivilege {
 }
 
 /// Which issue fields a role may edit (vanilla `IssueFieldSet`).
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum IssueFieldSet {
     /// All fields known to the issue setting (resolved by the caller).
+    #[default]
     All,
     None,
-    Include { fields: BTreeSet<String> },
-    Exclude { fields: BTreeSet<String> },
-}
-
-impl Default for IssueFieldSet {
-    fn default() -> Self {
-        IssueFieldSet::All
-    }
+    Include {
+        fields: BTreeSet<String>,
+    },
+    Exclude {
+        fields: BTreeSet<String>,
+    },
 }
 
 impl IssueFieldSet {
@@ -63,9 +62,7 @@ impl IssueFieldSet {
             IssueFieldSet::All => all_fields.clone(),
             IssueFieldSet::None => BTreeSet::new(),
             IssueFieldSet::Include { fields } => fields.clone(),
-            IssueFieldSet::Exclude { fields } => {
-                all_fields.difference(fields).cloned().collect()
-            }
+            IssueFieldSet::Exclude { fields } => all_fields.difference(fields).cloned().collect(),
         }
     }
 }

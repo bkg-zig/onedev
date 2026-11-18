@@ -105,8 +105,7 @@ impl DbRole {
                 .unwrap_or_default(),
             manage_builds: self.manage_builds,
             upload_cache: self.upload_cache,
-            job_privileges: serde_json::from_value(self.job_privileges.clone())
-                .unwrap_or_default(),
+            job_privileges: serde_json::from_value(self.job_privileges.clone()).unwrap_or_default(),
             accessible_sites: self.accessible_sites.clone(),
             manage_workspaces: self.manage_workspaces,
             create_workspaces: self.create_workspaces,

@@ -1,11 +1,11 @@
 //! Access Token API models
 
+use bitflags::bitflags;
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use utoipa::{PartialSchema, ToSchema};
-use chrono::{DateTime, Utc};
 use uuid::Uuid;
 use validator::Validate;
-use bitflags::bitflags;
 
 /// Access token type
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ToSchema)]

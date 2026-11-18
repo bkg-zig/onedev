@@ -291,7 +291,11 @@ define_event!(UpgradeCompleted, |_| None, { pub from_version: String, pub to_ver
 #[async_trait]
 pub trait EventBus: Send + Sync {
     async fn publish(&self, event: DomainEvent) -> Result<(), EventError>;
-    async fn subscribe(&self, event_type: &str, handler: Box<dyn EventHandler>) -> Result<(), EventError>;
+    async fn subscribe(
+        &self,
+        event_type: &str,
+        handler: Box<dyn EventHandler>,
+    ) -> Result<(), EventError>;
     async fn unsubscribe(&self, event_type: &str, handler_id: &str) -> Result<(), EventError>;
 }
 
@@ -319,8 +323,15 @@ pub enum EventError {
 #[async_trait]
 pub trait EventStore: Send + Sync {
     async fn append(&self, event: &DomainEvent) -> Result<(), EventError>;
-    async fn get_events(&self, aggregate_id: &str, from_version: Option<u64>) -> Result<Vec<DomainEvent>, EventError>;
-    async fn get_events_by_correlation(&self, correlation_id: &str) -> Result<Vec<DomainEvent>, EventError>;
+    async fn get_events(
+        &self,
+        aggregate_id: &str,
+        from_version: Option<u64>,
+    ) -> Result<Vec<DomainEvent>, EventError>;
+    async fn get_events_by_correlation(
+        &self,
+        correlation_id: &str,
+    ) -> Result<Vec<DomainEvent>, EventError>;
 }
 
 /// In-memory event bus for development
@@ -353,9 +364,16 @@ impl EventBus for InMemoryEventBus {
         Ok(())
     }
 
-    async fn subscribe(&self, event_type: &str, handler: Box<dyn EventHandler>) -> Result<(), EventError> {
+    async fn subscribe(
+        &self,
+        event_type: &str,
+        handler: Box<dyn EventHandler>,
+    ) -> Result<(), EventError> {
         let mut handlers = self.handlers.write();
-        handlers.entry(event_type.to_string()).or_default().push(Arc::from(handler));
+        handlers
+            .entry(event_type.to_string())
+            .or_default()
+            .push(Arc::from(handler));
         Ok(())
     }
 

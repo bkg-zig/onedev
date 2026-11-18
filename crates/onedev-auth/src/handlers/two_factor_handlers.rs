@@ -1,14 +1,14 @@
 //! Two-Factor Authentication HTTP Handlers
 
+use crate::errors::AuthError;
+use crate::models::two_factor::TwoFactorSetup;
+use crate::services::TwoFactorService;
 use axum::{
-    extract::{State, Json},
+    extract::{Json, State},
     http::StatusCode,
 };
-use serde::{Deserialize, Serialize};
-use crate::services::TwoFactorService;
-use crate::models::two_factor::TwoFactorSetup;
-use crate::errors::AuthError;
 use onedev_db::repositories::Repository;
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
 /// 2FA setup response
@@ -68,84 +68,126 @@ pub struct BackupCodesResponse {
 
 /// GET /api/auth/2fa/setup
 pub async fn setup_two_factor(
-    State(crate::router::AuthState { two_factor_service, .. }): State<crate::router::AuthState>,
+    State(crate::router::AuthState {
+        two_factor_service, ..
+    }): State<crate::router::AuthState>,
     subject: crate::models::subject::Subject,
 ) -> Result<Json<TwoFactorSetupResponse>, AuthError> {
     let user_id = match subject {
         crate::models::subject::Subject::User(p) => p.user_id,
-        _ => return Err(AuthError::Unauthorized("User authentication required".to_string())),
+        _ => {
+            return Err(AuthError::Unauthorized(
+                "User authentication required".to_string(),
+            ));
+        }
     };
 
     // Get issuer from config (would be injected)
     let issuer = "OneDev";
-    
+
     let setup = two_factor_service.create_setup(user_id, issuer).await?;
     Ok(Json(setup.into()))
 }
 
 /// POST /api/auth/2fa/enable
 pub async fn enable_two_factor(
-    State(crate::router::AuthState { two_factor_service, .. }): State<crate::router::AuthState>,
+    State(crate::router::AuthState {
+        two_factor_service, ..
+    }): State<crate::router::AuthState>,
     subject: crate::models::subject::Subject,
     Json(request): Json<EnableTwoFactorRequest>,
 ) -> Result<StatusCode, AuthError> {
     let user_id = match subject {
         crate::models::subject::Subject::User(p) => p.user_id,
-        _ => return Err(AuthError::Unauthorized("User authentication required".to_string())),
+        _ => {
+            return Err(AuthError::Unauthorized(
+                "User authentication required".to_string(),
+            ));
+        }
     };
 
-    two_factor_service.enable(
-        user_id,
-        &request.code,
-        &request.secret,
-        request.backup_codes,
-    ).await?;
+    two_factor_service
+        .enable(
+            user_id,
+            &request.code,
+            &request.secret,
+            request.backup_codes,
+        )
+        .await?;
 
     Ok(StatusCode::NO_CONTENT)
 }
 
 /// POST /api/auth/2fa/disable
 pub async fn disable_two_factor(
-    State(crate::router::AuthState { two_factor_service, auth_service, .. }): State<crate::router::AuthState>,
+    State(crate::router::AuthState {
+        two_factor_service,
+        auth_service,
+        ..
+    }): State<crate::router::AuthState>,
     subject: crate::models::subject::Subject,
     Json(request): Json<DisableTwoFactorRequest>,
 ) -> Result<StatusCode, AuthError> {
     let user_id = match subject {
         crate::models::subject::Subject::User(p) => p.user_id,
-        _ => return Err(AuthError::Unauthorized("User authentication required".to_string())),
+        _ => {
+            return Err(AuthError::Unauthorized(
+                "User authentication required".to_string(),
+            ));
+        }
     };
 
     // Get user's password hash for verification
-    let user = auth_service.user_repo.find_by_id(&auth_service.db_pool, user_id).await?
+    let user = auth_service
+        .user_repo
+        .find_by_id(&auth_service.db_pool, user_id)
+        .await?
         .ok_or(AuthError::UserNotFound)?;
 
-    let password_hash = user.password_hash
+    let password_hash = user
+        .password_hash
         .ok_or(AuthError::Internal("User has no password set".to_string()))?;
 
-    two_factor_service.disable(user_id, &request.password, &password_hash).await?;
+    two_factor_service
+        .disable(user_id, &request.password, &password_hash)
+        .await?;
     Ok(StatusCode::NO_CONTENT)
 }
 
 /// POST /api/auth/2fa/backup-codes/regenerate
 pub async fn regenerate_backup_codes(
-    State(crate::router::AuthState { two_factor_service, auth_service, .. }): State<crate::router::AuthState>,
+    State(crate::router::AuthState {
+        two_factor_service,
+        auth_service,
+        ..
+    }): State<crate::router::AuthState>,
     subject: crate::models::subject::Subject,
     Json(request): Json<RegenerateBackupCodesRequest>,
 ) -> Result<Json<BackupCodesResponse>, AuthError> {
     let user_id = match subject {
         crate::models::subject::Subject::User(p) => p.user_id,
-        _ => return Err(AuthError::Unauthorized("User authentication required".to_string())),
+        _ => {
+            return Err(AuthError::Unauthorized(
+                "User authentication required".to_string(),
+            ));
+        }
     };
 
     // Get user's password hash for verification
-    let user = auth_service.user_repo.find_by_id(&auth_service.db_pool, user_id).await?
+    let user = auth_service
+        .user_repo
+        .find_by_id(&auth_service.db_pool, user_id)
+        .await?
         .ok_or(AuthError::UserNotFound)?;
 
-    let password_hash = user.password_hash
+    let password_hash = user
+        .password_hash
         .ok_or(AuthError::Internal("User has no password set".to_string()))?;
 
-    let backup_codes = two_factor_service.regenerate_backup_codes(user_id, &request.password, &password_hash).await?;
-    
+    let backup_codes = two_factor_service
+        .regenerate_backup_codes(user_id, &request.password, &password_hash)
+        .await?;
+
     Ok(Json(BackupCodesResponse { backup_codes }))
 }
 
@@ -162,10 +204,17 @@ pub async fn two_factor_status(
 ) -> Result<Json<TwoFactorStatusResponse>, AuthError> {
     let user_id = match subject {
         crate::models::subject::Subject::User(p) => p.user_id,
-        _ => return Err(AuthError::Unauthorized("User authentication required".to_string())),
+        _ => {
+            return Err(AuthError::Unauthorized(
+                "User authentication required".to_string(),
+            ));
+        }
     };
 
-    let user = auth_service.user_repo.find_by_id(&auth_service.db_pool, user_id).await?
+    let user = auth_service
+        .user_repo
+        .find_by_id(&auth_service.db_pool, user_id)
+        .await?
         .ok_or(AuthError::UserNotFound)?;
 
     Ok(Json(TwoFactorStatusResponse {

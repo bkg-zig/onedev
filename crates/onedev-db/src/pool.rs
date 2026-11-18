@@ -80,12 +80,21 @@ impl DbConfig {
     /// Load configuration from environment
     pub fn from_env() -> DbResult<Self> {
         let host = std::env::var("DB_HOST").unwrap_or_else(|_| "localhost".to_string());
-        let port = std::env::var("DB_PORT").unwrap_or_else(|_| "5432".to_string()).parse().unwrap_or(5432);
+        let port = std::env::var("DB_PORT")
+            .unwrap_or_else(|_| "5432".to_string())
+            .parse()
+            .unwrap_or(5432);
         let username = std::env::var("DB_USER").unwrap_or_else(|_| "onedev".to_string());
         let password = std::env::var("DB_PASSWORD").unwrap_or_else(|_| "onedev".to_string());
         let database = std::env::var("DB_NAME").unwrap_or_else(|_| "onedev".to_string());
-        let max_connections = std::env::var("DB_MAX_CONNECTIONS").unwrap_or_else(|_| "20".to_string()).parse().unwrap_or(20);
-        let min_connections = std::env::var("DB_MIN_CONNECTIONS").unwrap_or_else(|_| "5".to_string()).parse().unwrap_or(5);
+        let max_connections = std::env::var("DB_MAX_CONNECTIONS")
+            .unwrap_or_else(|_| "20".to_string())
+            .parse()
+            .unwrap_or(20);
+        let min_connections = std::env::var("DB_MIN_CONNECTIONS")
+            .unwrap_or_else(|_| "5".to_string())
+            .parse()
+            .unwrap_or(5);
 
         Ok(Self {
             host,
@@ -166,13 +175,17 @@ pub async fn create_sqlx_pool(config: &DbConfig) -> DbResult<SqlxPool<Postgres>>
 
 /// Create deadpool connection pool
 pub async fn create_deadpool_pool(config: &DbConfig) -> DbResult<Pool> {
-    let pool = config.deadpool_config()
+    let pool = config
+        .deadpool_config()
         .create_pool(Some(Runtime::Tokio1), NoTls)
         .map_err(|e| DbError::Pool(e.to_string()))?;
 
     // Test connection
     let client = pool.get().await.map_err(|e| DbError::Pool(e.to_string()))?;
-    client.execute("SELECT 1", &[]).await.map_err(|e| DbError::Pool(e.to_string()))?;
+    client
+        .execute("SELECT 1", &[])
+        .await
+        .map_err(|e| DbError::Pool(e.to_string()))?;
 
     info!("Deadpool connection pool created successfully");
     Ok(pool)

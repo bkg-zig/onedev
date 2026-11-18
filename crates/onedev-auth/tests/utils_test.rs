@@ -1,4 +1,4 @@
-use onedev_auth::utils::{constant_time_eq, format_principal, parse_principal, PrincipalType};
+use onedev_auth::utils::{PrincipalType, constant_time_eq, format_principal, parse_principal};
 
 #[test]
 fn principal_roundtrip() {

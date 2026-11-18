@@ -2,7 +2,7 @@
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use sqlx::{FromRow, Row};
+use sqlx::FromRow;
 use uuid::Uuid;
 
 /// Project visibility in the database
@@ -17,8 +17,12 @@ pub enum DbProjectVisibility {
 impl From<DbProjectVisibility> for onedev_core::models::project::ProjectVisibility {
     fn from(v: DbProjectVisibility) -> Self {
         match v {
-            DbProjectVisibility::Private => onedev_core::models::project::ProjectVisibility::Private,
-            DbProjectVisibility::Internal => onedev_core::models::project::ProjectVisibility::Internal,
+            DbProjectVisibility::Private => {
+                onedev_core::models::project::ProjectVisibility::Private
+            }
+            DbProjectVisibility::Internal => {
+                onedev_core::models::project::ProjectVisibility::Internal
+            }
             DbProjectVisibility::Public => onedev_core::models::project::ProjectVisibility::Public,
         }
     }
@@ -27,8 +31,12 @@ impl From<DbProjectVisibility> for onedev_core::models::project::ProjectVisibili
 impl From<onedev_core::models::project::ProjectVisibility> for DbProjectVisibility {
     fn from(v: onedev_core::models::project::ProjectVisibility) -> Self {
         match v {
-            onedev_core::models::project::ProjectVisibility::Private => DbProjectVisibility::Private,
-            onedev_core::models::project::ProjectVisibility::Internal => DbProjectVisibility::Internal,
+            onedev_core::models::project::ProjectVisibility::Private => {
+                DbProjectVisibility::Private
+            }
+            onedev_core::models::project::ProjectVisibility::Internal => {
+                DbProjectVisibility::Internal
+            }
             onedev_core::models::project::ProjectVisibility::Public => DbProjectVisibility::Public,
         }
     }
@@ -49,7 +57,9 @@ impl From<DbProjectStatus> for onedev_core::models::project::ProjectStatus {
         match s {
             DbProjectStatus::Active => onedev_core::models::project::ProjectStatus::Active,
             DbProjectStatus::Archived => onedev_core::models::project::ProjectStatus::Archived,
-            DbProjectStatus::Maintenance => onedev_core::models::project::ProjectStatus::Maintenance,
+            DbProjectStatus::Maintenance => {
+                onedev_core::models::project::ProjectStatus::Maintenance
+            }
             DbProjectStatus::Deleted => onedev_core::models::project::ProjectStatus::Deleted,
         }
     }
@@ -60,7 +70,9 @@ impl From<onedev_core::models::project::ProjectStatus> for DbProjectStatus {
         match s {
             onedev_core::models::project::ProjectStatus::Active => DbProjectStatus::Active,
             onedev_core::models::project::ProjectStatus::Archived => DbProjectStatus::Archived,
-            onedev_core::models::project::ProjectStatus::Maintenance => DbProjectStatus::Maintenance,
+            onedev_core::models::project::ProjectStatus::Maintenance => {
+                DbProjectStatus::Maintenance
+            }
             onedev_core::models::project::ProjectStatus::Deleted => DbProjectStatus::Deleted,
         }
     }
@@ -273,7 +285,8 @@ impl DbProject {
             pages_enabled: self.pages_enabled,
             container_registry_enabled: self.container_registry_enabled,
             only_allow_merge_if_pipeline_succeeds: self.only_allow_merge_if_pipeline_succeeds,
-            only_allow_merge_if_all_discussions_resolved: self.only_allow_merge_if_all_discussions_resolved,
+            only_allow_merge_if_all_discussions_resolved: self
+                .only_allow_merge_if_all_discussions_resolved,
             remove_source_branch_after_merge: self.remove_source_branch_after_merge,
             enable_merge_commit: self.enable_merge_commit,
             enable_squash_merge: self.enable_squash_merge,
@@ -316,7 +329,11 @@ impl DbProject {
 
 impl DbCreateProject {
     /// Create from core CreateProject
-    pub fn from_core(create: &onedev_core::models::project::CreateProject, owner_id: i64, owner_type: DbOwnerType) -> Self {
+    pub fn from_core(
+        create: &onedev_core::models::project::CreateProject,
+        owner_id: i64,
+        owner_type: DbOwnerType,
+    ) -> Self {
         Self {
             name: create.name.clone(),
             path: create.path.clone(),

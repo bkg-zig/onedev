@@ -3,7 +3,9 @@
 use super::*;
 
 /// Workspace status
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display,
+)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum WorkspaceStatus {
@@ -17,7 +19,9 @@ pub enum WorkspaceStatus {
 }
 
 /// Workspace type
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display,
+)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum WorkspaceType {
@@ -42,7 +46,7 @@ pub struct Workspace {
     pub container_id: Option<String>,
     pub container_image: String,
     pub cpu_limit: Option<u32>,
-    pub memory_limit: Option<u64>, // bytes
+    pub memory_limit: Option<u64>,  // bytes
     pub storage_limit: Option<u64>, // bytes
     pub ports: Vec<WorkspacePort>,
     pub volumes: Vec<WorkspaceVolume>,
@@ -75,7 +79,7 @@ pub struct WorkspaceSpec {
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
 pub struct WorkspaceResources {
     pub cpu: Option<u32>,
-    pub memory: Option<String>, // e.g., "4Gi"
+    pub memory: Option<String>,  // e.g., "4Gi"
     pub storage: Option<String>, // e.g., "10Gi"
 }
 
@@ -105,7 +109,9 @@ pub struct WorkspacePortSpec {
     pub public: bool,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display,
+)]
 #[serde(rename_all = "lowercase")]
 #[strum(serialize_all = "lowercase")]
 pub enum PortProtocol {
@@ -132,7 +138,9 @@ pub struct WorkspaceVolumeSpec {
     pub read_only: bool,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display,
+)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum VolumeType {
@@ -187,7 +195,10 @@ pub struct WorkspaceQuery {
 
 impl Workspace {
     pub fn is_active(&self) -> bool {
-        matches!(self.status, WorkspaceStatus::Running | WorkspaceStatus::Creating)
+        matches!(
+            self.status,
+            WorkspaceStatus::Running | WorkspaceStatus::Creating
+        )
     }
 
     pub fn is_stopped(&self) -> bool {
@@ -195,12 +206,19 @@ impl Workspace {
     }
 
     pub fn is_terminal(&self) -> bool {
-        matches!(self.status, WorkspaceStatus::Failed | WorkspaceStatus::Deleted)
+        matches!(
+            self.status,
+            WorkspaceStatus::Failed | WorkspaceStatus::Deleted
+        )
     }
 
     pub fn url(&self, base_url: &str) -> Option<String> {
         if self.status == WorkspaceStatus::Running {
-            Some(format!("{}/-/workspaces/{}", base_url.trim_end_matches('/'), self.id))
+            Some(format!(
+                "{}/-/workspaces/{}",
+                base_url.trim_end_matches('/'),
+                self.id
+            ))
         } else {
             None
         }

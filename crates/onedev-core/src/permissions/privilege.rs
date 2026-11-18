@@ -156,7 +156,10 @@ pub struct ProjectPrivilege {
 
 impl ProjectPrivilege {
     pub fn new(project_id: i64, privilege: Privilege) -> Self {
-        Self { project_id, privilege }
+        Self {
+            project_id,
+            privilege,
+        }
     }
 
     /// Vanilla: the granting project must be the required project itself
@@ -204,22 +207,14 @@ impl Privilege {
 
             MaintainProject => matches!(other, MaintainProject),
 
-            CreateChildren => {
-                matches!(other, CreateChildren) || AccessProject.implies(other)
-            }
+            CreateChildren => matches!(other, CreateChildren) || AccessProject.implies(other),
 
-            ManagePullRequests => {
-                matches!(other, ManagePullRequests) || WriteCode.implies(other)
-            }
-            ManageCodeComments => {
-                matches!(other, ManageCodeComments) || WriteCode.implies(other)
-            }
+            ManagePullRequests => matches!(other, ManagePullRequests) || WriteCode.implies(other),
+            ManageCodeComments => matches!(other, ManageCodeComments) || WriteCode.implies(other),
 
             // WriteCode -> CreateWorkspaces -> ReadCode -> AccessProject
             WriteCode => matches!(other, WriteCode) || CreateWorkspaces.implies(other),
-            CreateWorkspaces => {
-                matches!(other, CreateWorkspaces) || ReadCode.implies(other)
-            }
+            CreateWorkspaces => matches!(other, CreateWorkspaces) || ReadCode.implies(other),
             ReadCode => matches!(other, ReadCode) || AccessProject.implies(other),
 
             WritePack => matches!(other, WritePack) || ReadPack.implies(other),
@@ -241,9 +236,7 @@ impl Privilege {
             AccessTimeTracking => {
                 matches!(other, AccessTimeTracking) || AccessProject.implies(other)
             }
-            ScheduleIssues => {
-                matches!(other, ScheduleIssues) || AccessProject.implies(other)
-            }
+            ScheduleIssues => matches!(other, ScheduleIssues) || AccessProject.implies(other),
             EditIssueField(fields) => match other {
                 EditIssueField(other_fields) => match (fields, other_fields) {
                     (None, _) => true,
@@ -254,9 +247,7 @@ impl Privilege {
             },
             EditFieldsOfOtherIssues => matches!(other, EditFieldsOfOtherIssues),
             EditIssueLink(link) => match other {
-                EditIssueLink(other_link) => {
-                    link.is_none() || link == other_link
-                }
+                EditIssueLink(other_link) => link.is_none() || link == other_link,
                 _ => AccessProject.implies(other),
             },
 
@@ -282,7 +273,10 @@ impl Privilege {
                 _ => AccessProject.implies(other),
             },
 
-            Job { job_names, privilege } => match other {
+            Job {
+                job_names,
+                privilege,
+            } => match other {
                 Job {
                     job_names: other_names,
                     privilege: other_privilege,
@@ -356,8 +350,7 @@ mod tests {
     fn manage_issues_implies_field_and_schedule_privileges() {
         assert!(Privilege::ManageIssues.implies(&Privilege::ScheduleIssues));
         assert!(Privilege::ManageIssues.implies(&Privilege::AccessTimeTracking));
-        assert!(Privilege::ManageIssues
-            .implies(&Privilege::EditIssueField(Some(set(&["Title"])))));
+        assert!(Privilege::ManageIssues.implies(&Privilege::EditIssueField(Some(set(&["Title"])))));
         assert!(Privilege::ManageIssues.implies(&Privilege::AccessConfidentialIssues));
         assert!(Privilege::ManageIssues.implies(&Privilege::ConfidentialIssue(7)));
     }

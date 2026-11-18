@@ -1,15 +1,15 @@
 //! Group HTTP Handlers
 
-use axum::{
-    extract::{State, Path, Query, Json},
-    http::StatusCode,
-};
-use serde::{Deserialize, Serialize};
+use crate::AppState;
+use crate::errors::AuthError;
 use crate::models::groups::*;
 use crate::models::pagination::{OffsetPagination, PaginatedResponse};
 use crate::models::users::UserRef;
-use crate::errors::AuthError;
-use crate::AppState;
+use axum::{
+    extract::{Json, Path, Query, State},
+    http::StatusCode,
+};
+use serde::{Deserialize, Serialize};
 
 /// GET /api/groups
 pub async fn list_groups(

@@ -1,12 +1,12 @@
 //! User Repository
 
 use crate::{
-    models::user::{DbUser, DbCreateUser, DbUpdateUser, UserQueryBuilder},
-    repositories::Repository,
     DbPool, DbResult,
+    models::user::{DbCreateUser, DbUpdateUser, DbUser, UserQueryBuilder},
+    repositories::Repository,
 };
 use async_trait::async_trait;
-use sqlx::{FromRow, Row};
+use sqlx::FromRow;
 
 pub struct UserRepository;
 
@@ -99,7 +99,10 @@ impl UserRepository {
         let mut param_idx = 1;
 
         if let Some(_term) = term {
-            conditions.push(format!("(name ILIKE ${} OR full_name ILIKE ${} OR email ILIKE ${})", param_idx, param_idx, param_idx));
+            conditions.push(format!(
+                "(name ILIKE ${} OR full_name ILIKE ${} OR email ILIKE ${})",
+                param_idx, param_idx, param_idx
+            ));
             param_idx += 1;
         }
 
@@ -143,7 +146,10 @@ impl UserRepository {
         q = q.bind((page * per_page) as i64);
 
         let rows = q.fetch_all(pool).await?;
-        let users = rows.into_iter().map(|r| DbUser::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let users = rows
+            .into_iter()
+            .map(|r| DbUser::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(users)
     }
 
@@ -160,7 +166,10 @@ impl UserRepository {
         let mut param_idx = 1;
 
         if let Some(_term) = term {
-            conditions.push(format!("(name ILIKE ${} OR full_name ILIKE ${} OR email ILIKE ${})", param_idx, param_idx, param_idx));
+            conditions.push(format!(
+                "(name ILIKE ${} OR full_name ILIKE ${} OR email ILIKE ${})",
+                param_idx, param_idx, param_idx
+            ));
             param_idx += 1;
         }
 
@@ -228,10 +237,12 @@ impl Repository<DbUser, DbCreateUser, DbUpdateUser> for UserRepository {
             .fetch_one(pool)
             .await?;
 
-        self.find_by_id(pool, id).await?.ok_or_else(|| crate::DbError::NotFound {
-            entity_type: "User".to_string(),
-            id: id.to_string(),
-        })
+        self.find_by_id(pool, id)
+            .await?
+            .ok_or_else(|| crate::DbError::NotFound {
+                entity_type: "User".to_string(),
+                id: id.to_string(),
+            })
     }
 
     async fn find_by_id(&self, pool: &DbPool, id: i64) -> DbResult<Option<DbUser>> {
@@ -245,7 +256,10 @@ impl Repository<DbUser, DbCreateUser, DbUpdateUser> for UserRepository {
 
     async fn update(&self, pool: &DbPool, id: i64, update: DbUpdateUser) -> DbResult<DbUser> {
         let ai_setting_json = update.ai_setting.map(serde_json::to_value).transpose()?;
-        let two_factor_auth_json = update.two_factor_auth.map(serde_json::to_value).transpose()?;
+        let two_factor_auth_json = update
+            .two_factor_auth
+            .map(serde_json::to_value)
+            .transpose()?;
         let backup_codes_json = update.backup_codes.map(serde_json::to_value).transpose()?;
 
         let row = sqlx::query(UserQueryBuilder::update())
@@ -287,7 +301,10 @@ impl Repository<DbUser, DbCreateUser, DbUpdateUser> for UserRepository {
             .fetch_all(pool)
             .await?;
 
-        let users = rows.into_iter().map(|r| DbUser::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let users = rows
+            .into_iter()
+            .map(|r| DbUser::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(users)
     }
 

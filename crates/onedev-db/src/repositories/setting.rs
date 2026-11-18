@@ -1,9 +1,12 @@
 //! Setting Repository
 
 use crate::{
-    models::setting::{DbSystemSetting, DbProjectSetting, DbUserSetting, DbCreateSetting, DbUpdateSetting, SystemSettingQueryBuilder, ProjectSettingQueryBuilder},
-    repositories::Repository,
     DbPool, DbResult,
+    models::setting::{
+        DbCreateSetting, DbProjectSetting, DbSystemSetting, DbUpdateSetting, DbUserSetting,
+        ProjectSettingQueryBuilder, SystemSettingQueryBuilder,
+    },
+    repositories::Repository,
 };
 use async_trait::async_trait;
 use sqlx::FromRow;
@@ -82,10 +85,12 @@ impl Repository<DbSystemSetting, DbCreateSetting, DbUpdateSetting> for SystemSet
             .fetch_one(pool)
             .await?;
 
-        self.find_by_id(pool, id).await?.ok_or_else(|| crate::DbError::NotFound {
-            entity_type: "SystemSetting".to_string(),
-            id: id.to_string(),
-        })
+        self.find_by_id(pool, id)
+            .await?
+            .ok_or_else(|| crate::DbError::NotFound {
+                entity_type: "SystemSetting".to_string(),
+                id: id.to_string(),
+            })
     }
 
     async fn find_by_id(&self, pool: &DbPool, id: i64) -> DbResult<Option<DbSystemSetting>> {
@@ -97,7 +102,12 @@ impl Repository<DbSystemSetting, DbCreateSetting, DbUpdateSetting> for SystemSet
         Ok(row.map(|r| DbSystemSetting::from_row(&r)).transpose()?)
     }
 
-    async fn update(&self, pool: &DbPool, id: i64, update: DbUpdateSetting) -> DbResult<DbSystemSetting> {
+    async fn update(
+        &self,
+        pool: &DbPool,
+        id: i64,
+        update: DbUpdateSetting,
+    ) -> DbResult<DbSystemSetting> {
         let row = sqlx::query(SystemSettingQueryBuilder::update())
             .bind(id)
             .bind(update.value)
@@ -118,15 +128,17 @@ impl Repository<DbSystemSetting, DbCreateSetting, DbUpdateSetting> for SystemSet
     }
 
     async fn list(&self, pool: &DbPool, limit: i64, offset: i64) -> DbResult<Vec<DbSystemSetting>> {
-        let rows = sqlx::query(
-            "SELECT * FROM system_settings ORDER BY category, key LIMIT $1 OFFSET $2"
-        )
-        .bind(limit)
-        .bind(offset)
-        .fetch_all(pool)
-        .await?;
+        let rows =
+            sqlx::query("SELECT * FROM system_settings ORDER BY category, key LIMIT $1 OFFSET $2")
+                .bind(limit)
+                .bind(offset)
+                .fetch_all(pool)
+                .await?;
 
-        let settings = rows.into_iter().map(|r| DbSystemSetting::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let settings = rows
+            .into_iter()
+            .map(|r| DbSystemSetting::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(settings)
     }
 
@@ -146,18 +158,30 @@ impl ProjectSettingRepository {
     }
 
     /// Find by project ID
-    pub async fn find_by_project_id(&self, pool: &DbPool, project_id: i64) -> DbResult<Vec<DbProjectSetting>> {
+    pub async fn find_by_project_id(
+        &self,
+        pool: &DbPool,
+        project_id: i64,
+    ) -> DbResult<Vec<DbProjectSetting>> {
         let rows = sqlx::query(ProjectSettingQueryBuilder::select_by_project_id())
             .bind(project_id)
             .fetch_all(pool)
             .await?;
 
-        let settings = rows.into_iter().map(|r| DbProjectSetting::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let settings = rows
+            .into_iter()
+            .map(|r| DbProjectSetting::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(settings)
     }
 
     /// Find by project and key
-    pub async fn find_by_project_and_key(&self, pool: &DbPool, project_id: i64, key: &str) -> DbResult<Option<DbProjectSetting>> {
+    pub async fn find_by_project_and_key(
+        &self,
+        pool: &DbPool,
+        project_id: i64,
+        key: &str,
+    ) -> DbResult<Option<DbProjectSetting>> {
         let row = sqlx::query(ProjectSettingQueryBuilder::select_by_project_and_key())
             .bind(project_id)
             .bind(key)
@@ -168,7 +192,13 @@ impl ProjectSettingRepository {
     }
 
     /// Upsert setting
-    pub async fn upsert(&self, pool: &DbPool, project_id: i64, key: &str, value: serde_json::Value) -> DbResult<i64> {
+    pub async fn upsert(
+        &self,
+        pool: &DbPool,
+        project_id: i64,
+        key: &str,
+        value: serde_json::Value,
+    ) -> DbResult<i64> {
         let id: i64 = sqlx::query_scalar(ProjectSettingQueryBuilder::upsert())
             .bind(uuid::Uuid::new_v4())
             .bind(project_id)
@@ -200,33 +230,47 @@ impl UserSettingRepository {
     }
 
     /// Find by user ID
-    pub async fn find_by_user_id(&self, pool: &DbPool, user_id: i64) -> DbResult<Vec<DbUserSetting>> {
-        let rows = sqlx::query(
-            "SELECT * FROM user_settings WHERE user_id = $1 ORDER BY key"
-        )
-        .bind(user_id)
-        .fetch_all(pool)
-        .await?;
+    pub async fn find_by_user_id(
+        &self,
+        pool: &DbPool,
+        user_id: i64,
+    ) -> DbResult<Vec<DbUserSetting>> {
+        let rows = sqlx::query("SELECT * FROM user_settings WHERE user_id = $1 ORDER BY key")
+            .bind(user_id)
+            .fetch_all(pool)
+            .await?;
 
-        let settings = rows.into_iter().map(|r| DbUserSetting::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let settings = rows
+            .into_iter()
+            .map(|r| DbUserSetting::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(settings)
     }
 
     /// Find by user and key
-    pub async fn find_by_user_and_key(&self, pool: &DbPool, user_id: i64, key: &str) -> DbResult<Option<DbUserSetting>> {
-        let row = sqlx::query(
-            "SELECT * FROM user_settings WHERE user_id = $1 AND key = $2"
-        )
-        .bind(user_id)
-        .bind(key)
-        .fetch_optional(pool)
-        .await?;
+    pub async fn find_by_user_and_key(
+        &self,
+        pool: &DbPool,
+        user_id: i64,
+        key: &str,
+    ) -> DbResult<Option<DbUserSetting>> {
+        let row = sqlx::query("SELECT * FROM user_settings WHERE user_id = $1 AND key = $2")
+            .bind(user_id)
+            .bind(key)
+            .fetch_optional(pool)
+            .await?;
 
         Ok(row.map(|r| DbUserSetting::from_row(&r)).transpose()?)
     }
 
     /// Upsert setting
-    pub async fn upsert(&self, pool: &DbPool, user_id: i64, key: &str, value: serde_json::Value) -> DbResult<i64> {
+    pub async fn upsert(
+        &self,
+        pool: &DbPool,
+        user_id: i64,
+        key: &str,
+        value: serde_json::Value,
+    ) -> DbResult<i64> {
         let id: i64 = sqlx::query_scalar(
             r#"
             INSERT INTO user_settings (uuid, user_id, key, value, created_at, updated_at)

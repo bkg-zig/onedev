@@ -1,13 +1,13 @@
 //! Merge Request HTTP Handlers
 
+use crate::AppState;
+use crate::errors::AuthError;
+use crate::models::pagination::{OffsetPagination, PaginatedResponse};
 use axum::{
-    extract::{State, Path, Query, Json},
+    extract::{Json, Path, Query, State},
     http::StatusCode,
 };
 use serde::{Deserialize, Serialize};
-use crate::models::pagination::{OffsetPagination, PaginatedResponse};
-use crate::errors::AuthError;
-use crate::AppState;
 
 /// Merge request state
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, utoipa::ToSchema)]

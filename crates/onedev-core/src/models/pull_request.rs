@@ -3,7 +3,9 @@
 use super::*;
 
 /// Merge request state
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display,
+)]
 #[serde(rename_all = "lowercase")]
 #[strum(serialize_all = "lowercase")]
 pub enum MergeRequestState {
@@ -15,7 +17,9 @@ pub enum MergeRequestState {
 }
 
 /// Merge strategy
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display,
+)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum MergeStrategy {
@@ -67,7 +71,9 @@ pub struct MergeRequest {
     pub remove_source_branch: bool,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display,
+)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum MergeStatus {
@@ -238,7 +244,9 @@ pub struct Approval {
     pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display,
+)]
 #[serde(rename_all = "lowercase")]
 #[strum(serialize_all = "lowercase")]
 pub enum ApprovalState {
@@ -285,7 +293,10 @@ impl MergeRequest {
     }
 
     pub fn is_open(&self) -> bool {
-        matches!(self.state, MergeRequestState::Open | MergeRequestState::Draft)
+        matches!(
+            self.state,
+            MergeRequestState::Open | MergeRequestState::Draft
+        )
     }
 
     pub fn is_merged(&self) -> bool {
@@ -293,7 +304,10 @@ impl MergeRequest {
     }
 
     pub fn is_closed(&self) -> bool {
-        matches!(self.state, MergeRequestState::Closed | MergeRequestState::Merged)
+        matches!(
+            self.state,
+            MergeRequestState::Closed | MergeRequestState::Merged
+        )
     }
 
     pub fn can_merge(&self) -> bool {

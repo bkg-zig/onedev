@@ -3,7 +3,18 @@
 use super::*;
 
 /// User types in the system
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, strum::EnumString, strum::Display)]
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    Hash,
+    Serialize,
+    Deserialize,
+    strum::EnumString,
+    strum::Display,
+)]
 #[serde(rename_all = "lowercase")]
 #[strum(serialize_all = "lowercase")]
 pub enum UserType {
@@ -16,7 +27,9 @@ pub enum UserType {
 }
 
 /// User status
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display,
+)]
 #[serde(rename_all = "lowercase")]
 #[strum(serialize_all = "lowercase")]
 pub enum UserStatus {
@@ -47,7 +60,7 @@ pub struct User {
     pub avatar_url: Option<String>,
     pub two_factor_enabled: bool,
     pub two_factor_secret: Option<String>, // Encrypted TOTP secret
-    pub backup_codes: Vec<String>, // Hashed backup codes
+    pub backup_codes: Vec<String>,         // Hashed backup codes
     pub last_login_at: Option<DateTime<Utc>>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,

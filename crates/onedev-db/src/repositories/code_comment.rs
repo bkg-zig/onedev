@@ -1,9 +1,11 @@
 //! Code Comment Repository
 
 use crate::{
-    models::code_comment::{DbCodeComment, DbCreateCodeComment, DbUpdateCodeComment, CodeCommentQueryBuilder},
-    repositories::Repository,
     DbPool, DbResult,
+    models::code_comment::{
+        CodeCommentQueryBuilder, DbCodeComment, DbCreateCodeComment, DbUpdateCodeComment,
+    },
+    repositories::Repository,
 };
 use async_trait::async_trait;
 use sqlx::FromRow;
@@ -16,38 +18,59 @@ impl CodeCommentRepository {
     }
 
     /// Find by pull request ID
-    pub async fn find_by_pull_request(&self, pool: &DbPool, pr_id: i64) -> DbResult<Vec<DbCodeComment>> {
+    pub async fn find_by_pull_request(
+        &self,
+        pool: &DbPool,
+        pr_id: i64,
+    ) -> DbResult<Vec<DbCodeComment>> {
         let rows = sqlx::query(CodeCommentQueryBuilder::select_by_pull_request())
             .bind(pr_id)
             .fetch_all(pool)
             .await?;
 
-        let comments = rows.into_iter().map(|r| DbCodeComment::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let comments = rows
+            .into_iter()
+            .map(|r| DbCodeComment::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(comments)
     }
 
     /// Find by commit
-    pub async fn find_by_commit(&self, pool: &DbPool, project_id: i64, commit_sha: &str) -> DbResult<Vec<DbCodeComment>> {
+    pub async fn find_by_commit(
+        &self,
+        pool: &DbPool,
+        project_id: i64,
+        commit_sha: &str,
+    ) -> DbResult<Vec<DbCodeComment>> {
         let rows = sqlx::query(CodeCommentQueryBuilder::select_by_commit())
             .bind(project_id)
             .bind(commit_sha)
             .fetch_all(pool)
             .await?;
 
-        let comments = rows.into_iter().map(|r| DbCodeComment::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let comments = rows
+            .into_iter()
+            .map(|r| DbCodeComment::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(comments)
     }
 
     /// Find replies (children)
-    pub async fn find_replies(&self, pool: &DbPool, parent_id: i64) -> DbResult<Vec<DbCodeComment>> {
-        let rows = sqlx::query(
-            "SELECT * FROM code_comments WHERE parent_id = $1 ORDER BY created_at ASC"
-        )
-        .bind(parent_id)
-        .fetch_all(pool)
-        .await?;
+    pub async fn find_replies(
+        &self,
+        pool: &DbPool,
+        parent_id: i64,
+    ) -> DbResult<Vec<DbCodeComment>> {
+        let rows =
+            sqlx::query("SELECT * FROM code_comments WHERE parent_id = $1 ORDER BY created_at ASC")
+                .bind(parent_id)
+                .fetch_all(pool)
+                .await?;
 
-        let comments = rows.into_iter().map(|r| DbCodeComment::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let comments = rows
+            .into_iter()
+            .map(|r| DbCodeComment::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(comments)
     }
 }
@@ -79,10 +102,12 @@ impl Repository<DbCodeComment, DbCreateCodeComment, DbUpdateCodeComment> for Cod
             .fetch_one(pool)
             .await?;
 
-        self.find_by_id(pool, id).await?.ok_or_else(|| crate::DbError::NotFound {
-            entity_type: "CodeComment".to_string(),
-            id: id.to_string(),
-        })
+        self.find_by_id(pool, id)
+            .await?
+            .ok_or_else(|| crate::DbError::NotFound {
+                entity_type: "CodeComment".to_string(),
+                id: id.to_string(),
+            })
     }
 
     async fn find_by_id(&self, pool: &DbPool, id: i64) -> DbResult<Option<DbCodeComment>> {
@@ -94,7 +119,12 @@ impl Repository<DbCodeComment, DbCreateCodeComment, DbUpdateCodeComment> for Cod
         Ok(row.map(|r| DbCodeComment::from_row(&r)).transpose()?)
     }
 
-    async fn update(&self, pool: &DbPool, id: i64, update: DbUpdateCodeComment) -> DbResult<DbCodeComment> {
+    async fn update(
+        &self,
+        pool: &DbPool,
+        id: i64,
+        update: DbUpdateCodeComment,
+    ) -> DbResult<DbCodeComment> {
         let row = sqlx::query(CodeCommentQueryBuilder::update())
             .bind(id)
             .bind(&update.content)
@@ -116,15 +146,17 @@ impl Repository<DbCodeComment, DbCreateCodeComment, DbUpdateCodeComment> for Cod
     }
 
     async fn list(&self, pool: &DbPool, limit: i64, offset: i64) -> DbResult<Vec<DbCodeComment>> {
-        let rows = sqlx::query(
-            "SELECT * FROM code_comments ORDER BY created_at DESC LIMIT $1 OFFSET $2"
-        )
-        .bind(limit)
-        .bind(offset)
-        .fetch_all(pool)
-        .await?;
+        let rows =
+            sqlx::query("SELECT * FROM code_comments ORDER BY created_at DESC LIMIT $1 OFFSET $2")
+                .bind(limit)
+                .bind(offset)
+                .fetch_all(pool)
+                .await?;
 
-        let comments = rows.into_iter().map(|r| DbCodeComment::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let comments = rows
+            .into_iter()
+            .map(|r| DbCodeComment::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(comments)
     }
 

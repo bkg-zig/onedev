@@ -6,10 +6,10 @@
 //! - An anonymous/unauthenticated request (Anonymous)
 
 use crate::errors::AuthError;
-use crate::models::principal::{UserPrincipal, AccessTokenPrincipal};
+use crate::models::principal::{AccessTokenPrincipal, UserPrincipal};
 use axum::extract::FromRequestParts;
 use axum::http::request::Parts;
-use onedev_core::models::user::{UserType, UserRef};
+use onedev_core::models::user::{UserRef, UserType};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
@@ -70,7 +70,9 @@ impl Subject {
     /// Check if subject can impersonate (has sudo scope)
     pub fn can_impersonate(&self) -> bool {
         match self {
-            Subject::AccessToken(p) => p.scopes.contains(onedev_core::models::access_token::TokenScope::SUDO),
+            Subject::AccessToken(p) => p
+                .scopes
+                .contains(onedev_core::models::access_token::TokenScope::SUDO),
             _ => false,
         }
     }
@@ -79,7 +81,9 @@ impl Subject {
     pub fn is_service_account(&self) -> bool {
         match self {
             Subject::User(p) => p.user_type == UserType::Service,
-            Subject::AccessToken(p) => p.token_type == onedev_core::models::access_token::AccessTokenType::ServiceAccount,
+            Subject::AccessToken(p) => {
+                p.token_type == onedev_core::models::access_token::AccessTokenType::ServiceAccount
+            }
             Subject::Anonymous => false,
         }
     }
@@ -125,7 +129,11 @@ where
     type Rejection = AuthError;
 
     async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
-        Ok(parts.extensions.get::<Subject>().cloned().unwrap_or(Subject::Anonymous))
+        Ok(parts
+            .extensions
+            .get::<Subject>()
+            .cloned()
+            .unwrap_or(Subject::Anonymous))
     }
 }
 
@@ -138,7 +146,9 @@ tokio::task_local! {
 
 /// Get the current subject from task-local storage
 pub fn current_subject() -> Subject {
-    CURRENT_SUBJECT.try_with(|s| s.clone()).unwrap_or(Subject::Anonymous)
+    CURRENT_SUBJECT
+        .try_with(|s| s.clone())
+        .unwrap_or(Subject::Anonymous)
 }
 
 /// Set the current subject for the current task

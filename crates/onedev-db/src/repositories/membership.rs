@@ -1,9 +1,11 @@
 //! Membership Repository
 
 use crate::{
-    models::membership::{DbMembership, DbCreateMembership, DbUpdateMembership, MembershipQueryBuilder},
-    repositories::Repository,
     DbPool, DbResult,
+    models::membership::{
+        DbCreateMembership, DbMembership, DbUpdateMembership, MembershipQueryBuilder,
+    },
+    repositories::Repository,
 };
 use async_trait::async_trait;
 use sqlx::FromRow;
@@ -16,29 +18,48 @@ impl MembershipRepository {
     }
 
     /// Find by user ID
-    pub async fn find_by_user_id(&self, pool: &DbPool, user_id: i64) -> DbResult<Vec<DbMembership>> {
+    pub async fn find_by_user_id(
+        &self,
+        pool: &DbPool,
+        user_id: i64,
+    ) -> DbResult<Vec<DbMembership>> {
         let rows = sqlx::query(MembershipQueryBuilder::select_by_user_id())
             .bind(user_id)
             .fetch_all(pool)
             .await?;
 
-        let memberships = rows.into_iter().map(|r| DbMembership::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let memberships = rows
+            .into_iter()
+            .map(|r| DbMembership::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(memberships)
     }
 
     /// Find by group ID
-    pub async fn find_by_group_id(&self, pool: &DbPool, group_id: i64) -> DbResult<Vec<DbMembership>> {
+    pub async fn find_by_group_id(
+        &self,
+        pool: &DbPool,
+        group_id: i64,
+    ) -> DbResult<Vec<DbMembership>> {
         let rows = sqlx::query(MembershipQueryBuilder::select_by_group_id())
             .bind(group_id)
             .fetch_all(pool)
             .await?;
 
-        let memberships = rows.into_iter().map(|r| DbMembership::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let memberships = rows
+            .into_iter()
+            .map(|r| DbMembership::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(memberships)
     }
 
     /// Find by user and group
-    pub async fn find_by_user_and_group(&self, pool: &DbPool, user_id: i64, group_id: i64) -> DbResult<Option<DbMembership>> {
+    pub async fn find_by_user_and_group(
+        &self,
+        pool: &DbPool,
+        user_id: i64,
+        group_id: i64,
+    ) -> DbResult<Option<DbMembership>> {
         let row = sqlx::query(MembershipQueryBuilder::select_by_user_and_group())
             .bind(user_id)
             .bind(group_id)
@@ -49,7 +70,12 @@ impl MembershipRepository {
     }
 
     /// Delete by user and group
-    pub async fn delete_by_user_and_group(&self, pool: &DbPool, user_id: i64, group_id: i64) -> DbResult<()> {
+    pub async fn delete_by_user_and_group(
+        &self,
+        pool: &DbPool,
+        user_id: i64,
+        group_id: i64,
+    ) -> DbResult<()> {
         sqlx::query(MembershipQueryBuilder::delete_by_user_and_group())
             .bind(user_id)
             .bind(group_id)
@@ -75,10 +101,12 @@ impl Repository<DbMembership, DbCreateMembership, DbUpdateMembership> for Member
             .fetch_one(pool)
             .await?;
 
-        self.find_by_id(pool, id).await?.ok_or_else(|| crate::DbError::NotFound {
-            entity_type: "Membership".to_string(),
-            id: id.to_string(),
-        })
+        self.find_by_id(pool, id)
+            .await?
+            .ok_or_else(|| crate::DbError::NotFound {
+                entity_type: "Membership".to_string(),
+                id: id.to_string(),
+            })
     }
 
     async fn find_by_id(&self, pool: &DbPool, id: i64) -> DbResult<Option<DbMembership>> {
@@ -90,7 +118,12 @@ impl Repository<DbMembership, DbCreateMembership, DbUpdateMembership> for Member
         Ok(row.map(|r| DbMembership::from_row(&r)).transpose()?)
     }
 
-    async fn update(&self, pool: &DbPool, id: i64, update: DbUpdateMembership) -> DbResult<DbMembership> {
+    async fn update(
+        &self,
+        pool: &DbPool,
+        id: i64,
+        update: DbUpdateMembership,
+    ) -> DbResult<DbMembership> {
         let row = sqlx::query(MembershipQueryBuilder::update())
             .bind(id)
             .bind(update.role)
@@ -109,15 +142,17 @@ impl Repository<DbMembership, DbCreateMembership, DbUpdateMembership> for Member
     }
 
     async fn list(&self, pool: &DbPool, limit: i64, offset: i64) -> DbResult<Vec<DbMembership>> {
-        let rows = sqlx::query(
-            "SELECT * FROM memberships ORDER BY created_at DESC LIMIT $1 OFFSET $2"
-        )
-        .bind(limit)
-        .bind(offset)
-        .fetch_all(pool)
-        .await?;
+        let rows =
+            sqlx::query("SELECT * FROM memberships ORDER BY created_at DESC LIMIT $1 OFFSET $2")
+                .bind(limit)
+                .bind(offset)
+                .fetch_all(pool)
+                .await?;
 
-        let memberships = rows.into_iter().map(|r| DbMembership::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let memberships = rows
+            .into_iter()
+            .map(|r| DbMembership::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(memberships)
     }
 

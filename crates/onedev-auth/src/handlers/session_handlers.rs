@@ -1,13 +1,13 @@
 //! Session HTTP Handlers
 
+use crate::errors::AuthError;
+use crate::models::session::{Session, SessionQuery};
+use crate::services::SessionService;
 use axum::{
-    extract::{State, Path, Query, Json},
+    extract::{Json, Path, Query, State},
     http::StatusCode,
 };
 use serde::{Deserialize, Serialize};
-use crate::services::SessionService;
-use crate::models::session::{Session, SessionQuery};
-use crate::errors::AuthError;
 use std::sync::Arc;
 use uuid::Uuid;
 
@@ -53,13 +53,19 @@ pub struct ListSessionsQuery {
 
 /// GET /api/auth/sessions
 pub async fn list_sessions(
-    State(crate::router::AuthState { session_service, .. }): State<crate::router::AuthState>,
+    State(crate::router::AuthState {
+        session_service, ..
+    }): State<crate::router::AuthState>,
     subject: crate::models::subject::Subject,
     Query(query): Query<ListSessionsQuery>,
 ) -> Result<Json<Vec<SessionResponse>>, AuthError> {
     let user_id = match subject {
         crate::models::subject::Subject::User(p) => p.user_id,
-        _ => return Err(AuthError::Unauthorized("User authentication required".to_string())),
+        _ => {
+            return Err(AuthError::Unauthorized(
+                "User authentication required".to_string(),
+            ));
+        }
     };
 
     let session_query = SessionQuery {
@@ -71,30 +77,41 @@ pub async fn list_sessions(
 
     let sessions = session_service.list(session_query).await?;
     let response: Vec<SessionResponse> = sessions.into_iter().map(Into::into).collect();
-    
+
     Ok(Json(response))
 }
 
 /// GET /api/auth/sessions/{id}
 pub async fn get_session(
-    State(crate::router::AuthState { session_service, .. }): State<crate::router::AuthState>,
+    State(crate::router::AuthState {
+        session_service, ..
+    }): State<crate::router::AuthState>,
     subject: crate::models::subject::Subject,
     Path(id): Path<String>,
 ) -> Result<Json<SessionResponse>, AuthError> {
-    let session_uuid = id.parse::<Uuid>()
+    let session_uuid = id
+        .parse::<Uuid>()
         .map_err(|_| AuthError::Internal("Invalid session ID".to_string()))?;
 
-    let session = session_service.find_by_id(session_uuid).await?
+    let session = session_service
+        .find_by_id(session_uuid)
+        .await?
         .ok_or(AuthError::SessionNotFound)?;
 
     // Verify ownership
     let user_id = match &subject {
         crate::models::subject::Subject::User(p) => p.user_id,
-        _ => return Err(AuthError::Unauthorized("User authentication required".to_string())),
+        _ => {
+            return Err(AuthError::Unauthorized(
+                "User authentication required".to_string(),
+            ));
+        }
     };
 
     if session.user_id != user_id && !subject.is_elevated() {
-        return Err(AuthError::Forbidden("Not authorized to view this session".to_string()));
+        return Err(AuthError::Forbidden(
+            "Not authorized to view this session".to_string(),
+        ));
     }
 
     Ok(Json(session.into()))
@@ -102,24 +119,35 @@ pub async fn get_session(
 
 /// DELETE /api/auth/sessions/{id}
 pub async fn revoke_session(
-    State(crate::router::AuthState { session_service, .. }): State<crate::router::AuthState>,
+    State(crate::router::AuthState {
+        session_service, ..
+    }): State<crate::router::AuthState>,
     subject: crate::models::subject::Subject,
     Path(id): Path<String>,
 ) -> Result<StatusCode, AuthError> {
-    let session_uuid = id.parse::<Uuid>()
+    let session_uuid = id
+        .parse::<Uuid>()
         .map_err(|_| AuthError::Internal("Invalid session ID".to_string()))?;
 
-    let session = session_service.find_by_id(session_uuid).await?
+    let session = session_service
+        .find_by_id(session_uuid)
+        .await?
         .ok_or(AuthError::SessionNotFound)?;
 
     // Verify ownership
     let user_id = match &subject {
         crate::models::subject::Subject::User(p) => p.user_id,
-        _ => return Err(AuthError::Unauthorized("User authentication required".to_string())),
+        _ => {
+            return Err(AuthError::Unauthorized(
+                "User authentication required".to_string(),
+            ));
+        }
     };
 
     if session.user_id != user_id && !subject.is_elevated() {
-        return Err(AuthError::Forbidden("Not authorized to revoke this session".to_string()));
+        return Err(AuthError::Forbidden(
+            "Not authorized to revoke this session".to_string(),
+        ));
     }
 
     session_service.delete(session_uuid).await?;
@@ -128,12 +156,18 @@ pub async fn revoke_session(
 
 /// DELETE /api/auth/sessions
 pub async fn revoke_all_sessions(
-    State(crate::router::AuthState { session_service, .. }): State<crate::router::AuthState>,
+    State(crate::router::AuthState {
+        session_service, ..
+    }): State<crate::router::AuthState>,
     subject: crate::models::subject::Subject,
 ) -> Result<StatusCode, AuthError> {
     let user_id = match subject {
         crate::models::subject::Subject::User(p) => p.user_id,
-        _ => return Err(AuthError::Unauthorized("User authentication required".to_string())),
+        _ => {
+            return Err(AuthError::Unauthorized(
+                "User authentication required".to_string(),
+            ));
+        }
     };
 
     session_service.delete_by_user(user_id).await?;

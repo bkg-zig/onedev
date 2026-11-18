@@ -1,9 +1,11 @@
 //! Email Address Repository
 
 use crate::{
-    models::email::{DbEmailAddress, DbCreateEmailAddress, DbUpdateEmailAddress, EmailAddressQueryBuilder},
-    repositories::Repository,
     DbPool, DbResult,
+    models::email::{
+        DbCreateEmailAddress, DbEmailAddress, DbUpdateEmailAddress, EmailAddressQueryBuilder,
+    },
+    repositories::Repository,
 };
 use async_trait::async_trait;
 use sqlx::FromRow;
@@ -16,18 +18,29 @@ impl EmailAddressRepository {
     }
 
     /// Find by user ID
-    pub async fn find_by_user_id(&self, pool: &DbPool, user_id: i64) -> DbResult<Vec<DbEmailAddress>> {
+    pub async fn find_by_user_id(
+        &self,
+        pool: &DbPool,
+        user_id: i64,
+    ) -> DbResult<Vec<DbEmailAddress>> {
         let rows = sqlx::query(EmailAddressQueryBuilder::select_by_user_id())
             .bind(user_id)
             .fetch_all(pool)
             .await?;
 
-        let emails = rows.into_iter().map(|r| DbEmailAddress::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let emails = rows
+            .into_iter()
+            .map(|r| DbEmailAddress::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(emails)
     }
 
     /// Find by value
-    pub async fn find_by_value(&self, pool: &DbPool, value: &str) -> DbResult<Option<DbEmailAddress>> {
+    pub async fn find_by_value(
+        &self,
+        pool: &DbPool,
+        value: &str,
+    ) -> DbResult<Option<DbEmailAddress>> {
         let row = sqlx::query(EmailAddressQueryBuilder::select_by_value())
             .bind(value)
             .fetch_optional(pool)
@@ -37,7 +50,11 @@ impl EmailAddressRepository {
     }
 
     /// Find primary by user ID
-    pub async fn find_primary_by_user_id(&self, pool: &DbPool, user_id: i64) -> DbResult<Option<DbEmailAddress>> {
+    pub async fn find_primary_by_user_id(
+        &self,
+        pool: &DbPool,
+        user_id: i64,
+    ) -> DbResult<Option<DbEmailAddress>> {
         let row = sqlx::query(EmailAddressQueryBuilder::select_primary_by_user_id())
             .bind(user_id)
             .fetch_optional(pool)
@@ -78,8 +95,14 @@ impl EmailAddressRepository {
 }
 
 #[async_trait]
-impl Repository<DbEmailAddress, DbCreateEmailAddress, DbUpdateEmailAddress> for EmailAddressRepository {
-    async fn create(&self, pool: &DbPool, create: DbCreateEmailAddress) -> DbResult<DbEmailAddress> {
+impl Repository<DbEmailAddress, DbCreateEmailAddress, DbUpdateEmailAddress>
+    for EmailAddressRepository
+{
+    async fn create(
+        &self,
+        pool: &DbPool,
+        create: DbCreateEmailAddress,
+    ) -> DbResult<DbEmailAddress> {
         let uuid = uuid::Uuid::new_v4();
         let now = chrono::Utc::now();
 
@@ -96,10 +119,12 @@ impl Repository<DbEmailAddress, DbCreateEmailAddress, DbUpdateEmailAddress> for 
             .fetch_one(pool)
             .await?;
 
-        self.find_by_id(pool, id).await?.ok_or_else(|| crate::DbError::NotFound {
-            entity_type: "EmailAddress".to_string(),
-            id: id.to_string(),
-        })
+        self.find_by_id(pool, id)
+            .await?
+            .ok_or_else(|| crate::DbError::NotFound {
+                entity_type: "EmailAddress".to_string(),
+                id: id.to_string(),
+            })
     }
 
     async fn find_by_id(&self, pool: &DbPool, id: i64) -> DbResult<Option<DbEmailAddress>> {
@@ -111,7 +136,12 @@ impl Repository<DbEmailAddress, DbCreateEmailAddress, DbUpdateEmailAddress> for 
         Ok(row.map(|r| DbEmailAddress::from_row(&r)).transpose()?)
     }
 
-    async fn update(&self, pool: &DbPool, id: i64, update: DbUpdateEmailAddress) -> DbResult<DbEmailAddress> {
+    async fn update(
+        &self,
+        pool: &DbPool,
+        id: i64,
+        update: DbUpdateEmailAddress,
+    ) -> DbResult<DbEmailAddress> {
         let row = sqlx::query(EmailAddressQueryBuilder::update())
             .bind(id)
             .bind(update.verified)
@@ -134,14 +164,17 @@ impl Repository<DbEmailAddress, DbCreateEmailAddress, DbUpdateEmailAddress> for 
 
     async fn list(&self, pool: &DbPool, limit: i64, offset: i64) -> DbResult<Vec<DbEmailAddress>> {
         let rows = sqlx::query(
-            "SELECT * FROM email_addresses ORDER BY created_at DESC LIMIT $1 OFFSET $2"
+            "SELECT * FROM email_addresses ORDER BY created_at DESC LIMIT $1 OFFSET $2",
         )
         .bind(limit)
         .bind(offset)
         .fetch_all(pool)
         .await?;
 
-        let emails = rows.into_iter().map(|r| DbEmailAddress::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let emails = rows
+            .into_iter()
+            .map(|r| DbEmailAddress::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(emails)
     }
 

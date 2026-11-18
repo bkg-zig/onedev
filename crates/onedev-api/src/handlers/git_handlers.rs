@@ -1,13 +1,13 @@
 //! Git Smart HTTP Handlers
 
+use crate::AppState;
+use crate::errors::AuthError;
 use axum::{
-    extract::{State, Path, Query},
+    body::{Body, Bytes},
+    extract::{Path, Query, State},
     http::{HeaderMap, StatusCode, header},
     response::{IntoResponse, Response},
-    body::{Body, Bytes},
 };
-use crate::errors::AuthError;
-use crate::AppState;
 use std::sync::Arc;
 
 /// Git service errors
@@ -29,30 +29,32 @@ impl IntoResponse for GitHttpError {
     fn into_response(self) -> Response {
         let (status, message) = match self {
             GitHttpError::NotFound => (StatusCode::NOT_FOUND, "Repository not found".to_string()),
-            GitHttpError::Unauthorized => (StatusCode::UNAUTHORIZED, "Authentication required".to_string()),
+            GitHttpError::Unauthorized => (
+                StatusCode::UNAUTHORIZED,
+                "Authentication required".to_string(),
+            ),
             GitHttpError::Forbidden(msg) => (StatusCode::FORBIDDEN, msg),
             GitHttpError::BadRequest(msg) => (StatusCode::BAD_REQUEST, msg),
             GitHttpError::Internal(msg) => (StatusCode::INTERNAL_SERVER_ERROR, msg),
         };
-        
+
         let mut response = Response::builder()
             .status(status)
             .header(header::CONTENT_TYPE, "text/plain")
             .body(Body::from(message))
             .unwrap();
-        
+
         // Add Git HTTP headers
-        response.headers_mut().insert(
-            header::CACHE_CONTROL,
-            "no-cache".parse().unwrap(),
-        );
-        
+        response
+            .headers_mut()
+            .insert(header::CACHE_CONTROL, "no-cache".parse().unwrap());
+
         response
     }
 }
 
 /// GET /api/git/{project_path}/info/refs
-/// 
+///
 /// Git Smart HTTP - Advertise refs for upload-pack (fetch/clone) or receive-pack (push)
 pub async fn info_refs(
     State(_state): State<crate::AppState>,
@@ -65,7 +67,7 @@ pub async fn info_refs(
 }
 
 /// POST /api/git/{project_path}/git-upload-pack
-/// 
+///
 /// Git Smart HTTP - Fetch/clone operation
 pub async fn git_upload_pack(
     State(_state): State<crate::AppState>,
@@ -78,7 +80,7 @@ pub async fn git_upload_pack(
 }
 
 /// POST /api/git/{project_path}/git-receive-pack
-/// 
+///
 /// Git Smart HTTP - Push operation
 pub async fn git_receive_pack(
     State(_state): State<crate::AppState>,

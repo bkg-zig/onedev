@@ -1,9 +1,11 @@
 //! Project Repository
 
 use crate::{
-    models::project::{DbProject, DbProjectStats, DbCreateProject, DbUpdateProject, ProjectQueryBuilder},
-    repositories::Repository,
     DbPool, DbResult,
+    models::project::{
+        DbCreateProject, DbProject, DbProjectStats, DbUpdateProject, ProjectQueryBuilder,
+    },
+    repositories::Repository,
 };
 use async_trait::async_trait;
 use sqlx::{FromRow, Row};
@@ -16,7 +18,12 @@ impl ProjectRepository {
     }
 
     /// Find project by path (and optional parent)
-    pub async fn find_by_path(&self, pool: &DbPool, path: &str, parent_id: Option<i64>) -> DbResult<Option<DbProject>> {
+    pub async fn find_by_path(
+        &self,
+        pool: &DbPool,
+        path: &str,
+        parent_id: Option<i64>,
+    ) -> DbResult<Option<DbProject>> {
         let row = sqlx::query(ProjectQueryBuilder::select_by_path())
             .bind(path)
             .bind(parent_id)
@@ -27,7 +34,11 @@ impl ProjectRepository {
     }
 
     /// Find project by UUID
-    pub async fn find_by_uuid(&self, pool: &DbPool, uuid: uuid::Uuid) -> DbResult<Option<DbProject>> {
+    pub async fn find_by_uuid(
+        &self,
+        pool: &DbPool,
+        uuid: uuid::Uuid,
+    ) -> DbResult<Option<DbProject>> {
         let row = sqlx::query(ProjectQueryBuilder::select_by_uuid())
             .bind(uuid)
             .fetch_optional(pool)
@@ -54,7 +65,10 @@ impl ProjectRepository {
         let mut param_idx = 1;
 
         if let Some(_term) = term {
-            conditions.push(format!("(name ILIKE ${} OR path ILIKE ${} OR description ILIKE ${})", param_idx, param_idx, param_idx));
+            conditions.push(format!(
+                "(name ILIKE ${} OR path ILIKE ${} OR description ILIKE ${})",
+                param_idx, param_idx, param_idx
+            ));
             param_idx += 1;
         }
 
@@ -107,7 +121,10 @@ impl ProjectRepository {
         q = q.bind((page * per_page) as i64);
 
         let rows = q.fetch_all(pool).await?;
-        let projects = rows.into_iter().map(|r| DbProject::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let projects = rows
+            .into_iter()
+            .map(|r| DbProject::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(projects)
     }
 
@@ -125,7 +142,10 @@ impl ProjectRepository {
         let mut param_idx = 1;
 
         if let Some(_term) = term {
-            conditions.push(format!("(name ILIKE ${} OR path ILIKE ${} OR description ILIKE ${})", param_idx, param_idx, param_idx));
+            conditions.push(format!(
+                "(name ILIKE ${} OR path ILIKE ${} OR description ILIKE ${})",
+                param_idx, param_idx, param_idx
+            ));
             param_idx += 1;
         }
 
@@ -174,10 +194,12 @@ impl ProjectRepository {
 
     /// Update last activity timestamp
     pub async fn update_last_activity(&self, pool: &DbPool, id: i64) -> DbResult<()> {
-        sqlx::query("UPDATE projects SET last_activity_at = NOW(), updated_at = NOW() WHERE id = $1")
-            .bind(id)
-            .execute(pool)
-            .await?;
+        sqlx::query(
+            "UPDATE projects SET last_activity_at = NOW(), updated_at = NOW() WHERE id = $1",
+        )
+        .bind(id)
+        .execute(pool)
+        .await?;
         Ok(())
     }
 
@@ -185,7 +207,11 @@ impl ProjectRepository {
     ///
     /// Storage/repository/wiki/package sizes and fork/star counters are not
     /// persisted in the schema (the git layer owns them), so they are reported as 0.
-    pub async fn find_with_stats(&self, pool: &DbPool, id: i64) -> DbResult<Option<(DbProject, DbProjectStats)>> {
+    pub async fn find_with_stats(
+        &self,
+        pool: &DbPool,
+        id: i64,
+    ) -> DbResult<Option<(DbProject, DbProjectStats)>> {
         let row = sqlx::query(
             r#"
             SELECT p.*,
@@ -287,10 +313,12 @@ impl Repository<DbProject, DbCreateProject, DbUpdateProject> for ProjectReposito
             .fetch_one(pool)
             .await?;
 
-        self.find_by_id(pool, id).await?.ok_or_else(|| crate::DbError::NotFound {
-            entity_type: "Project".to_string(),
-            id: id.to_string(),
-        })
+        self.find_by_id(pool, id)
+            .await?
+            .ok_or_else(|| crate::DbError::NotFound {
+                entity_type: "Project".to_string(),
+                id: id.to_string(),
+            })
     }
 
     async fn find_by_id(&self, pool: &DbPool, id: i64) -> DbResult<Option<DbProject>> {
@@ -360,7 +388,10 @@ impl Repository<DbProject, DbCreateProject, DbUpdateProject> for ProjectReposito
             .fetch_all(pool)
             .await?;
 
-        let projects = rows.into_iter().map(|r| DbProject::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let projects = rows
+            .into_iter()
+            .map(|r| DbProject::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(projects)
     }
 

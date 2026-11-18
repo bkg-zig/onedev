@@ -1,9 +1,9 @@
 //! GPG Key Repository
 
 use crate::{
-    models::gpg_key::{DbGpgKey, DbCreateGpgKey, DbUpdateGpgKey, GpgKeyQueryBuilder},
-    repositories::Repository,
     DbPool, DbResult,
+    models::gpg_key::{DbCreateGpgKey, DbGpgKey, DbUpdateGpgKey, GpgKeyQueryBuilder},
+    repositories::Repository,
 };
 use async_trait::async_trait;
 use sqlx::FromRow;
@@ -22,7 +22,10 @@ impl GpgKeyRepository {
             .fetch_all(pool)
             .await?;
 
-        let keys = rows.into_iter().map(|r| DbGpgKey::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let keys = rows
+            .into_iter()
+            .map(|r| DbGpgKey::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(keys)
     }
 
@@ -56,10 +59,12 @@ impl Repository<DbGpgKey, DbCreateGpgKey, DbUpdateGpgKey> for GpgKeyRepository {
             .fetch_one(pool)
             .await?;
 
-        self.find_by_id(pool, id).await?.ok_or_else(|| crate::DbError::NotFound {
-            entity_type: "GpgKey".to_string(),
-            id: id.to_string(),
-        })
+        self.find_by_id(pool, id)
+            .await?
+            .ok_or_else(|| crate::DbError::NotFound {
+                entity_type: "GpgKey".to_string(),
+                id: id.to_string(),
+            })
     }
 
     async fn find_by_id(&self, pool: &DbPool, id: i64) -> DbResult<Option<DbGpgKey>> {
@@ -90,15 +95,17 @@ impl Repository<DbGpgKey, DbCreateGpgKey, DbUpdateGpgKey> for GpgKeyRepository {
     }
 
     async fn list(&self, pool: &DbPool, limit: i64, offset: i64) -> DbResult<Vec<DbGpgKey>> {
-        let rows = sqlx::query(
-            "SELECT * FROM gpg_keys ORDER BY created_at DESC LIMIT $1 OFFSET $2"
-        )
-        .bind(limit)
-        .bind(offset)
-        .fetch_all(pool)
-        .await?;
+        let rows =
+            sqlx::query("SELECT * FROM gpg_keys ORDER BY created_at DESC LIMIT $1 OFFSET $2")
+                .bind(limit)
+                .bind(offset)
+                .fetch_all(pool)
+                .await?;
 
-        let keys = rows.into_iter().map(|r| DbGpgKey::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let keys = rows
+            .into_iter()
+            .map(|r| DbGpgKey::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(keys)
     }
 

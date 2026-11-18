@@ -1,9 +1,9 @@
 //! Issue Repository
 
 use crate::{
-    models::issue::{DbIssue, DbCreateIssue, DbUpdateIssue, IssueQueryBuilder},
-    repositories::Repository,
     DbPool, DbResult,
+    models::issue::{DbCreateIssue, DbIssue, DbUpdateIssue, IssueQueryBuilder},
+    repositories::Repository,
 };
 use async_trait::async_trait;
 use sqlx::FromRow;
@@ -16,7 +16,12 @@ impl IssueRepository {
     }
 
     /// Find issue by project and number
-    pub async fn find_by_project_and_number(&self, pool: &DbPool, project_id: i64, number: i32) -> DbResult<Option<DbIssue>> {
+    pub async fn find_by_project_and_number(
+        &self,
+        pool: &DbPool,
+        project_id: i64,
+        number: i32,
+    ) -> DbResult<Option<DbIssue>> {
         let row = sqlx::query(IssueQueryBuilder::select_by_project_and_number())
             .bind(project_id)
             .bind(number)
@@ -29,7 +34,7 @@ impl IssueRepository {
     /// Get next issue number for project
     pub async fn next_number(&self, pool: &DbPool, project_id: i64) -> DbResult<i32> {
         let max: Option<i32> = sqlx::query_scalar(
-            "SELECT COALESCE(MAX(number), 0) + 1 FROM issues WHERE project_id = $1"
+            "SELECT COALESCE(MAX(number), 0) + 1 FROM issues WHERE project_id = $1",
         )
         .bind(project_id)
         .fetch_one(pool)
@@ -51,13 +56,11 @@ impl IssueRepository {
 
     /// Remove watcher
     pub async fn remove_watcher(&self, pool: &DbPool, issue_id: i64, user_id: i64) -> DbResult<()> {
-        sqlx::query(
-            "UPDATE issues SET watcher_ids = array_remove(watcher_ids, $1) WHERE id = $2"
-        )
-        .bind(user_id)
-        .bind(issue_id)
-        .execute(pool)
-        .await?;
+        sqlx::query("UPDATE issues SET watcher_ids = array_remove(watcher_ids, $1) WHERE id = $2")
+            .bind(user_id)
+            .bind(issue_id)
+            .execute(pool)
+            .await?;
         Ok(())
     }
 
@@ -75,13 +78,11 @@ impl IssueRepository {
 
     /// Remove voter
     pub async fn remove_voter(&self, pool: &DbPool, issue_id: i64, user_id: i64) -> DbResult<()> {
-        sqlx::query(
-            "UPDATE issues SET voter_ids = array_remove(voter_ids, $1) WHERE id = $2"
-        )
-        .bind(user_id)
-        .bind(issue_id)
-        .execute(pool)
-        .await?;
+        sqlx::query("UPDATE issues SET voter_ids = array_remove(voter_ids, $1) WHERE id = $2")
+            .bind(user_id)
+            .bind(issue_id)
+            .execute(pool)
+            .await?;
         Ok(())
     }
 
@@ -99,13 +100,11 @@ impl IssueRepository {
 
     /// Remove label
     pub async fn remove_label(&self, pool: &DbPool, issue_id: i64, label_id: i64) -> DbResult<()> {
-        sqlx::query(
-            "UPDATE issues SET label_ids = array_remove(label_ids, $1) WHERE id = $2"
-        )
-        .bind(label_id)
-        .bind(issue_id)
-        .execute(pool)
-        .await?;
+        sqlx::query("UPDATE issues SET label_ids = array_remove(label_ids, $1) WHERE id = $2")
+            .bind(label_id)
+            .bind(issue_id)
+            .execute(pool)
+            .await?;
         Ok(())
     }
 }
@@ -135,15 +134,17 @@ impl Repository<DbIssue, DbCreateIssue, DbUpdateIssue> for IssueRepository {
             .bind(now) // updated_at
             .bind(create.due_date)
             .bind(&create.label_ids)
-            .bind(&Vec::<i64>::new()) // watcher_ids
-            .bind(&Vec::<i64>::new()) // voter_ids
+            .bind(Vec::<i64>::new()) // watcher_ids
+            .bind(Vec::<i64>::new()) // voter_ids
             .fetch_one(pool)
             .await?;
 
-        self.find_by_id(pool, id).await?.ok_or_else(|| crate::DbError::NotFound {
-            entity_type: "Issue".to_string(),
-            id: id.to_string(),
-        })
+        self.find_by_id(pool, id)
+            .await?
+            .ok_or_else(|| crate::DbError::NotFound {
+                entity_type: "Issue".to_string(),
+                id: id.to_string(),
+            })
     }
 
     async fn find_by_id(&self, pool: &DbPool, id: i64) -> DbResult<Option<DbIssue>> {
@@ -168,9 +169,9 @@ impl Repository<DbIssue, DbCreateIssue, DbUpdateIssue> for IssueRepository {
             .bind(update.remaining_duration)
             .bind(update.spent_duration)
             .bind(update.due_date)
-            .bind(update.label_ids.as_ref().map(|v| v.as_slice()))
-            .bind(update.watcher_ids.as_ref().map(|v| v.as_slice()))
-            .bind(update.voter_ids.as_ref().map(|v| v.as_slice()))
+            .bind(update.label_ids.as_deref())
+            .bind(update.watcher_ids.as_deref())
+            .bind(update.voter_ids.as_deref())
             .fetch_one(pool)
             .await?;
 
@@ -186,15 +187,16 @@ impl Repository<DbIssue, DbCreateIssue, DbUpdateIssue> for IssueRepository {
     }
 
     async fn list(&self, pool: &DbPool, limit: i64, offset: i64) -> DbResult<Vec<DbIssue>> {
-        let rows = sqlx::query(
-            "SELECT * FROM issues ORDER BY created_at DESC LIMIT $1 OFFSET $2"
-        )
-        .bind(limit)
-        .bind(offset)
-        .fetch_all(pool)
-        .await?;
+        let rows = sqlx::query("SELECT * FROM issues ORDER BY created_at DESC LIMIT $1 OFFSET $2")
+            .bind(limit)
+            .bind(offset)
+            .fetch_all(pool)
+            .await?;
 
-        let issues = rows.into_iter().map(|r| DbIssue::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let issues = rows
+            .into_iter()
+            .map(|r| DbIssue::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(issues)
     }
 

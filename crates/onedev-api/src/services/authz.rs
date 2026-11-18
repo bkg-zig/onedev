@@ -34,7 +34,9 @@ impl AuthorizationService {
         project_id: i64,
         permission: ProjectPermissionType,
     ) -> Result<PermissionCheck, InnerAuthzError> {
-        self.inner.check_project_permission(subject, project_id, permission).await
+        self.inner
+            .check_project_permission(subject, project_id, permission)
+            .await
     }
 
     /// Check system permission
@@ -43,6 +45,8 @@ impl AuthorizationService {
         subject: &onedev_auth::Subject,
         permission: SystemPermission,
     ) -> Result<PermissionCheck, InnerAuthzError> {
-        self.inner.check_system_permission(subject, permission).await
+        self.inner
+            .check_system_permission(subject, permission)
+            .await
     }
 }

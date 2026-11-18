@@ -1,16 +1,18 @@
 //! Access Token HTTP Handlers
 
+use crate::errors::AuthError;
+use crate::models::token::TokenPair;
+use crate::services::TokenService;
 use axum::{
-    extract::{State, Path, Query, Json},
+    extract::{Json, Path, Query, State},
     http::StatusCode,
 };
-use serde::{Deserialize, Serialize};
-use crate::services::TokenService;
-use crate::models::token::TokenPair;
-use onedev_core::models::access_token::{AccessToken, AccessTokenType, TokenScope, CreateAccessToken};
-use crate::errors::AuthError;
-use std::sync::Arc;
 use chrono::{DateTime, Utc};
+use onedev_core::models::access_token::{
+    AccessToken, AccessTokenType, CreateAccessToken, TokenScope,
+};
+use serde::{Deserialize, Serialize};
+use std::sync::Arc;
 
 /// Access token response (without raw token)
 #[derive(Debug, Serialize)]
@@ -109,8 +111,14 @@ pub async fn create_token(
 ) -> Result<Json<AccessTokenWithRawResponse>, AuthError> {
     let owner_id = match subject {
         crate::models::subject::Subject::User(p) => p.user_id,
-        crate::models::subject::Subject::AccessToken(p) if p.can_impersonate() => p.effective_user_id(),
-        _ => return Err(AuthError::Unauthorized("User authentication required".to_string())),
+        crate::models::subject::Subject::AccessToken(p) if p.can_impersonate() => {
+            p.effective_user_id()
+        }
+        _ => {
+            return Err(AuthError::Unauthorized(
+                "User authentication required".to_string(),
+            ));
+        }
     };
 
     let create = CreateAccessToken {
@@ -124,11 +132,14 @@ pub async fn create_token(
     };
 
     let token = token_service.create(owner_id, create).await?;
-    
+
     // Generate raw token (this would be stored in the DB response)
     // For now, we'll return a placeholder - in reality the service returns the raw token
-    let raw_token = format!("onedev_pat_{}", uuid::Uuid::new_v4().to_string().replace('-', ""));
-    
+    let raw_token = format!(
+        "onedev_pat_{}",
+        uuid::Uuid::new_v4().to_string().replace('-', "")
+    );
+
     Ok(Json(AccessTokenWithRawResponse {
         token: token.into(),
         raw_token,
@@ -143,13 +154,19 @@ pub async fn list_tokens(
 ) -> Result<Json<Vec<AccessTokenResponse>>, AuthError> {
     let owner_id = match subject {
         crate::models::subject::Subject::User(p) => p.user_id,
-        crate::models::subject::Subject::AccessToken(p) if p.can_impersonate() => p.effective_user_id(),
-        _ => return Err(AuthError::Unauthorized("User authentication required".to_string())),
+        crate::models::subject::Subject::AccessToken(p) if p.can_impersonate() => {
+            p.effective_user_id()
+        }
+        _ => {
+            return Err(AuthError::Unauthorized(
+                "User authentication required".to_string(),
+            ));
+        }
     };
 
     let tokens = token_service.list_by_owner(owner_id).await?;
     let response: Vec<AccessTokenResponse> = tokens.into_iter().map(Into::into).collect();
-    
+
     Ok(Json(response))
 }
 
@@ -159,18 +176,28 @@ pub async fn get_token(
     subject: crate::models::subject::Subject,
     Path(id): Path<i64>,
 ) -> Result<Json<AccessTokenResponse>, AuthError> {
-    let token = token_service.find_by_id(id).await?
+    let token = token_service
+        .find_by_id(id)
+        .await?
         .ok_or(AuthError::AccessTokenNotFound)?;
 
     // Verify ownership
     let owner_id = match &subject {
         crate::models::subject::Subject::User(p) => p.user_id,
-        crate::models::subject::Subject::AccessToken(p) if p.can_impersonate() => p.effective_user_id(),
-        _ => return Err(AuthError::Unauthorized("User authentication required".to_string())),
+        crate::models::subject::Subject::AccessToken(p) if p.can_impersonate() => {
+            p.effective_user_id()
+        }
+        _ => {
+            return Err(AuthError::Unauthorized(
+                "User authentication required".to_string(),
+            ));
+        }
     };
 
     if token.owner_id != owner_id && !subject.is_elevated() {
-        return Err(AuthError::Forbidden("Not authorized to view this token".to_string()));
+        return Err(AuthError::Forbidden(
+            "Not authorized to view this token".to_string(),
+        ));
     }
 
     Ok(Json(token.into()))
@@ -183,18 +210,28 @@ pub async fn update_token(
     Path(id): Path<i64>,
     Json(request): Json<UpdateAccessTokenRequest>,
 ) -> Result<Json<AccessTokenResponse>, AuthError> {
-    let token = token_service.find_by_id(id).await?
+    let token = token_service
+        .find_by_id(id)
+        .await?
         .ok_or(AuthError::AccessTokenNotFound)?;
 
     // Verify ownership
     let owner_id = match &subject {
         crate::models::subject::Subject::User(p) => p.user_id,
-        crate::models::subject::Subject::AccessToken(p) if p.can_impersonate() => p.effective_user_id(),
-        _ => return Err(AuthError::Unauthorized("User authentication required".to_string())),
+        crate::models::subject::Subject::AccessToken(p) if p.can_impersonate() => {
+            p.effective_user_id()
+        }
+        _ => {
+            return Err(AuthError::Unauthorized(
+                "User authentication required".to_string(),
+            ));
+        }
     };
 
     if token.owner_id != owner_id && !subject.is_elevated() {
-        return Err(AuthError::Forbidden("Not authorized to update this token".to_string()));
+        return Err(AuthError::Forbidden(
+            "Not authorized to update this token".to_string(),
+        ));
     }
 
     // Build update
@@ -217,24 +254,38 @@ pub async fn revoke_token(
     subject: crate::models::subject::Subject,
     Path(id): Path<i64>,
 ) -> Result<StatusCode, AuthError> {
-    let token = token_service.find_by_id(id).await?
+    let token = token_service
+        .find_by_id(id)
+        .await?
         .ok_or(AuthError::AccessTokenNotFound)?;
 
     // Verify ownership
     let owner_id = match &subject {
         crate::models::subject::Subject::User(p) => p.user_id,
-        crate::models::subject::Subject::AccessToken(p) if p.can_impersonate() => p.effective_user_id(),
-        _ => return Err(AuthError::Unauthorized("User authentication required".to_string())),
+        crate::models::subject::Subject::AccessToken(p) if p.can_impersonate() => {
+            p.effective_user_id()
+        }
+        _ => {
+            return Err(AuthError::Unauthorized(
+                "User authentication required".to_string(),
+            ));
+        }
     };
 
     if token.owner_id != owner_id && !subject.is_elevated() {
-        return Err(AuthError::Forbidden("Not authorized to revoke this token".to_string()));
+        return Err(AuthError::Forbidden(
+            "Not authorized to revoke this token".to_string(),
+        ));
     }
 
     let revoked_by = match &subject {
         crate::models::subject::Subject::User(p) => p.user_id,
         crate::models::subject::Subject::AccessToken(p) => p.effective_user_id(),
-        _ => return Err(AuthError::Unauthorized("User authentication required".to_string())),
+        _ => {
+            return Err(AuthError::Unauthorized(
+                "User authentication required".to_string(),
+            ));
+        }
     };
 
     token_service.revoke(id, revoked_by).await?;

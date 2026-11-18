@@ -15,7 +15,8 @@ fn compile(pattern: String) -> Regex {
 pub static USERNAME_REGEX: LazyLock<Regex> = LazyLock::new(|| compile(format!("^{SEGMENT}$")));
 
 /// Workspace name (single segment).
-pub static WORKSPACE_NAME_REGEX: LazyLock<Regex> = LazyLock::new(|| compile(format!("^{SEGMENT}$")));
+pub static WORKSPACE_NAME_REGEX: LazyLock<Regex> =
+    LazyLock::new(|| compile(format!("^{SEGMENT}$")));
 
 /// Project path: one or more segments separated by `/`.
 pub static PROJECT_PATH_REGEX: LazyLock<Regex> =

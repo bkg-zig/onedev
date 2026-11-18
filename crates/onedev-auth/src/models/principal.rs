@@ -1,9 +1,9 @@
 //! Principal types for authentication
 
-use onedev_core::models::user::{UserType, UserRef};
-use onedev_core::models::access_token::{AccessTokenType, TokenScope};
-use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
+use onedev_core::models::access_token::{AccessTokenType, TokenScope};
+use onedev_core::models::user::{UserRef, UserType};
+use serde::{Deserialize, Serialize};
 
 /// User principal - represents an authenticated user
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -82,7 +82,7 @@ impl AccessTokenPrincipal {
     }
 
     pub fn is_expired(&self) -> bool {
-        self.expires_at.map_or(false, |exp| exp < Utc::now())
+        self.expires_at.is_some_and(|exp| exp < Utc::now())
     }
 
     /// Check if token is active (not expired)

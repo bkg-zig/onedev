@@ -2,7 +2,7 @@
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use sqlx::{FromRow, Row};
+use sqlx::FromRow;
 use uuid::Uuid;
 
 /// Access token row from database
@@ -43,7 +43,7 @@ pub struct DbUpdateAccessToken {
 impl DbAccessToken {
     /// Check if token is expired
     pub fn is_expired(&self) -> bool {
-        self.expires_at.map_or(false, |exp| exp < Utc::now())
+        self.expires_at.is_some_and(|exp| exp < Utc::now())
     }
 
     /// Check if token is revoked

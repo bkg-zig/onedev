@@ -1,10 +1,10 @@
 //! Session Service - Session management
 
-use crate::models::session::{Session, CreateSession, SessionQuery};
+use crate::models::session::{CreateSession, Session, SessionQuery};
 use crate::repositories::SessionRepository;
+use chrono::{DateTime, Utc};
 use onedev_db::{DbPool, DbResult};
 use uuid::Uuid;
-use chrono::{DateTime, Utc};
 
 /// Session service
 pub struct SessionService {
@@ -38,7 +38,9 @@ impl SessionService {
 
     /// Update last accessed time
     pub async fn touch(&self, id: Uuid) -> DbResult<()> {
-        self.repo.update_last_accessed(&self.db_pool, id, Utc::now()).await
+        self.repo
+            .update_last_accessed(&self.db_pool, id, Utc::now())
+            .await
     }
 
     /// Delete a session

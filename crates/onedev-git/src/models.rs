@@ -196,6 +196,43 @@ impl BlobInfo {
     }
 }
 
+/// One line of blame output (`BlameCommit` in vanilla, grouped by commit).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BlameCommit {
+    pub commit_id: String,
+    pub author: GitSignature,
+    pub message: String,
+    /// 1-based line numbers in the blamed file belonging to this commit.
+    pub lines: Vec<u32>,
+}
+
+/// Content change of one blob between two revisions (`BlobChange`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BlobChange {
+    pub old_path: Option<String>,
+    pub new_path: Option<String>,
+    pub status: FileChangeStatus,
+    pub old_content: Option<Vec<u8>>,
+    pub new_content: Option<Vec<u8>>,
+}
+
+/// A git submodule (`Submodule` in vanilla).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Submodule {
+    pub name: String,
+    pub path: String,
+    pub url: String,
+    /// Commit the superproject pins the submodule at.
+    pub commit_id: String,
+}
+
+/// Last commit touching a tree entry (`LastCommitsOfChildren`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ChildCommit {
+    pub path: String,
+    pub commit: CommitInfo,
+}
+
 /// One changed path of a commit range comparison.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct FileChange {

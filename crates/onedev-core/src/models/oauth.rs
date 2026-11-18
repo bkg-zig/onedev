@@ -3,7 +3,9 @@
 use super::*;
 
 /// OAuth Provider type
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display,
+)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum OAuthProviderType {
@@ -32,7 +34,7 @@ pub struct OAuthApplication {
     pub redirect_uris: Vec<String>,
     pub scopes: Vec<String>,
     pub client_id: String,
-    pub client_secret_hash: String, // Hashed
+    pub client_secret_hash: String,   // Hashed
     pub client_secret_prefix: String, // First 8 chars
     pub confidential: bool,
     pub enabled: bool,
@@ -47,9 +49,9 @@ pub struct OAuthGrant {
     pub uuid: Uuid,
     pub application_id: i64,
     pub user_id: i64,
-    pub code: Option<String>, // Authorization code
-    pub code_hash: Option<String>, // Hashed code
-    pub access_token_hash: Option<String>, // Hashed access token
+    pub code: Option<String>,               // Authorization code
+    pub code_hash: Option<String>,          // Hashed code
+    pub access_token_hash: Option<String>,  // Hashed access token
     pub refresh_token_hash: Option<String>, // Hashed refresh token
     pub scopes: Vec<String>,
     pub redirect_uri: String,
@@ -107,8 +109,8 @@ pub struct SsoAccount {
     pub external_email: Option<String>,
     pub external_name: Option<String>,
     pub external_avatar_url: Option<String>,
-    pub raw_data: serde_json::Value, // Full provider response
-    pub access_token: Option<String>, // Encrypted
+    pub raw_data: serde_json::Value,   // Full provider response
+    pub access_token: Option<String>,  // Encrypted
     pub refresh_token: Option<String>, // Encrypted
     pub token_expires_at: Option<DateTime<Utc>>,
     pub last_synced_at: Option<DateTime<Utc>>,
@@ -156,14 +158,19 @@ pub struct CreateOAuthProvider {
 
 impl OAuthApplication {
     pub fn generate_client_id() -> String {
-        format!("od_{}", uuid::Uuid::new_v4().simple().to_string().replace('-', "")[..20].to_string())
+        format!(
+            "od_{}",
+            &uuid::Uuid::new_v4().simple().to_string().replace('-', "")[..20]
+        )
     }
 
     pub fn generate_client_secret() -> String {
         use rand::Rng;
         const CHARSET: &[u8] = b"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-";
         let mut rng = rand::rng();
-        (0..64).map(|_| CHARSET[rng.random_range(0..CHARSET.len())] as char).collect()
+        (0..64)
+            .map(|_| CHARSET[rng.random_range(0..CHARSET.len())] as char)
+            .collect()
     }
 
     pub fn hash_secret(secret: &str) -> String {
@@ -183,10 +190,26 @@ impl OAuthProvider {
         match self.provider_type {
             OAuthProviderType::GitHub => vec!["read:user".to_string(), "user:email".to_string()],
             OAuthProviderType::GitLab => vec!["read_user".to_string(), "api".to_string()],
-            OAuthProviderType::Google => vec!["openid".to_string(), "email".to_string(), "profile".to_string()],
-            OAuthProviderType::Microsoft => vec!["openid".to_string(), "profile".to_string(), "email".to_string()],
-            OAuthProviderType::OpenIdConnect => vec!["openid".to_string(), "profile".to_string(), "email".to_string()],
-            _ => vec!["openid".to_string(), "profile".to_string(), "email".to_string()],
+            OAuthProviderType::Google => vec![
+                "openid".to_string(),
+                "email".to_string(),
+                "profile".to_string(),
+            ],
+            OAuthProviderType::Microsoft => vec![
+                "openid".to_string(),
+                "profile".to_string(),
+                "email".to_string(),
+            ],
+            OAuthProviderType::OpenIdConnect => vec![
+                "openid".to_string(),
+                "profile".to_string(),
+                "email".to_string(),
+            ],
+            _ => vec![
+                "openid".to_string(),
+                "profile".to_string(),
+                "email".to_string(),
+            ],
         }
     }
 }

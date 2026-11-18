@@ -82,6 +82,27 @@ fn reads_refs_tree_blob_and_history() {
 }
 
 #[test]
+fn blame_submodules_and_last_commits() {
+    let root = tempfile::tempdir().unwrap();
+    let service = seeded_service(root.path());
+
+    let blame = service.blame("acme/app", "main", "README.md").unwrap();
+    assert_eq!(blame.len(), 1);
+    assert_eq!(blame[0].author.name, "Test");
+    assert_eq!(blame[0].lines, vec![1]);
+
+    assert!(service.submodules("acme/app", "main").unwrap().is_empty());
+
+    let children = service
+        .last_commits_of_children("acme/app", "main", "")
+        .unwrap();
+    assert_eq!(children.len(), 2);
+    assert!(children
+        .iter()
+        .all(|child| child.commit.message.trim() == "initial commit"));
+}
+
+#[test]
 fn smart_http_advertises_refs_and_serves_upload_pack() {
     let root = tempfile::tempdir().unwrap();
     let service = seeded_service(root.path());

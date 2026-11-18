@@ -1,8 +1,8 @@
 //! Project API models
 
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
-use chrono::{DateTime, Utc};
 use uuid::Uuid;
 use validator::Validate;
 

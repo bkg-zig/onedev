@@ -1,9 +1,9 @@
 //! Role Repository — Vanilla free-form roles.
 
 use crate::{
+    DbPool, DbResult,
     models::role::{DbCreateRole, DbRole, DbUpdateRole, RoleQueryBuilder},
     repositories::Repository,
-    DbPool, DbResult,
 };
 use async_trait::async_trait;
 use sqlx::FromRow;
@@ -62,10 +62,12 @@ impl Repository<DbRole, DbCreateRole, DbUpdateRole> for RoleRepository {
             .fetch_one(pool)
             .await?;
 
-        self.find_by_id(pool, id).await?.ok_or_else(|| crate::DbError::NotFound {
-            entity_type: "Role".to_string(),
-            id: id.to_string(),
-        })
+        self.find_by_id(pool, id)
+            .await?
+            .ok_or_else(|| crate::DbError::NotFound {
+                entity_type: "Role".to_string(),
+                id: id.to_string(),
+            })
     }
 
     async fn find_by_id(&self, pool: &DbPool, id: i64) -> DbResult<Option<DbRole>> {
@@ -142,7 +144,10 @@ impl Repository<DbRole, DbCreateRole, DbUpdateRole> for RoleRepository {
         .fetch_all(pool)
         .await?;
 
-        let roles = rows.into_iter().map(|r| DbRole::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let roles = rows
+            .into_iter()
+            .map(|r| DbRole::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(roles)
     }
 

@@ -38,24 +38,22 @@ pub async fn run_migrations_from_dir(pool: &DbPool, dir: impl AsRef<Path>) -> Db
 
 /// Get migration version
 pub async fn get_migration_version(pool: &DbPool) -> DbResult<Option<i64>> {
-    let version: Option<i64> = sqlx::query_scalar(
-        "SELECT version FROM _sqlx_migrations ORDER BY version DESC LIMIT 1"
-    )
-    .fetch_optional(pool)
-    .await
-    .map_err(DbError::Connection)?;
+    let version: Option<i64> =
+        sqlx::query_scalar("SELECT version FROM _sqlx_migrations ORDER BY version DESC LIMIT 1")
+            .fetch_optional(pool)
+            .await
+            .map_err(DbError::Connection)?;
 
     Ok(version)
 }
 
 /// Check if all embedded migrations have been applied
 pub async fn check_migrations(pool: &DbPool) -> DbResult<bool> {
-    let applied = sqlx::query_scalar::<_, i64>(
-        "SELECT COUNT(*) FROM _sqlx_migrations WHERE success"
-    )
-    .fetch_one(pool)
-    .await
-    .map_err(DbError::Connection)?;
+    let applied =
+        sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM _sqlx_migrations WHERE success")
+            .fetch_one(pool)
+            .await
+            .map_err(DbError::Connection)?;
 
     let expected = MIGRATOR
         .iter()

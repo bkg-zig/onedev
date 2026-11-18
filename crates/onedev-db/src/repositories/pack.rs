@@ -1,9 +1,9 @@
 //! Package Repository
 
 use crate::{
-    models::pack::{DbPack, DbCreatePack, DbUpdatePack, PackQueryBuilder},
-    repositories::Repository,
     DbPool, DbResult,
+    models::pack::{DbCreatePack, DbPack, DbUpdatePack, PackQueryBuilder},
+    repositories::Repository,
 };
 use async_trait::async_trait;
 use sqlx::FromRow;
@@ -16,19 +16,32 @@ impl PackRepository {
     }
 
     /// Find by project and name
-    pub async fn find_by_project_and_name(&self, pool: &DbPool, project_id: i64, name: &str) -> DbResult<Vec<DbPack>> {
+    pub async fn find_by_project_and_name(
+        &self,
+        pool: &DbPool,
+        project_id: i64,
+        name: &str,
+    ) -> DbResult<Vec<DbPack>> {
         let rows = sqlx::query(PackQueryBuilder::select_by_project_and_name())
             .bind(project_id)
             .bind(name)
             .fetch_all(pool)
             .await?;
 
-        let packs = rows.into_iter().map(|r| DbPack::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let packs = rows
+            .into_iter()
+            .map(|r| DbPack::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(packs)
     }
 
     /// Find latest version
-    pub async fn find_latest_version(&self, pool: &DbPool, project_id: i64, name: &str) -> DbResult<Option<DbPack>> {
+    pub async fn find_latest_version(
+        &self,
+        pool: &DbPool,
+        project_id: i64,
+        name: &str,
+    ) -> DbResult<Option<DbPack>> {
         let row = sqlx::query(
             "SELECT * FROM packs WHERE project_id = $1 AND name = $2 AND deleted_at IS NULL ORDER BY version DESC LIMIT 1"
         )
@@ -65,10 +78,12 @@ impl Repository<DbPack, DbCreatePack, DbUpdatePack> for PackRepository {
             .fetch_one(pool)
             .await?;
 
-        self.find_by_id(pool, id).await?.ok_or_else(|| crate::DbError::NotFound {
-            entity_type: "Pack".to_string(),
-            id: id.to_string(),
-        })
+        self.find_by_id(pool, id)
+            .await?
+            .ok_or_else(|| crate::DbError::NotFound {
+                entity_type: "Pack".to_string(),
+                id: id.to_string(),
+            })
     }
 
     async fn find_by_id(&self, pool: &DbPool, id: i64) -> DbResult<Option<DbPack>> {
@@ -109,7 +124,10 @@ impl Repository<DbPack, DbCreatePack, DbUpdatePack> for PackRepository {
         .fetch_all(pool)
         .await?;
 
-        let packs = rows.into_iter().map(|r| DbPack::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let packs = rows
+            .into_iter()
+            .map(|r| DbPack::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(packs)
     }
 

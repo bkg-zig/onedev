@@ -45,6 +45,7 @@ parking_lot.workspace = true
 once_cell.workspace = true
 flume.workspace = true
 urlencoding.workspace = true
+futures.workspace = true
 axum.workspace = true
 axum-extra.workspace = true
 tower.workspace = true

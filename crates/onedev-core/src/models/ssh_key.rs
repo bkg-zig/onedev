@@ -3,7 +3,9 @@
 use super::*;
 
 /// SSH Key type
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, strum::EnumString, strum::Display,
+)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum SshKeyType {
@@ -58,7 +60,7 @@ pub struct SshKeyRef {
 
 impl SshKey {
     pub fn is_expired(&self) -> bool {
-        self.expires_at.map_or(false, |exp| exp < Utc::now())
+        self.expires_at.is_some_and(|exp| exp < Utc::now())
     }
 
     pub fn is_valid(&self) -> bool {
@@ -69,7 +71,11 @@ impl SshKey {
         // Show only first 10 and last 10 chars
         let len = self.public_key.len();
         if len > 20 {
-            format!("{}...{}", &self.public_key[..10], &self.public_key[len-10..])
+            format!(
+                "{}...{}",
+                &self.public_key[..10],
+                &self.public_key[len - 10..]
+            )
         } else {
             "****".to_string()
         }

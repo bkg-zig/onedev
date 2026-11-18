@@ -1,13 +1,15 @@
 //! Password hashing with Argon2id
 
 use argon2::{
-    password_hash::{rand_core::OsRng as SaltRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
-    Argon2, Algorithm, Version, Params,
+    Algorithm, Argon2, Params, Version,
+    password_hash::{
+        PasswordHash, PasswordHasher, PasswordVerifier, SaltString, rand_core::OsRng as SaltRng,
+    },
 };
 use base64::Engine;
-use rand::rngs::OsRng;
 use rand::TryRngCore;
-use secrecy::{SecretString, ExposeSecret};
+use rand::rngs::OsRng;
+use secrecy::{ExposeSecret, SecretString};
 use thiserror::Error;
 
 /// Argon2id configuration (OWASP recommended parameters)
@@ -34,18 +36,24 @@ pub enum PasswordError {
 /// Validate password strength
 pub fn validate_password_strength(password: &str) -> Result<(), PasswordError> {
     if password.len() < 8 {
-        return Err(PasswordError::TooWeak("Password must be at least 8 characters".to_string()));
+        return Err(PasswordError::TooWeak(
+            "Password must be at least 8 characters".to_string(),
+        ));
     }
     if password.len() > 128 {
-        return Err(PasswordError::TooWeak("Password must not exceed 128 characters".to_string()));
+        return Err(PasswordError::TooWeak(
+            "Password must not exceed 128 characters".to_string(),
+        ));
     }
 
     // Check for at least one letter and one number
     let has_letter = password.chars().any(|c| c.is_alphabetic());
     let has_digit = password.chars().any(|c| c.is_ascii_digit());
-    
+
     if !has_letter || !has_digit {
-        return Err(PasswordError::TooWeak("Password must contain at least one letter and one number".to_string()));
+        return Err(PasswordError::TooWeak(
+            "Password must contain at least one letter and one number".to_string(),
+        ));
     }
 
     Ok(())
@@ -65,7 +73,8 @@ pub fn hash_password(password: &str) -> Result<String, PasswordError> {
         ARGON2_TIME_COST,
         ARGON2_PARALLELISM,
         Some(ARGON2_HASH_LENGTH),
-    ).map_err(|e| PasswordError::Hashing(e.to_string()))?;
+    )
+    .map_err(|e| PasswordError::Hashing(e.to_string()))?;
 
     let argon2 = Argon2::new(Algorithm::Argon2id, Version::V0x13, params);
 
@@ -81,8 +90,7 @@ pub fn hash_password(password: &str) -> Result<String, PasswordError> {
 /// Verify a password against an Argon2id hash
 pub fn verify_password(password: &str, hash: &str) -> Result<bool, PasswordError> {
     // Parse the hash
-    let parsed_hash = PasswordHash::new(hash)
-        .map_err(|_| PasswordError::InvalidHash)?;
+    let parsed_hash = PasswordHash::new(hash).map_err(|_| PasswordError::InvalidHash)?;
 
     // Configure Argon2id with same parameters
     let params = Params::new(
@@ -90,7 +98,8 @@ pub fn verify_password(password: &str, hash: &str) -> Result<bool, PasswordError
         ARGON2_TIME_COST,
         ARGON2_PARALLELISM,
         Some(ARGON2_HASH_LENGTH),
-    ).map_err(|e| PasswordError::Verification(e.to_string()))?;
+    )
+    .map_err(|e| PasswordError::Verification(e.to_string()))?;
 
     let argon2 = Argon2::new(Algorithm::Argon2id, Version::V0x13, params);
 
@@ -142,11 +151,11 @@ pub fn generate_secure_password(length: usize) -> String {
     let mut password = String::with_capacity(length);
     let mut bytes = vec![0u8; length];
     OsRng.try_fill_bytes(&mut bytes).expect("OS random source");
-    
+
     for &b in &bytes {
         password.push(CHARSET[(b as usize) % CHARSET.len()] as char);
     }
-    
+
     password
 }
 

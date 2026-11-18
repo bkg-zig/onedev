@@ -1,9 +1,9 @@
 //! Label Repository
 
 use crate::{
-    models::label::{DbLabel, DbCreateLabel, DbUpdateLabel, LabelQueryBuilder},
-    repositories::Repository,
     DbPool, DbResult,
+    models::label::{DbCreateLabel, DbLabel, DbUpdateLabel, LabelQueryBuilder},
+    repositories::Repository,
 };
 use async_trait::async_trait;
 use sqlx::FromRow;
@@ -16,18 +16,30 @@ impl LabelRepository {
     }
 
     /// Find by project ID
-    pub async fn find_by_project_id(&self, pool: &DbPool, project_id: i64) -> DbResult<Vec<DbLabel>> {
+    pub async fn find_by_project_id(
+        &self,
+        pool: &DbPool,
+        project_id: i64,
+    ) -> DbResult<Vec<DbLabel>> {
         let rows = sqlx::query(LabelQueryBuilder::select_by_project_id())
             .bind(project_id)
             .fetch_all(pool)
             .await?;
 
-        let labels = rows.into_iter().map(|r| DbLabel::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let labels = rows
+            .into_iter()
+            .map(|r| DbLabel::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(labels)
     }
 
     /// Find by project and name
-    pub async fn find_by_project_and_name(&self, pool: &DbPool, project_id: i64, name: &str) -> DbResult<Option<DbLabel>> {
+    pub async fn find_by_project_and_name(
+        &self,
+        pool: &DbPool,
+        project_id: i64,
+        name: &str,
+    ) -> DbResult<Option<DbLabel>> {
         let row = sqlx::query(LabelQueryBuilder::select_by_project_and_name())
             .bind(project_id)
             .bind(name)
@@ -55,10 +67,12 @@ impl Repository<DbLabel, DbCreateLabel, DbUpdateLabel> for LabelRepository {
             .fetch_one(pool)
             .await?;
 
-        self.find_by_id(pool, id).await?.ok_or_else(|| crate::DbError::NotFound {
-            entity_type: "Label".to_string(),
-            id: id.to_string(),
-        })
+        self.find_by_id(pool, id)
+            .await?
+            .ok_or_else(|| crate::DbError::NotFound {
+                entity_type: "Label".to_string(),
+                id: id.to_string(),
+            })
     }
 
     async fn find_by_id(&self, pool: &DbPool, id: i64) -> DbResult<Option<DbLabel>> {
@@ -91,15 +105,16 @@ impl Repository<DbLabel, DbCreateLabel, DbUpdateLabel> for LabelRepository {
     }
 
     async fn list(&self, pool: &DbPool, limit: i64, offset: i64) -> DbResult<Vec<DbLabel>> {
-        let rows = sqlx::query(
-            "SELECT * FROM labels ORDER BY name ASC LIMIT $1 OFFSET $2"
-        )
-        .bind(limit)
-        .bind(offset)
-        .fetch_all(pool)
-        .await?;
+        let rows = sqlx::query("SELECT * FROM labels ORDER BY name ASC LIMIT $1 OFFSET $2")
+            .bind(limit)
+            .bind(offset)
+            .fetch_all(pool)
+            .await?;
 
-        let labels = rows.into_iter().map(|r| DbLabel::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let labels = rows
+            .into_iter()
+            .map(|r| DbLabel::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(labels)
     }
 

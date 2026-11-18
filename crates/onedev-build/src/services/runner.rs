@@ -48,9 +48,12 @@ impl BuildRunner {
         for name in &order {
             let job = by_name[name.as_str()];
             let dependencies_ok = job
-                .needs
+                .job_dependencies
                 .iter()
-                .all(|need| statuses.get(need) == Some(&BuildStatus::Success));
+                .all(|dependency| {
+                    !dependency.require_successful
+                        || statuses.get(&dependency.job_name) == Some(&BuildStatus::Success)
+                });
 
             if !selected_set.contains(name.as_str()) || !dependencies_ok {
                 let result = JobResult {
@@ -65,18 +68,27 @@ impl BuildRunner {
                 continue;
             }
 
+            // Vanilla: retryCondition "never" disables retries, otherwise
+            // the job is attempted up to maxAttempts times.
+            let max_attempts = if job.retry_condition == "never" {
+                1
+            } else {
+                job.max_attempts.max(1)
+            };
+            let no_variables = HashMap::new();
             let mut attempts = 0;
             let mut step_results = Vec::new();
             let mut status = BuildStatus::Failed;
-            while attempts <= job.retries {
+            while attempts < max_attempts {
                 attempts += 1;
                 step_results = self.executor.execute(
                     job,
-                    &spec.variables,
+                    &no_variables,
                     &JobContext { work_dir, log: log.clone() },
                 )?;
                 status = if step_results
                     .iter()
+                    .filter(|step| step.status != BuildStatus::Skipped)
                     .all(|step| step.status == BuildStatus::Success)
                 {
                     BuildStatus::Success
@@ -94,9 +106,6 @@ impl BuildRunner {
                 Vec::new()
             };
 
-            if status == BuildStatus::Failed && job.allow_failure {
-                status = BuildStatus::Success;
-            }
             statuses.insert(name.clone(), status);
             results.push(JobResult {
                 name: name.clone(),
@@ -128,7 +137,12 @@ fn collect_artifacts(
     target_dir: &Path,
 ) -> BuildResult<Vec<String>> {
     let mut collected = Vec::new();
-    for pattern in &job.artifacts {
+    let patterns: Vec<String> = job
+        .artifact_patterns()
+        .iter()
+        .flat_map(|patterns| patterns.split_whitespace().map(str::to_owned).collect::<Vec<_>>())
+        .collect();
+    for pattern in &patterns {
         let full = work_dir.join(pattern);
         let matches: Vec<PathBuf> = if pattern.contains('*') {
             match glob::glob(full.to_string_lossy().as_ref()) {

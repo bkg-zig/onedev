@@ -1,9 +1,11 @@
 //! Pull Request Repository
 
 use crate::{
-    models::pull_request::{DbPullRequest, DbCreatePullRequest, DbUpdatePullRequest, PullRequestQueryBuilder},
-    repositories::Repository,
     DbPool, DbResult,
+    models::pull_request::{
+        DbCreatePullRequest, DbPullRequest, DbUpdatePullRequest, PullRequestQueryBuilder,
+    },
+    repositories::Repository,
 };
 use async_trait::async_trait;
 use sqlx::FromRow;
@@ -16,7 +18,12 @@ impl PullRequestRepository {
     }
 
     /// Find pull request by project and number
-    pub async fn find_by_project_and_number(&self, pool: &DbPool, project_id: i64, number: i32) -> DbResult<Option<DbPullRequest>> {
+    pub async fn find_by_project_and_number(
+        &self,
+        pool: &DbPool,
+        project_id: i64,
+        number: i32,
+    ) -> DbResult<Option<DbPullRequest>> {
         let row = sqlx::query(PullRequestQueryBuilder::select_by_project_and_number())
             .bind(project_id)
             .bind(number)
@@ -29,7 +36,7 @@ impl PullRequestRepository {
     /// Get next pull request number for project
     pub async fn next_number(&self, pool: &DbPool, project_id: i64) -> DbResult<i32> {
         let max: Option<i32> = sqlx::query_scalar(
-            "SELECT COALESCE(MAX(number), 0) + 1 FROM pull_requests WHERE project_id = $1"
+            "SELECT COALESCE(MAX(number), 0) + 1 FROM pull_requests WHERE project_id = $1",
         )
         .bind(project_id)
         .fetch_one(pool)
@@ -52,7 +59,7 @@ impl PullRequestRepository {
     /// Remove reviewer
     pub async fn remove_reviewer(&self, pool: &DbPool, pr_id: i64, user_id: i64) -> DbResult<()> {
         sqlx::query(
-            "UPDATE pull_requests SET reviewer_ids = array_remove(reviewer_ids, $1) WHERE id = $2"
+            "UPDATE pull_requests SET reviewer_ids = array_remove(reviewer_ids, $1) WHERE id = $2",
         )
         .bind(user_id)
         .bind(pr_id)
@@ -76,7 +83,7 @@ impl PullRequestRepository {
     /// Remove watcher
     pub async fn remove_watcher(&self, pool: &DbPool, pr_id: i64, user_id: i64) -> DbResult<()> {
         sqlx::query(
-            "UPDATE pull_requests SET watcher_ids = array_remove(watcher_ids, $1) WHERE id = $2"
+            "UPDATE pull_requests SET watcher_ids = array_remove(watcher_ids, $1) WHERE id = $2",
         )
         .bind(user_id)
         .bind(pr_id)
@@ -100,7 +107,7 @@ impl PullRequestRepository {
     /// Remove label
     pub async fn remove_label(&self, pool: &DbPool, pr_id: i64, label_id: i64) -> DbResult<()> {
         sqlx::query(
-            "UPDATE pull_requests SET label_ids = array_remove(label_ids, $1) WHERE id = $2"
+            "UPDATE pull_requests SET label_ids = array_remove(label_ids, $1) WHERE id = $2",
         )
         .bind(label_id)
         .bind(pr_id)
@@ -144,10 +151,12 @@ impl Repository<DbPullRequest, DbCreatePullRequest, DbUpdatePullRequest> for Pul
             .fetch_one(pool)
             .await?;
 
-        self.find_by_id(pool, id).await?.ok_or_else(|| crate::DbError::NotFound {
-            entity_type: "PullRequest".to_string(),
-            id: id.to_string(),
-        })
+        self.find_by_id(pool, id)
+            .await?
+            .ok_or_else(|| crate::DbError::NotFound {
+                entity_type: "PullRequest".to_string(),
+                id: id.to_string(),
+            })
     }
 
     async fn find_by_id(&self, pool: &DbPool, id: i64) -> DbResult<Option<DbPullRequest>> {
@@ -159,7 +168,12 @@ impl Repository<DbPullRequest, DbCreatePullRequest, DbUpdatePullRequest> for Pul
         Ok(row.map(|r| DbPullRequest::from_row(&r)).transpose()?)
     }
 
-    async fn update(&self, pool: &DbPool, id: i64, update: DbUpdatePullRequest) -> DbResult<DbPullRequest> {
+    async fn update(
+        &self,
+        pool: &DbPool,
+        id: i64,
+        update: DbUpdatePullRequest,
+    ) -> DbResult<DbPullRequest> {
         let row = sqlx::query(PullRequestQueryBuilder::update())
             .bind(id)
             .bind(&update.title)
@@ -171,9 +185,9 @@ impl Repository<DbPullRequest, DbCreatePullRequest, DbUpdatePullRequest> for Pul
             .bind(update.mergeable)
             .bind(&update.merge_check_status)
             .bind(update.draft)
-            .bind(update.label_ids.as_ref().map(|v| v.as_slice()))
-            .bind(update.reviewer_ids.as_ref().map(|v| v.as_slice()))
-            .bind(update.watcher_ids.as_ref().map(|v| v.as_slice()))
+            .bind(update.label_ids.as_deref())
+            .bind(update.reviewer_ids.as_deref())
+            .bind(update.watcher_ids.as_deref())
             .fetch_one(pool)
             .await?;
 
@@ -189,15 +203,17 @@ impl Repository<DbPullRequest, DbCreatePullRequest, DbUpdatePullRequest> for Pul
     }
 
     async fn list(&self, pool: &DbPool, limit: i64, offset: i64) -> DbResult<Vec<DbPullRequest>> {
-        let rows = sqlx::query(
-            "SELECT * FROM pull_requests ORDER BY created_at DESC LIMIT $1 OFFSET $2"
-        )
-        .bind(limit)
-        .bind(offset)
-        .fetch_all(pool)
-        .await?;
+        let rows =
+            sqlx::query("SELECT * FROM pull_requests ORDER BY created_at DESC LIMIT $1 OFFSET $2")
+                .bind(limit)
+                .bind(offset)
+                .fetch_all(pool)
+                .await?;
 
-        let prs = rows.into_iter().map(|r| DbPullRequest::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let prs = rows
+            .into_iter()
+            .map(|r| DbPullRequest::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(prs)
     }
 

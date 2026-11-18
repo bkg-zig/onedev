@@ -1,11 +1,11 @@
 //! JWT Token handling
 
+use chrono::{DateTime, Duration, Utc};
 use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, Validation, decode, encode};
+use secrecy::{ExposeSecret, SecretString};
 use serde::{Deserialize, Serialize};
-use chrono::{DateTime, Utc, Duration};
-use uuid::Uuid;
-use secrecy::{SecretString, ExposeSecret};
 use thiserror::Error;
+use uuid::Uuid;
 
 /// JWT Claims
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -80,9 +80,9 @@ impl Default for TokenConfig {
         Self {
             issuer: "onedev".to_string(),
             audience: "onedev-api".to_string(),
-            access_ttl_seconds: 15 * 60, // 15 minutes
+            access_ttl_seconds: 15 * 60,           // 15 minutes
             refresh_ttl_seconds: 7 * 24 * 60 * 60, // 7 days
-            temporary_ttl_seconds: 5 * 60, // 5 minutes
+            temporary_ttl_seconds: 5 * 60,         // 5 minutes
             private_key: SecretString::from(String::new()),
             public_key: SecretString::from(String::new()),
             algorithm: Algorithm::RS256,
@@ -113,8 +113,12 @@ impl From<jsonwebtoken::errors::Error> for JwtError {
     fn from(err: jsonwebtoken::errors::Error) -> Self {
         match err.kind() {
             jsonwebtoken::errors::ErrorKind::ExpiredSignature => JwtError::Expired,
-            jsonwebtoken::errors::ErrorKind::InvalidSignature => JwtError::Invalid("Invalid signature".to_string()),
-            jsonwebtoken::errors::ErrorKind::InvalidToken => JwtError::Invalid("Invalid token format".to_string()),
+            jsonwebtoken::errors::ErrorKind::InvalidSignature => {
+                JwtError::Invalid("Invalid signature".to_string())
+            }
+            jsonwebtoken::errors::ErrorKind::InvalidToken => {
+                JwtError::Invalid("Invalid token format".to_string())
+            }
             _ => JwtError::Validation(err.to_string()),
         }
     }
@@ -153,7 +157,12 @@ impl JwtService {
     }
 
     /// Create an access token for a user
-    pub fn create_access_token(&self, user_id: i64, username: &str, scopes: Vec<String>) -> Result<TokenPair, JwtError> {
+    pub fn create_access_token(
+        &self,
+        user_id: i64,
+        username: &str,
+        scopes: Vec<String>,
+    ) -> Result<TokenPair, JwtError> {
         let now = Utc::now();
         let access_exp = now + Duration::seconds(self.config.access_ttl_seconds);
         let refresh_exp = now + Duration::seconds(self.config.refresh_ttl_seconds);
@@ -187,11 +196,19 @@ impl JwtService {
             token_id: None,
         };
 
-        let access_token = encode(&Header::new(self.config.algorithm), &access_claims, &self.encoding_key)
-            .map_err(|e| JwtError::Encoding(e.to_string()))?;
+        let access_token = encode(
+            &Header::new(self.config.algorithm),
+            &access_claims,
+            &self.encoding_key,
+        )
+        .map_err(|e| JwtError::Encoding(e.to_string()))?;
 
-        let refresh_token = encode(&Header::new(self.config.algorithm), &refresh_claims, &self.encoding_key)
-            .map_err(|e| JwtError::Encoding(e.to_string()))?;
+        let refresh_token = encode(
+            &Header::new(self.config.algorithm),
+            &refresh_claims,
+            &self.encoding_key,
+        )
+        .map_err(|e| JwtError::Encoding(e.to_string()))?;
 
         Ok(TokenPair {
             access_token,
@@ -203,7 +220,13 @@ impl JwtService {
     }
 
     /// Create an access token for an access token (API token)
-    pub fn create_token_access_token(&self, token_id: i64, token_name: &str, owner_id: i64, scopes: Vec<String>) -> Result<TokenPair, JwtError> {
+    pub fn create_token_access_token(
+        &self,
+        token_id: i64,
+        token_name: &str,
+        owner_id: i64,
+        scopes: Vec<String>,
+    ) -> Result<TokenPair, JwtError> {
         let now = Utc::now();
         let access_exp = now + Duration::seconds(self.config.access_ttl_seconds);
         let refresh_exp = now + Duration::seconds(self.config.refresh_ttl_seconds);
@@ -235,11 +258,19 @@ impl JwtService {
             token_id: Some(token_id),
         };
 
-        let access_token = encode(&Header::new(self.config.algorithm), &access_claims, &self.encoding_key)
-            .map_err(|e| JwtError::Encoding(e.to_string()))?;
+        let access_token = encode(
+            &Header::new(self.config.algorithm),
+            &access_claims,
+            &self.encoding_key,
+        )
+        .map_err(|e| JwtError::Encoding(e.to_string()))?;
 
-        let refresh_token = encode(&Header::new(self.config.algorithm), &refresh_claims, &self.encoding_key)
-            .map_err(|e| JwtError::Encoding(e.to_string()))?;
+        let refresh_token = encode(
+            &Header::new(self.config.algorithm),
+            &refresh_claims,
+            &self.encoding_key,
+        )
+        .map_err(|e| JwtError::Encoding(e.to_string()))?;
 
         Ok(TokenPair {
             access_token,
@@ -251,7 +282,12 @@ impl JwtService {
     }
 
     /// Create a temporary token (for email verification, password reset, etc.)
-    pub fn create_temporary_token(&self, subject: &str, scopes: Vec<String>, ttl_seconds: Option<i64>) -> Result<String, JwtError> {
+    pub fn create_temporary_token(
+        &self,
+        subject: &str,
+        scopes: Vec<String>,
+        ttl_seconds: Option<i64>,
+    ) -> Result<String, JwtError> {
         let now = Utc::now();
         let exp = now + Duration::seconds(ttl_seconds.unwrap_or(self.config.temporary_ttl_seconds));
         let jti = Uuid::new_v4().to_string();
@@ -269,22 +305,26 @@ impl JwtService {
             token_id: None,
         };
 
-        encode(&Header::new(self.config.algorithm), &claims, &self.encoding_key)
-            .map_err(|e| JwtError::Encoding(e.to_string()))
+        encode(
+            &Header::new(self.config.algorithm),
+            &claims,
+            &self.encoding_key,
+        )
+        .map_err(|e| JwtError::Encoding(e.to_string()))
     }
 
     /// Validate and decode a token
     pub fn validate_token(&self, token: &str) -> Result<Claims, JwtError> {
         let token_data = decode::<Claims>(token, &self.decoding_key, &self.validation)
             .map_err(|e| JwtError::from(e))?;
-        
+
         Ok(token_data.claims)
     }
 
     /// Validate an access token (not refresh)
     pub fn validate_access_token(&self, token: &str) -> Result<Claims, JwtError> {
         let claims = self.validate_token(token)?;
-        
+
         if claims.typ != TokenType::Access {
             return Err(JwtError::Invalid("Not an access token".to_string()));
         }
@@ -295,7 +335,7 @@ impl JwtService {
     /// Validate a refresh token
     pub fn validate_refresh_token(&self, token: &str) -> Result<Claims, JwtError> {
         let claims = self.validate_token(token)?;
-        
+
         if claims.typ != TokenType::Refresh {
             return Err(JwtError::Invalid("Not a refresh token".to_string()));
         }
@@ -309,7 +349,7 @@ impl JwtService {
         let mut validation = Validation::new(self.config.algorithm);
         validation.validate_exp = false;
         validation.insecure_disable_signature_validation();
-        
+
         decode::<Claims>(token, &DecodingKey::from_secret(b""), &validation)
             .ok()
             .map(|d| d.claims.sub)
@@ -336,7 +376,7 @@ pub fn generate_rsa_keys() -> Result<(String, String), JwtError> {
     let mut rng = OsRng;
     let private_key = RsaPrivateKey::new(&mut rng, 2048)
         .map_err(|e| JwtError::Key(format!("Failed to generate private key: {}", e)))?;
-    
+
     let public_key = RsaPublicKey::from(&private_key);
 
     let private_pem = private_key

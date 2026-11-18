@@ -1,9 +1,9 @@
 //! Audit Log Repository
 
 use crate::{
-    models::audit::{DbAuditLog, DbCreateAuditLog, AuditLogQueryBuilder},
-    repositories::Repository,
     DbPool, DbResult,
+    models::audit::{AuditLogQueryBuilder, DbAuditLog, DbCreateAuditLog},
+    repositories::Repository,
 };
 use async_trait::async_trait;
 use sqlx::FromRow;
@@ -16,7 +16,13 @@ impl AuditLogRepository {
     }
 
     /// Find by user ID
-    pub async fn find_by_user_id(&self, pool: &DbPool, user_id: i64, limit: i64, offset: i64) -> DbResult<Vec<DbAuditLog>> {
+    pub async fn find_by_user_id(
+        &self,
+        pool: &DbPool,
+        user_id: i64,
+        limit: i64,
+        offset: i64,
+    ) -> DbResult<Vec<DbAuditLog>> {
         let rows = sqlx::query(AuditLogQueryBuilder::select_by_user_id())
             .bind(user_id)
             .bind(limit)
@@ -24,12 +30,22 @@ impl AuditLogRepository {
             .fetch_all(pool)
             .await?;
 
-        let logs = rows.into_iter().map(|r| DbAuditLog::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let logs = rows
+            .into_iter()
+            .map(|r| DbAuditLog::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(logs)
     }
 
     /// Find by entity
-    pub async fn find_by_entity(&self, pool: &DbPool, entity_type: &str, entity_id: i64, limit: i64, offset: i64) -> DbResult<Vec<DbAuditLog>> {
+    pub async fn find_by_entity(
+        &self,
+        pool: &DbPool,
+        entity_type: &str,
+        entity_id: i64,
+        limit: i64,
+        offset: i64,
+    ) -> DbResult<Vec<DbAuditLog>> {
         let rows = sqlx::query(AuditLogQueryBuilder::select_by_entity())
             .bind(entity_type)
             .bind(entity_id)
@@ -38,12 +54,21 @@ impl AuditLogRepository {
             .fetch_all(pool)
             .await?;
 
-        let logs = rows.into_iter().map(|r| DbAuditLog::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let logs = rows
+            .into_iter()
+            .map(|r| DbAuditLog::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(logs)
     }
 
     /// Find by action
-    pub async fn find_by_action(&self, pool: &DbPool, action: &str, limit: i64, offset: i64) -> DbResult<Vec<DbAuditLog>> {
+    pub async fn find_by_action(
+        &self,
+        pool: &DbPool,
+        action: &str,
+        limit: i64,
+        offset: i64,
+    ) -> DbResult<Vec<DbAuditLog>> {
         let rows = sqlx::query(AuditLogQueryBuilder::select_by_action())
             .bind(action)
             .bind(limit)
@@ -51,12 +76,22 @@ impl AuditLogRepository {
             .fetch_all(pool)
             .await?;
 
-        let logs = rows.into_iter().map(|r| DbAuditLog::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let logs = rows
+            .into_iter()
+            .map(|r| DbAuditLog::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(logs)
     }
 
     /// Find by date range
-    pub async fn find_by_date_range(&self, pool: &DbPool, start: chrono::DateTime<chrono::Utc>, end: chrono::DateTime<chrono::Utc>, limit: i64, offset: i64) -> DbResult<Vec<DbAuditLog>> {
+    pub async fn find_by_date_range(
+        &self,
+        pool: &DbPool,
+        start: chrono::DateTime<chrono::Utc>,
+        end: chrono::DateTime<chrono::Utc>,
+        limit: i64,
+        offset: i64,
+    ) -> DbResult<Vec<DbAuditLog>> {
         let rows = sqlx::query(AuditLogQueryBuilder::select_by_date_range())
             .bind(start)
             .bind(end)
@@ -65,12 +100,19 @@ impl AuditLogRepository {
             .fetch_all(pool)
             .await?;
 
-        let logs = rows.into_iter().map(|r| DbAuditLog::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let logs = rows
+            .into_iter()
+            .map(|r| DbAuditLog::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(logs)
     }
 
     /// Delete old logs
-    pub async fn delete_old(&self, pool: &DbPool, before: chrono::DateTime<chrono::Utc>) -> DbResult<u64> {
+    pub async fn delete_old(
+        &self,
+        pool: &DbPool,
+        before: chrono::DateTime<chrono::Utc>,
+    ) -> DbResult<u64> {
         let result = sqlx::query(AuditLogQueryBuilder::delete_old())
             .bind(before)
             .execute(pool)
@@ -101,10 +143,12 @@ impl Repository<DbAuditLog, DbCreateAuditLog, DbAuditLog> for AuditLogRepository
             .fetch_one(pool)
             .await?;
 
-        self.find_by_id(pool, id).await?.ok_or_else(|| crate::DbError::NotFound {
-            entity_type: "AuditLog".to_string(),
-            id: id.to_string(),
-        })
+        self.find_by_id(pool, id)
+            .await?
+            .ok_or_else(|| crate::DbError::NotFound {
+                entity_type: "AuditLog".to_string(),
+                id: id.to_string(),
+            })
     }
 
     async fn find_by_id(&self, pool: &DbPool, id: i64) -> DbResult<Option<DbAuditLog>> {
@@ -118,10 +162,12 @@ impl Repository<DbAuditLog, DbCreateAuditLog, DbAuditLog> for AuditLogRepository
 
     async fn update(&self, pool: &DbPool, id: i64, _update: DbAuditLog) -> DbResult<DbAuditLog> {
         // Audit logs are immutable
-        self.find_by_id(pool, id).await?.ok_or_else(|| crate::DbError::NotFound {
-            entity_type: "AuditLog".to_string(),
-            id: id.to_string(),
-        })
+        self.find_by_id(pool, id)
+            .await?
+            .ok_or_else(|| crate::DbError::NotFound {
+                entity_type: "AuditLog".to_string(),
+                id: id.to_string(),
+            })
     }
 
     async fn delete(&self, pool: &DbPool, id: i64) -> DbResult<()> {
@@ -133,15 +179,17 @@ impl Repository<DbAuditLog, DbCreateAuditLog, DbAuditLog> for AuditLogRepository
     }
 
     async fn list(&self, pool: &DbPool, limit: i64, offset: i64) -> DbResult<Vec<DbAuditLog>> {
-        let rows = sqlx::query(
-            "SELECT * FROM audit_logs ORDER BY created_at DESC LIMIT $1 OFFSET $2"
-        )
-        .bind(limit)
-        .bind(offset)
-        .fetch_all(pool)
-        .await?;
+        let rows =
+            sqlx::query("SELECT * FROM audit_logs ORDER BY created_at DESC LIMIT $1 OFFSET $2")
+                .bind(limit)
+                .bind(offset)
+                .fetch_all(pool)
+                .await?;
 
-        let logs = rows.into_iter().map(|r| DbAuditLog::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let logs = rows
+            .into_iter()
+            .map(|r| DbAuditLog::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(logs)
     }
 

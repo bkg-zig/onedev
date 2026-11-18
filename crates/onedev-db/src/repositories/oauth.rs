@@ -1,9 +1,13 @@
 //! OAuth Repository
 
 use crate::{
-    models::oauth::{DbOAuthApplication, DbCreateOAuthApplication, DbUpdateOAuthApplication, DbOAuthGrant, DbCreateOAuthGrant, DbUpdateOAuthGrant, OAuthApplicationQueryBuilder, OAuthGrantQueryBuilder},
-    repositories::Repository,
     DbPool, DbResult,
+    models::oauth::{
+        DbCreateOAuthApplication, DbCreateOAuthGrant, DbOAuthApplication, DbOAuthGrant,
+        DbUpdateOAuthApplication, DbUpdateOAuthGrant, OAuthApplicationQueryBuilder,
+        OAuthGrantQueryBuilder,
+    },
+    repositories::Repository,
 };
 use async_trait::async_trait;
 use sqlx::FromRow;
@@ -16,7 +20,11 @@ impl OAuthApplicationRepository {
     }
 
     /// Find by client ID
-    pub async fn find_by_client_id(&self, pool: &DbPool, client_id: &str) -> DbResult<Option<DbOAuthApplication>> {
+    pub async fn find_by_client_id(
+        &self,
+        pool: &DbPool,
+        client_id: &str,
+    ) -> DbResult<Option<DbOAuthApplication>> {
         let row = sqlx::query(OAuthApplicationQueryBuilder::select_by_client_id())
             .bind(client_id)
             .fetch_optional(pool)
@@ -26,21 +34,35 @@ impl OAuthApplicationRepository {
     }
 
     /// Find by owner
-    pub async fn find_by_owner(&self, pool: &DbPool, owner_id: i64, owner_type: crate::models::oauth::DbOAuthOwnerType) -> DbResult<Vec<DbOAuthApplication>> {
+    pub async fn find_by_owner(
+        &self,
+        pool: &DbPool,
+        owner_id: i64,
+        owner_type: crate::models::oauth::DbOAuthOwnerType,
+    ) -> DbResult<Vec<DbOAuthApplication>> {
         let rows = sqlx::query(OAuthApplicationQueryBuilder::select_by_owner())
             .bind(owner_id)
             .bind(owner_type)
             .fetch_all(pool)
             .await?;
 
-        let apps = rows.into_iter().map(|r| DbOAuthApplication::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let apps = rows
+            .into_iter()
+            .map(|r| DbOAuthApplication::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(apps)
     }
 }
 
 #[async_trait]
-impl Repository<DbOAuthApplication, DbCreateOAuthApplication, DbUpdateOAuthApplication> for OAuthApplicationRepository {
-    async fn create(&self, pool: &DbPool, create: DbCreateOAuthApplication) -> DbResult<DbOAuthApplication> {
+impl Repository<DbOAuthApplication, DbCreateOAuthApplication, DbUpdateOAuthApplication>
+    for OAuthApplicationRepository
+{
+    async fn create(
+        &self,
+        pool: &DbPool,
+        create: DbCreateOAuthApplication,
+    ) -> DbResult<DbOAuthApplication> {
         let uuid = uuid::Uuid::new_v4();
         let now = chrono::Utc::now();
 
@@ -59,10 +81,12 @@ impl Repository<DbOAuthApplication, DbCreateOAuthApplication, DbUpdateOAuthAppli
             .fetch_one(pool)
             .await?;
 
-        self.find_by_id(pool, id).await?.ok_or_else(|| crate::DbError::NotFound {
-            entity_type: "OAuthApplication".to_string(),
-            id: id.to_string(),
-        })
+        self.find_by_id(pool, id)
+            .await?
+            .ok_or_else(|| crate::DbError::NotFound {
+                entity_type: "OAuthApplication".to_string(),
+                id: id.to_string(),
+            })
     }
 
     async fn find_by_id(&self, pool: &DbPool, id: i64) -> DbResult<Option<DbOAuthApplication>> {
@@ -74,7 +98,12 @@ impl Repository<DbOAuthApplication, DbCreateOAuthApplication, DbUpdateOAuthAppli
         Ok(row.map(|r| DbOAuthApplication::from_row(&r)).transpose()?)
     }
 
-    async fn update(&self, pool: &DbPool, id: i64, update: DbUpdateOAuthApplication) -> DbResult<DbOAuthApplication> {
+    async fn update(
+        &self,
+        pool: &DbPool,
+        id: i64,
+        update: DbUpdateOAuthApplication,
+    ) -> DbResult<DbOAuthApplication> {
         let row = sqlx::query(OAuthApplicationQueryBuilder::update())
             .bind(id)
             .bind(&update.name)
@@ -95,16 +124,24 @@ impl Repository<DbOAuthApplication, DbCreateOAuthApplication, DbUpdateOAuthAppli
         Ok(())
     }
 
-    async fn list(&self, pool: &DbPool, limit: i64, offset: i64) -> DbResult<Vec<DbOAuthApplication>> {
+    async fn list(
+        &self,
+        pool: &DbPool,
+        limit: i64,
+        offset: i64,
+    ) -> DbResult<Vec<DbOAuthApplication>> {
         let rows = sqlx::query(
-            "SELECT * FROM oauth_applications ORDER BY created_at DESC LIMIT $1 OFFSET $2"
+            "SELECT * FROM oauth_applications ORDER BY created_at DESC LIMIT $1 OFFSET $2",
         )
         .bind(limit)
         .bind(offset)
         .fetch_all(pool)
         .await?;
 
-        let apps = rows.into_iter().map(|r| DbOAuthApplication::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let apps = rows
+            .into_iter()
+            .map(|r| DbOAuthApplication::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(apps)
     }
 
@@ -124,7 +161,11 @@ impl OAuthGrantRepository {
     }
 
     /// Find by code hash
-    pub async fn find_by_code_hash(&self, pool: &DbPool, code_hash: &str) -> DbResult<Option<DbOAuthGrant>> {
+    pub async fn find_by_code_hash(
+        &self,
+        pool: &DbPool,
+        code_hash: &str,
+    ) -> DbResult<Option<DbOAuthGrant>> {
         let row = sqlx::query(OAuthGrantQueryBuilder::select_by_code_hash())
             .bind(code_hash)
             .fetch_optional(pool)
@@ -134,7 +175,11 @@ impl OAuthGrantRepository {
     }
 
     /// Find by access token hash
-    pub async fn find_by_access_token_hash(&self, pool: &DbPool, access_token_hash: &str) -> DbResult<Option<DbOAuthGrant>> {
+    pub async fn find_by_access_token_hash(
+        &self,
+        pool: &DbPool,
+        access_token_hash: &str,
+    ) -> DbResult<Option<DbOAuthGrant>> {
         let row = sqlx::query(OAuthGrantQueryBuilder::select_by_access_token_hash())
             .bind(access_token_hash)
             .fetch_optional(pool)
@@ -144,7 +189,11 @@ impl OAuthGrantRepository {
     }
 
     /// Find by refresh token hash
-    pub async fn find_by_refresh_token_hash(&self, pool: &DbPool, refresh_token_hash: &str) -> DbResult<Option<DbOAuthGrant>> {
+    pub async fn find_by_refresh_token_hash(
+        &self,
+        pool: &DbPool,
+        refresh_token_hash: &str,
+    ) -> DbResult<Option<DbOAuthGrant>> {
         let row = sqlx::query(OAuthGrantQueryBuilder::select_by_refresh_token_hash())
             .bind(refresh_token_hash)
             .fetch_optional(pool)
@@ -154,14 +203,22 @@ impl OAuthGrantRepository {
     }
 
     /// Find by application and user
-    pub async fn find_by_application_and_user(&self, pool: &DbPool, application_id: i64, user_id: i64) -> DbResult<Vec<DbOAuthGrant>> {
+    pub async fn find_by_application_and_user(
+        &self,
+        pool: &DbPool,
+        application_id: i64,
+        user_id: i64,
+    ) -> DbResult<Vec<DbOAuthGrant>> {
         let rows = sqlx::query(OAuthGrantQueryBuilder::select_by_application_and_user())
             .bind(application_id)
             .bind(user_id)
             .fetch_all(pool)
             .await?;
 
-        let grants = rows.into_iter().map(|r| DbOAuthGrant::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let grants = rows
+            .into_iter()
+            .map(|r| DbOAuthGrant::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(grants)
     }
 
@@ -195,10 +252,12 @@ impl Repository<DbOAuthGrant, DbCreateOAuthGrant, DbUpdateOAuthGrant> for OAuthG
             .fetch_one(pool)
             .await?;
 
-        self.find_by_id(pool, id).await?.ok_or_else(|| crate::DbError::NotFound {
-            entity_type: "OAuthGrant".to_string(),
-            id: id.to_string(),
-        })
+        self.find_by_id(pool, id)
+            .await?
+            .ok_or_else(|| crate::DbError::NotFound {
+                entity_type: "OAuthGrant".to_string(),
+                id: id.to_string(),
+            })
     }
 
     async fn find_by_id(&self, pool: &DbPool, id: i64) -> DbResult<Option<DbOAuthGrant>> {
@@ -210,7 +269,12 @@ impl Repository<DbOAuthGrant, DbCreateOAuthGrant, DbUpdateOAuthGrant> for OAuthG
         Ok(row.map(|r| DbOAuthGrant::from_row(&r)).transpose()?)
     }
 
-    async fn update(&self, pool: &DbPool, id: i64, update: DbUpdateOAuthGrant) -> DbResult<DbOAuthGrant> {
+    async fn update(
+        &self,
+        pool: &DbPool,
+        id: i64,
+        update: DbUpdateOAuthGrant,
+    ) -> DbResult<DbOAuthGrant> {
         let row = sqlx::query(OAuthGrantQueryBuilder::update())
             .bind(id)
             .bind(&update.code)
@@ -233,15 +297,17 @@ impl Repository<DbOAuthGrant, DbCreateOAuthGrant, DbUpdateOAuthGrant> for OAuthG
     }
 
     async fn list(&self, pool: &DbPool, limit: i64, offset: i64) -> DbResult<Vec<DbOAuthGrant>> {
-        let rows = sqlx::query(
-            "SELECT * FROM oauth_grants ORDER BY created_at DESC LIMIT $1 OFFSET $2"
-        )
-        .bind(limit)
-        .bind(offset)
-        .fetch_all(pool)
-        .await?;
+        let rows =
+            sqlx::query("SELECT * FROM oauth_grants ORDER BY created_at DESC LIMIT $1 OFFSET $2")
+                .bind(limit)
+                .bind(offset)
+                .fetch_all(pool)
+                .await?;
 
-        let grants = rows.into_iter().map(|r| DbOAuthGrant::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let grants = rows
+            .into_iter()
+            .map(|r| DbOAuthGrant::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(grants)
     }
 

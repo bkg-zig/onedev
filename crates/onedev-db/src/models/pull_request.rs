@@ -2,7 +2,7 @@
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use sqlx::{FromRow, Row};
+use sqlx::FromRow;
 use uuid::Uuid;
 
 /// Pull request state in the database
@@ -22,7 +22,9 @@ impl From<DbPullRequestState> for onedev_core::models::pull_request::MergeReques
     fn from(s: DbPullRequestState) -> Self {
         match s {
             DbPullRequestState::Open => onedev_core::models::pull_request::MergeRequestState::Open,
-            DbPullRequestState::Merged => onedev_core::models::pull_request::MergeRequestState::Merged,
+            DbPullRequestState::Merged => {
+                onedev_core::models::pull_request::MergeRequestState::Merged
+            }
             DbPullRequestState::Closed | DbPullRequestState::Abandoned => {
                 onedev_core::models::pull_request::MergeRequestState::Closed
             }
@@ -35,9 +37,15 @@ impl From<onedev_core::models::pull_request::MergeRequestState> for DbPullReques
         match s {
             onedev_core::models::pull_request::MergeRequestState::Open
             | onedev_core::models::pull_request::MergeRequestState::Draft
-            | onedev_core::models::pull_request::MergeRequestState::Locked => DbPullRequestState::Open,
-            onedev_core::models::pull_request::MergeRequestState::Merged => DbPullRequestState::Merged,
-            onedev_core::models::pull_request::MergeRequestState::Closed => DbPullRequestState::Closed,
+            | onedev_core::models::pull_request::MergeRequestState::Locked => {
+                DbPullRequestState::Open
+            }
+            onedev_core::models::pull_request::MergeRequestState::Merged => {
+                DbPullRequestState::Merged
+            }
+            onedev_core::models::pull_request::MergeRequestState::Closed => {
+                DbPullRequestState::Closed
+            }
         }
     }
 }
@@ -55,10 +63,16 @@ pub enum DbMergeStrategy {
 impl From<DbMergeStrategy> for onedev_core::models::pull_request::MergeStrategy {
     fn from(s: DbMergeStrategy) -> Self {
         match s {
-            DbMergeStrategy::MergeCommit => onedev_core::models::pull_request::MergeStrategy::MergeCommit,
+            DbMergeStrategy::MergeCommit => {
+                onedev_core::models::pull_request::MergeStrategy::MergeCommit
+            }
             DbMergeStrategy::Squash => onedev_core::models::pull_request::MergeStrategy::Squash,
-            DbMergeStrategy::FastForward => onedev_core::models::pull_request::MergeStrategy::FastForward,
-            DbMergeStrategy::Rebase => onedev_core::models::pull_request::MergeStrategy::RebaseMerge,
+            DbMergeStrategy::FastForward => {
+                onedev_core::models::pull_request::MergeStrategy::FastForward
+            }
+            DbMergeStrategy::Rebase => {
+                onedev_core::models::pull_request::MergeStrategy::RebaseMerge
+            }
         }
     }
 }
@@ -66,10 +80,16 @@ impl From<DbMergeStrategy> for onedev_core::models::pull_request::MergeStrategy 
 impl From<onedev_core::models::pull_request::MergeStrategy> for DbMergeStrategy {
     fn from(s: onedev_core::models::pull_request::MergeStrategy) -> Self {
         match s {
-            onedev_core::models::pull_request::MergeStrategy::MergeCommit => DbMergeStrategy::MergeCommit,
+            onedev_core::models::pull_request::MergeStrategy::MergeCommit => {
+                DbMergeStrategy::MergeCommit
+            }
             onedev_core::models::pull_request::MergeStrategy::Squash => DbMergeStrategy::Squash,
-            onedev_core::models::pull_request::MergeStrategy::FastForward => DbMergeStrategy::FastForward,
-            onedev_core::models::pull_request::MergeStrategy::RebaseMerge => DbMergeStrategy::Rebase,
+            onedev_core::models::pull_request::MergeStrategy::FastForward => {
+                DbMergeStrategy::FastForward
+            }
+            onedev_core::models::pull_request::MergeStrategy::RebaseMerge => {
+                DbMergeStrategy::Rebase
+            }
         }
     }
 }
@@ -160,7 +180,9 @@ impl DbPullRequest {
     /// - DB-only data (`merge_base_sha`, `merge_check_status`, `label_ids`,
     ///   `watcher_ids`) is not part of the core model and is dropped
     pub fn to_core(&self) -> onedev_core::models::pull_request::MergeRequest {
-        use onedev_core::models::pull_request::{MergeRequest, MergeRequestState, MergeStatus, MergeStrategy};
+        use onedev_core::models::pull_request::{
+            MergeRequest, MergeRequestState, MergeStatus, MergeStrategy,
+        };
 
         let merge_strategy: MergeStrategy = self.merge_strategy.into();
         let state: MergeRequestState = match self.state {

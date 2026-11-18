@@ -8,9 +8,9 @@ pub struct GpgKey {
     pub id: i64,
     pub uuid: Uuid,
     pub user_id: i64,
-    pub key_id: String, // 8 or 16 char key ID
+    pub key_id: String,      // 8 or 16 char key ID
     pub fingerprint: String, // Full fingerprint
-    pub public_key: String, // Armored public key
+    pub public_key: String,  // Armored public key
     pub primary_key_id: Option<String>,
     pub subkeys: Vec<GpgSubkey>,
     pub user_ids: Vec<GpgUserId>,
@@ -31,7 +31,18 @@ pub struct GpgSubkey {
     pub created_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, strum::EnumString, strum::Display)]
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    Hash,
+    Serialize,
+    Deserialize,
+    strum::EnumString,
+    strum::Display,
+)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum GpgKeyCapability {
@@ -72,7 +83,7 @@ pub struct GpgKeyRef {
 
 impl GpgKey {
     pub fn is_expired(&self) -> bool {
-        self.expires_at.map_or(false, |exp| exp < Utc::now())
+        self.expires_at.is_some_and(|exp| exp < Utc::now())
     }
 
     pub fn is_valid(&self) -> bool {
@@ -80,22 +91,31 @@ impl GpgKey {
     }
 
     pub fn can_sign(&self) -> bool {
-        self.subkeys.iter().any(|sk| sk.capabilities.contains(&GpgKeyCapability::Sign)) ||
-        self.capabilities().contains(&GpgKeyCapability::Sign)
+        self.subkeys
+            .iter()
+            .any(|sk| sk.capabilities.contains(&GpgKeyCapability::Sign))
+            || self.capabilities().contains(&GpgKeyCapability::Sign)
     }
 
     pub fn can_encrypt(&self) -> bool {
-        self.subkeys.iter().any(|sk| sk.capabilities.contains(&GpgKeyCapability::Encrypt)) ||
-        self.capabilities().contains(&GpgKeyCapability::Encrypt)
+        self.subkeys
+            .iter()
+            .any(|sk| sk.capabilities.contains(&GpgKeyCapability::Encrypt))
+            || self.capabilities().contains(&GpgKeyCapability::Encrypt)
     }
 
     pub fn can_authenticate(&self) -> bool {
-        self.subkeys.iter().any(|sk| sk.capabilities.contains(&GpgKeyCapability::Authenticate)) ||
-        self.capabilities().contains(&GpgKeyCapability::Authenticate)
+        self.subkeys
+            .iter()
+            .any(|sk| sk.capabilities.contains(&GpgKeyCapability::Authenticate))
+            || self
+                .capabilities()
+                .contains(&GpgKeyCapability::Authenticate)
     }
 
     pub fn capabilities(&self) -> Vec<GpgKeyCapability> {
-        self.subkeys.iter()
+        self.subkeys
+            .iter()
             .flat_map(|sk| sk.capabilities.clone())
             .collect::<std::collections::HashSet<_>>()
             .into_iter()

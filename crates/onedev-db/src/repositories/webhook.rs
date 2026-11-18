@@ -1,9 +1,9 @@
 //! Webhook Repository
 
 use crate::{
-    models::webhook::{DbWebhook, DbCreateWebhook, DbUpdateWebhook, WebhookQueryBuilder},
-    repositories::Repository,
     DbPool, DbResult,
+    models::webhook::{DbCreateWebhook, DbUpdateWebhook, DbWebhook, WebhookQueryBuilder},
+    repositories::Repository,
 };
 use async_trait::async_trait;
 use sqlx::FromRow;
@@ -16,13 +16,20 @@ impl WebhookRepository {
     }
 
     /// Find by project ID
-    pub async fn find_by_project_id(&self, pool: &DbPool, project_id: i64) -> DbResult<Vec<DbWebhook>> {
+    pub async fn find_by_project_id(
+        &self,
+        pool: &DbPool,
+        project_id: i64,
+    ) -> DbResult<Vec<DbWebhook>> {
         let rows = sqlx::query(WebhookQueryBuilder::select_by_project_id())
             .bind(project_id)
             .fetch_all(pool)
             .await?;
 
-        let webhooks = rows.into_iter().map(|r| DbWebhook::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let webhooks = rows
+            .into_iter()
+            .map(|r| DbWebhook::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(webhooks)
     }
 
@@ -32,12 +39,20 @@ impl WebhookRepository {
             .fetch_all(pool)
             .await?;
 
-        let webhooks = rows.into_iter().map(|r| DbWebhook::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let webhooks = rows
+            .into_iter()
+            .map(|r| DbWebhook::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(webhooks)
     }
 
     /// Update delivery status
-    pub async fn update_delivery_status(&self, pool: &DbPool, id: i64, status: i32) -> DbResult<()> {
+    pub async fn update_delivery_status(
+        &self,
+        pool: &DbPool,
+        id: i64,
+        status: i32,
+    ) -> DbResult<()> {
         sqlx::query(WebhookQueryBuilder::update_delivery_status())
             .bind(id)
             .bind(status)
@@ -68,10 +83,12 @@ impl Repository<DbWebhook, DbCreateWebhook, DbUpdateWebhook> for WebhookReposito
             .fetch_one(pool)
             .await?;
 
-        self.find_by_id(pool, id).await?.ok_or_else(|| crate::DbError::NotFound {
-            entity_type: "Webhook".to_string(),
-            id: id.to_string(),
-        })
+        self.find_by_id(pool, id)
+            .await?
+            .ok_or_else(|| crate::DbError::NotFound {
+                entity_type: "Webhook".to_string(),
+                id: id.to_string(),
+            })
     }
 
     async fn find_by_id(&self, pool: &DbPool, id: i64) -> DbResult<Option<DbWebhook>> {
@@ -108,15 +125,17 @@ impl Repository<DbWebhook, DbCreateWebhook, DbUpdateWebhook> for WebhookReposito
     }
 
     async fn list(&self, pool: &DbPool, limit: i64, offset: i64) -> DbResult<Vec<DbWebhook>> {
-        let rows = sqlx::query(
-            "SELECT * FROM webhooks ORDER BY created_at DESC LIMIT $1 OFFSET $2"
-        )
-        .bind(limit)
-        .bind(offset)
-        .fetch_all(pool)
-        .await?;
+        let rows =
+            sqlx::query("SELECT * FROM webhooks ORDER BY created_at DESC LIMIT $1 OFFSET $2")
+                .bind(limit)
+                .bind(offset)
+                .fetch_all(pool)
+                .await?;
 
-        let webhooks = rows.into_iter().map(|r| DbWebhook::from_row(&r)).collect::<Result<Vec<_>, _>>()?;
+        let webhooks = rows
+            .into_iter()
+            .map(|r| DbWebhook::from_row(&r))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(webhooks)
     }
 
