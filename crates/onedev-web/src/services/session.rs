@@ -1,16 +1,32 @@
 //! Session Management for Web UI
 
-use anyhow::Result;
-use axum::{
-    extract::{FromRequestParts, State},
-    http::request::Parts,
-    response::Response,
-};
-use axum_extra::extract::cookie::{Cookie, CookieJar, Key, SameSite, SignedCookieJar};
+use axum::extract::FromRequestParts;
+use axum::http::HeaderMap;
+use axum_extra::extract::cookie::{Cookie, CookieJar, Key, SameSite};
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
 use time::Duration as TimeDuration;
 use uuid::Uuid;
+
+/// Extract cookie value by name from the Cookie header
+fn get_cookie_value(headers: &HeaderMap, name: &str) -> Option<String> {
+    headers
+        .get(axum::http::header::COOKIE)
+        .and_then(|value| value.to_str().ok())
+        .and_then(|cookie_str| {
+            cookie_str
+                .split(';')
+                .find_map(|part| {
+                    let part = part.trim();
+                    let mut iter = part.splitn(2, '=');
+                    let cookie_name = iter.next()?;
+                    if cookie_name == name {
+                        iter.next().map(|s| s.to_owned())
+                    } else {
+                        None
+                    }
+                })
+        })
+}
 
 /// Session data stored in cookie
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -43,7 +59,7 @@ impl SessionManager {
     }
 
     /// Create a new session cookie
-    pub fn create_session(&self, data: SessionData) -> Result<Cookie<'static>> {
+    pub fn create_session(&self, data: SessionData) -> anyhow::Result<Cookie<'static>> {
         let value = serde_json::to_string(&data)?;
         let cookie = Cookie::build((self.cookie_name.clone(), value))
             .http_only(true)
@@ -55,8 +71,8 @@ impl SessionManager {
         Ok(cookie)
     }
 
-    /// Extract session from signed cookie jar
-    pub fn extract_session(&self, jar: &SignedCookieJar) -> Option<SessionData> {
+    /// Extract session from cookie value
+    pub fn extract_session(&self, jar: &CookieJar) -> Option<SessionData> {
         jar.get(&self.cookie_name)
             .and_then(|cookie| serde_json::from_str(cookie.value()).ok())
     }
@@ -73,26 +89,19 @@ impl SessionManager {
     }
 }
 
-/// Extract session from parts directly using cookie extraction
-async fn extract_session_from_parts<S>(parts: &mut Parts, _state: &S) -> Result<Option<SignedCookieJar>, axum::http::StatusCode>
-where
-    S: Send + Sync,
-{
-    // Use CookieJar extractor - we need to manually extract cookies from headers
-    // For now, return Ok(None) as placeholder
-    Ok(None)
-}
-
-/// Extractor for session data using signed cookies (placeholder)
+/// Extractor for session data using cookies
 impl<S> FromRequestParts<S> for SessionData
 where
     S: Send + Sync,
 {
     type Rejection = axum::http::StatusCode;
 
-    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
-        // Placeholder - in real implementation, extract from cookie
-        let _ = (parts, state);
+    async fn from_request_parts(parts: &mut axum::http::request::Parts, _state: &S) -> Result<Self, Self::Rejection> {
+        if let Some(session_value) = get_cookie_value(&parts.headers, "session") {
+            if let Ok(session_data) = serde_json::from_str(&session_value) {
+                return Ok(session_data);
+            }
+        }
         Err(axum::http::StatusCode::UNAUTHORIZED)
     }
 }
@@ -106,9 +115,13 @@ where
 {
     type Rejection = std::convert::Infallible;
 
-    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
-        let _ = (parts, state);
-        Ok(OptionalSession(None))
+    async fn from_request_parts(parts: &mut axum::http::request::Parts, _state: &S) -> Result<Self, Self::Rejection> {
+        if let Some(session_value) = get_cookie_value(&parts.headers, "session") {
+            let session = serde_json::from_str(&session_value).ok();
+            Ok(OptionalSession(session))
+        } else {
+            Ok(OptionalSession(None))
+        }
     }
 }
 

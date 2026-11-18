@@ -1,7 +1,6 @@
 //! OneDev SSR Web UI Binary
 
 use onedev_web::{create_web_router, WebConfig, WebState};
-use onedev_server::config::AppConfig;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 #[tokio::main]
