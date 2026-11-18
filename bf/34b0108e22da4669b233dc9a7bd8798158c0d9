@@ -1,0 +1,19 @@
+crates/onedev-api/src/services/build_service.rs
+  s_4dc460dbf339a2::t_d7320805d4723f 1-5,7-11,16-32,37-104
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "bf34b0108e22da4669b233dc9a7bd8798158c0d9",
+  "prompts": {},
+  "sessions": {
+    "s_4dc460dbf339a2": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e163f433bffe5t2PzgPpubA64u",
+        "model": "big-pickle"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}
