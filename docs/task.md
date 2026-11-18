@@ -14,7 +14,7 @@
 | 0.2 | `vendor/bkg-core-dev` formal read-only setzen (`git update-index --skip-worktree` für getrackte Dateien) | infra | - [ ] | Vor Portierung sicherstellen |
 | 0.3 | `docker/ports.env` anlegen (`BKG_CORE_PORT=46315`, `BKG_GATEWAY_PORT=36697`, `CORE_INTERNAL_PORT=18080`) | infra | - [ ] | Einmalig, danach nie ändern |
 | 0.4 | `/srv/bkg/admin-state/db.env` anlegen (0700/0600), DB-PW generieren | infra | - [ ] | Nur DB-PW, keine anderen Secrets |
-| 0.5 | `docker/compose.yml` für `bkg-core-admin` erstellen (Services: `db` → `bkg-core-admin-db`, `core`, `gateway` Profil → `bkg-core-ruxen:mango`) | infra | - [ ] | Eigenes Netz `bkg-core-admin-net` |
+| 0.5 | `docker-compose.yml` für `bkg-core-admin` erstellen (Services: `db` → `bkg-core-admin-db`, `core`, `gateway` Profil → `bkg-core-ruxen:mango`) | infra | - [ ] | Eigenes Netz `bkg-core-admin-net` |
 | 0.6 | `onedev-core` Domain-Modelle auf Vollständigkeit prüfen vs. Java-Entities (≈500) | core | - [~] | `user.rs`, `project.rs`, `issue.rs`, `pull_request.rs`, `build.rs` vorhanden; `auth.rs`, `query.rs`, `pack.rs` partiell |
 | 0.7 | `cargo test --quiet` im Workspace laufen lassen (Baseline) | core | - [ ] | Erwartet: Fehlschlagen bis Crates komplett |
 
@@ -187,7 +187,7 @@
 | 6.2 | `cargo clippy -D warnings` clean | core | - [ ] |
 | 6.3 | `cargo fmt --check` clean | core | - [ ] |
 | 6.4 | `dx build --web` erfolgreich | core | - [ ] |
-| 6.5 | `docker compose -f docker/compose.yml config --quiet` ok | infra | - [ ] |
+| 6.5 | `docker compose -f docker-compose.yml config --quiet` ok | infra | - [ ] |
 | 6.6 | Stack-Neustart: `docker compose up -d` → `/health` 200 | infra | - [ ] |
 | 6.7 | `/api/stack/status` mit Session 200, Container gelistet | core | - [ ] |
 | 6.8 | Dashboard Stack-Tab: Buttons funktionieren, Logs follow | core | - [ ] |

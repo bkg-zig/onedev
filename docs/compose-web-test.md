@@ -23,7 +23,7 @@ scripts/docker-build.sh up          # baut db/core/web und startet sie
 Direkt mit Compose geht es auch (Projektverzeichnis pinnen!):
 
 ```bash
-docker compose --project-directory . -f docker/compose.yml up -d --build db core web
+docker compose --project-directory . -f docker-compose.yml up -d --build db core web
 ```
 
 Alle Befehle laufen über ein Skript (`scripts/docker-build.sh` —
@@ -79,8 +79,10 @@ Platzhalterdaten zurück, mit `ONEDEV_WEB_DATABASE_URL` auf echten
 
 ## Hinweis zu Build-Kontexten
 
-Alle `context`-Pfade in `docker/compose.yml` sind relativ zum
-`docker/`-Verzeichnis (Projektverzeichnis bei `-f docker/compose.yml`):
-`..` = Repo-Root, `../ruxen` und `../pgrust/...` zeigen auf die
-Nachbar-Repos unter `infra/`. Von einem anderen Arbeitsverzeichnis aus
-ändert sich daran nichts.
+Die Compose-Datei liegt bewusst am Repo-Root (`docker-compose.yml`):
+Aufrufverzeichnis und Dateiverzeichnis fallen zusammen, deshalb lösen
+`docker compose -f docker-compose.yml ...` und
+`docker compose --project-directory . -f docker-compose.yml ...`
+identisch auf — egal welche Compose-Version. Alle `context`-Pfade sind
+relativ zum Root: `.` = Repo-Root, `docker/Dockerfile.*`,
+`../pgrust/...` und `../ruxen` zeigen auf die Nachbar-Repos unter `infra/`.

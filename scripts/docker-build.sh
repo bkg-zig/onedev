@@ -23,7 +23,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-COMPOSE=(docker compose --project-directory . -f docker/compose.yml)
+COMPOSE=(docker compose --project-directory . -f docker-compose.yml)
 DEFAULT_SERVICES=(db core web)
 
 usage() {

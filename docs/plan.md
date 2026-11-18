@@ -139,7 +139,7 @@ Hinweis: Phase 1 ist vorhanden, aber semantisch zu korrigieren (Naming-Drift Mer
 ### Phase 6 – hardening & Cutover (Woche 8–9)
 - [ ] `cargo test --quiet` (alle Crates) + `cargo clippy -D warnings`
 - [ ] `dx build --web` erfolgreich
-- [ ] `docker compose -f docker/compose.yml config --quiet`
+- [ ] `docker compose -f docker-compose.yml config --quiet`
 - [ ] Stack-Neustart, `/health` 200, `/api/stack/status` mit Session
 - [ ] Dashboard Stack-Tab funktional, `admin logs --follow` ohne Secrets
 - [ ] Git-Status aller Forks (`pgrust`, `ruxen`, `youki`) clean – **kein Push ohne Freigabe**
@@ -154,7 +154,7 @@ Hinweis: Phase 1 ist vorhanden, aber semantisch zu korrigieren (Naming-Drift Mer
 | `docker/ports.env` | Feste Ports (Core 46315, Gateway 36697, intern 18080) | Infra |
 | `/srv/bkg/admin-state/db.env` | DB-Passwort (0700/0600) | Infra |
 | `control.admin_credentials` | Admin Salt+SHA256, Force-PW-Change | Core (Rust) |
-| `docker/compose.yml` | Services: db (pgrust), core, gateway (ruxen, Profil) | Infra |
+| `docker-compose.yml` | Services: db (pgrust), core, gateway (ruxen, Profil) | Infra |
 | `infra/pgrust/bkg/docker/db` | Build-Context `bkg-core-admin-db` | Infra |
 | `infra/ruxen` | Build-Context `bkg-core-ruxen:mango` | Infra |
 

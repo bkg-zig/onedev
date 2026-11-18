@@ -307,7 +307,7 @@ services:
 - [ ] `cargo clippy --all-targets --all-features -- -D warnings` clean
 - [ ] `cargo test --quiet --workspace` grün
 - [ ] `dx build --web` erfolgreich
-- [ ] `docker compose -f docker/compose.yml config --quiet` ok
+- [ ] `docker compose -f docker-compose.yml config --quiet` ok
 - [ ] Stack restart → `/health` 200, `/ready` 200
 - [ ] `/api/stack/status` mit Session 200, Container gelistet
 - [ ] Dashboard Stack-Tab: Buttons funktionieren, Logs follow
