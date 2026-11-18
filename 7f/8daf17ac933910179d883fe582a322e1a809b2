@@ -1,0 +1,53 @@
+crates/onedev-build/src/services/youki/spec.rs
+  s_0de1f439e1761a::t_5e60534f7f0c6f 585-630
+  s_0de1f439e1761a::t_eb4623a829c954 1-83,146-584,631-637
+  s_0de1f439e1761a::t_3c678fe24a0b8d 84-145
+crates/onedev-build/src/services/youki/probe.rs
+  s_0de1f439e1761a::t_b4bee7ee8b8b12 1-150
+crates/onedev-build/src/services/executor.rs
+  s_0de1f439e1761a::t_7f5836a7b0b616 7-10,31-32,94,96-99,122-125,140,369-374
+  s_0de1f439e1761a::t_435360c445fad0 725,728-731,856-960,1178-1232
+  s_0de1f439e1761a::t_27b95805cab5e0 1233
+crates/onedev-build/src/services/youki/e2e.rs
+  s_0de1f439e1761a::t_68207d1b6031dd 1-108,111-141,143-426,429,432,434-459,463-465,467-637,639,643-644,646-648,650-651,653-991
+  s_0de1f439e1761a::t_b7fc8599626ab5 109-110,142,430-431,433,460-462,466,638,640-642,645,649,652
+  s_0de1f439e1761a::t_3c3d8e270bbc83 427-428
+crates/onedev-build/src/services/youki/cgroup.rs
+  s_0de1f439e1761a::t_3accc8582b7a9f 14-21,37-52,150-233,240-249,256,259,273,275-280,285-286,290-291
+  s_0de1f439e1761a::t_013d96736a4eb5 63-65,274,281-284,292,344,347-352
+  s_0de1f439e1761a::t_6aa70e78ce64b0 1-13,22-27,29-33,53-62,66-149,234-239,250-255,257-258,260-272,287-289,293-343,345-346,353-411,413-414,422-423,506-510,513-515,517-518,520-532,540-549,551-555,563-572
+  s_0de1f439e1761a::t_0a62287ba7dc7c 28,34-36
+  s_0de1f439e1761a::t_25ee5e880f5a77 412,415-418,420-421,424-429,437
+  s_0de1f439e1761a::t_8dbbe16abc4002 419,430-436,438-481,483,498,511-512,516,519,533-539,550,556-562
+  s_0de1f439e1761a::t_93dd25bd9c4773 482,484-497,499-505
+crates/onedev-build/src/services/youki/rootfs.rs
+  s_0de1f439e1761a::t_e98fbcc7cec053 1-385,387-607
+  s_0de1f439e1761a::t_0a62287ba7dc7c 386
+crates/onedev-build/src/services/mod.rs
+  s_0de1f439e1761a::t_2459db291e6b93 10
+crates/onedev-build/src/services/youki/mod.rs
+  s_0de1f439e1761a::t_b7fc8599626ab5 821-823
+  s_0de1f439e1761a::t_46349f95a92029 1-275,277-280,282,284-359,362-820,824-826,830-833,838-923
+  s_0de1f439e1761a::t_1eb9af3d264370 360-361
+  s_0de1f439e1761a::t_8dbbe16abc4002 276,281,283
+  s_0de1f439e1761a::t_016dca9c2dd188 827-829
+  s_0de1f439e1761a::t_e53c2620fa347b 834-837
+crates/onedev-build/src/services/oci/store.rs
+  s_0de1f439e1761a::t_2459db291e6b93 874,905,925
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "7f8daf17ac933910179d883fe582a322e1a809b2",
+  "prompts": {},
+  "sessions": {
+    "s_0de1f439e1761a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0f2f81bd-eb11-4834-95c4-07542b095264",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}
