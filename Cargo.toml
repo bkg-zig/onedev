@@ -167,7 +167,7 @@ insta = { version = "1.37", features = ["json", "ron", "yaml", "csv"] }
 
 # Compression
 flate2 = "1.0"
-zstd = { version = "0.13", features = ["multithreading"] }
+zstd = "0.13"
 bzip2 = "0.4"
 tar = "0.4"
 

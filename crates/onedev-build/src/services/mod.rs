@@ -2,6 +2,7 @@
 
 pub mod executor;
 pub mod interpolation;
+pub mod oci;
 pub mod parser;
 pub mod retry_condition;
 pub mod runner;

@@ -41,3 +41,10 @@ glob.workspace = true
 tempfile = "3.10"
 libc.workspace = true
 which = "8.0"
+# OCI image handling of the youki executor (registry client, layer unpacking)
+reqwest.workspace = true
+sha2.workspace = true
+hex.workspace = true
+base64.workspace = true
+flate2.workspace = true
+zstd.workspace = true
