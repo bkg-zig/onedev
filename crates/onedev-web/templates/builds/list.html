@@ -1,6 +1,79 @@
 {% extends "base.html" %}
-{% block title %}Builds · OneDev{% endblock title %}
-{% block page_title %}Builds{% endblock page_title %}
+{# 1:1 port of ProjectBuildListPage + BuildListPanel.html: side-main     #}
+{# layout, query toolbar with Run-job button, operations row (incl.      #}
+{# saved queries and display-params), build table; wicket:svg becomes    #}
+{# text, AJAX becomes htmx.                                             #}
+{% block title %}{{ title }} · OneDev{% endblock title %}
+{% block page_title %}{{ title }}{% endblock page_title %}
+{% block head %}
+<link rel="stylesheet" href="/static/vanilla/web/component/build/status/build-status.css">
+{% endblock head %}
 {% block content %}
-<div class="p-2 p-sm-5"><h1>{{ title | default(value='Builds') }}</h1><ul>{% for build in builds | default(value=[]) %}<li><a href="/projects/{{ project_id | default(value='') }}/builds/{{ build.id }}">#{{ build.number }} {{ build.status }}</a></li>{% else %}<li>No builds.</li>{% endfor %}</ul></div>
+<div class="side-main p-2 p-sm-5">
+  <div class="side card"></div>
+  <div class="main">
+    <div class="build-list card no-autofocus">
+      <div class="card-body">
+        <div class="d-flex mb-4">
+          <form class="clearable-wrapper flex-grow-1" hx-get="/projects/{{ project_id }}/builds" hx-target=".build-rows" hx-swap="outerHTML" hx-trigger="submit">
+            <div class="input-group">
+              <input name="search" spellcheck="false" autocomplete="off" class="form-control" placeholder="Query/order builds" value="{{ params.search | default(value='') }}">
+              <span class="input-group-append">
+                <button type="submit" title="Query" class="btn btn-outline-secondary btn-icon">&#x1f50d;</button>
+              </span>
+            </div>
+          </form>
+          <a href="/projects/{{ project_id }}/builds/new" title="Run job" class="btn btn-primary btn-icon flex-shrink-0 ml-3">&#9654;</a>
+        </div>
+        <div class="mb-4">
+          <a href="#" class="show-saved-queries text-gray d-inline-block mb-2 mr-4 text-nowrap">Show Saved Queries</a>
+          <a href="#" class="save-query text-gray d-inline-block mb-2 mr-4 text-nowrap">Save Query</a>
+          <a href="#" class="filter text-gray mr-4 mb-2 d-inline-block text-nowrap">Filter</a>
+          <a href="#" class="order-by text-gray mr-4 mb-2 d-inline-block text-nowrap">Order By</a>
+          <a href="#" class="operations text-gray mr-4 mb-2 d-inline-block text-nowrap">Operations</a>
+          <a href="#" class="list-params text-gray d-inline-block mr-4 mb-2 d-none d-xl-inline text-nowrap">Display Params</a>
+        </div>
+        <div class="build-rows">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Build</th>
+                <th>Status</th>
+                <th>Branch</th>
+                <th>Commit</th>
+                <th>Duration</th>
+                <th>Triggered By</th>
+                <th>Started</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for build in builds %}
+              <tr>
+                <td>
+                  <div class="d-flex flex-wrap row-gap-2">
+                    <a href="/projects/{{ project_id }}/builds/{{ build.id }}" class="text-nowrap">
+                      #{{ build.number }}
+                    </a>
+                  </div>
+                </td>
+                <td>{{ build.status }}</td>
+                <td>{{ build.branch }}</td>
+                <td>
+                  <div>{{ build.commit.message | default(value='') }}</div>
+                  <div class="text-muted">{{ build.commit.short_sha | default(value='') }}</div>
+                </td>
+                <td>{{ build.duration | default(value='') }}</td>
+                <td>{{ build.triggered_by.username | default(value='') }}</td>
+                <td>{{ build.started_at | default(value='') }}</td>
+              </tr>
+              {% else %}
+              <tr><td colspan="7" class="text-muted">No builds found.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock content %}

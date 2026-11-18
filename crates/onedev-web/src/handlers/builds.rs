@@ -62,12 +62,56 @@ pub struct TriggerBuildForm {
     pub variables: std::collections::HashMap<String, String>,
 }
 
-/// Get builds list
+/// Live build list from the database when configured, otherwise the dev
+/// placeholder rows. `search`/`status`/`branch` are plain filters for now;
+/// the full vanilla query language is a later slice (see report 04).
 async fn get_builds(
-    _state: &WebState,
-    _project_id: &str,
-    _params: &BuildListParams,
+    state: &WebState,
+    project_id: &str,
+    params: &BuildListParams,
 ) -> Vec<serde_json::Value> {
+    let needle = params.search.as_deref().unwrap_or("").to_lowercase();
+    let status_filter = params.status.as_deref().unwrap_or("").to_lowercase();
+    let branch_filter = params.branch.as_deref().unwrap_or("").to_lowercase();
+    let matches = |row: &onedev_db::models::build::DbBuild| {
+        (status_filter.is_empty()
+            || format!("{:?}", row.status).to_lowercase() == status_filter)
+            && (branch_filter.is_empty()
+                || row.ref_name.to_lowercase().contains(&branch_filter))
+            && (needle.is_empty()
+                || row.ref_name.to_lowercase().contains(&needle)
+                || row.commit_sha.to_lowercase().contains(&needle))
+    };
+    if let (Some(pool), Ok(pid)) = (&state.db_pool, project_id.parse::<i64>()) {
+        let builds = onedev_api::services::BuildService::new(pool.clone());
+        let users = onedev_api::services::UserService::new(pool.clone());
+        let per_page = params.per_page.unwrap_or(25).min(100).max(1) as i64;
+        let page = params.page.unwrap_or(0) as i64;
+        if let Ok(rows) = builds.list(pid, per_page, page * per_page).await {
+            let mut out = Vec::new();
+            for row in rows.into_iter().filter(matches) {
+                let author = users
+                    .get(row.author_id)
+                    .await
+                    .map(|user| user.name)
+                    .unwrap_or_default();
+                let short_sha = row.commit_sha.chars().take(7).collect::<String>();
+                out.push(serde_json::json!({
+                    "id": row.id,
+                    "number": row.number,
+                    "pipeline": null,
+                    "branch": row.ref_name,
+                    "commit": { "sha": row.commit_sha, "short_sha": short_sha, "message": row.commit_message },
+                    "status": format!("{:?}", row.status).to_lowercase(),
+                    "queued_at": row.created_at,
+                    "started_at": row.started_at,
+                    "finished_at": row.finished_at,
+                    "triggered_by": { "username": author, "full_name": null, "avatar_url": null }
+                }));
+            }
+            return out;
+        }
+    }
     vec![
         serde_json::json!({
             "id": 1,
@@ -109,6 +153,30 @@ async fn get_builds(
             "triggered_by": { "username": "admin", "full_name": "Admin User", "avatar_url": null }
         }),
     ]
+    .into_iter()
+    .filter(|item| {
+        (status_filter.is_empty()
+            || item.get("status").and_then(|v| v.as_str()).unwrap_or("") == status_filter)
+            && (branch_filter.is_empty()
+                || item.get("branch").and_then(|v| v.as_str()).unwrap_or("").to_lowercase().contains(&branch_filter))
+            && (needle.is_empty()
+                || item.get("branch").and_then(|v| v.as_str()).unwrap_or("").to_lowercase().contains(&needle)
+                || item
+                    .get("commit")
+                    .and_then(|c| c.get("sha"))
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_lowercase()
+                    .contains(&needle)
+                || item
+                    .get("commit")
+                    .and_then(|c| c.get("message"))
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_lowercase()
+                    .contains(&needle))
+    })
+    .collect()
 }
 
 /// Get single build
