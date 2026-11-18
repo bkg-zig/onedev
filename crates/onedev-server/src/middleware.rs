@@ -5,6 +5,7 @@ use axum::{
     http::{HeaderValue, StatusCode},
     middleware::Next,
     response::Response,
+    Router,
 };
 use governor::{Quota, RateLimiter, clock::DefaultClock, state::InMemoryState};
 use std::num::NonZeroU32;
@@ -13,7 +14,6 @@ use std::time::Duration;
 use tokio::sync::Mutex;
 use tracing::warn;
 use uuid::Uuid;
-
 use crate::config::AppConfig;
 
 /// Rate limiter state - using NotKeyed for global rate limiting
@@ -40,27 +40,29 @@ pub async fn rate_limit_middleware(
     req: Request,
     next: Next,
 ) -> Result<Response, StatusCode> {
-    let mut limiter = limiter.lock().await;
+    let limiter = limiter.lock().await;
     match limiter.check() {
         Ok(_) => {
             drop(limiter);
             Ok(next.run(req).await)
         }
         Err(e) => {
-            warn!("Rate limit exceeded: {:?}", e);
+            tracing::warn!("Rate limit exceeded: {:?}", e);
             Err(StatusCode::TOO_MANY_REQUESTS)
         }
     }
 }
 
 /// Extract client identifier from request
+#[allow(dead_code)]
 fn extract_client_id(req: &Request) -> String {
     // Try to get user ID from auth header
     if let Some(auth_header) = req.headers().get("authorization") {
         if let Ok(auth_str) = auth_header.to_str() {
             if auth_str.starts_with("Bearer ") {
                 // Could extract user ID from JWT, for now use token prefix
-                return format!("token:{}", &auth_str[7..min(20, auth_str.len())]);
+                let end = std::cmp::min(20, auth_str.len());
+                return format!("token:{}", &auth_str[7..end]);
             }
         }
     }
@@ -80,10 +82,6 @@ fn extract_client_id(req: &Request) -> String {
 
     // Fallback to a generic identifier
     "unknown".to_string()
-}
-
-fn min(a: usize, b: usize) -> usize {
-    if a < b { a } else { b }
 }
 
 /// Request ID middleware
@@ -116,7 +114,7 @@ pub async fn tracing_middleware(req: Request, next: Next) -> Response {
     let path = req.uri().path().to_string();
     let request_id = req.extensions().get::<RequestId>().map(|r| r.0.clone());
 
-    let span = tracing::info_span!(
+    let _span = tracing::info_span!(
         "http_request",
         method = %method,
         path = %path,
@@ -243,4 +241,17 @@ pub async fn timeout_middleware(req: Request, next: Next) -> Result<Response, St
             Err(StatusCode::REQUEST_TIMEOUT)
         }
     }
+}
+
+/// Create middleware stack for the application
+pub fn create_middleware_stack<S>(app: Router<S>) -> Router<S>
+where
+    S: Clone + Send + Sync + 'static,
+{
+    app.layer(tower_http::trace::TraceLayer::new_for_http())
+        .layer(tower_http::cors::CorsLayer::permissive())
+        .layer(tower_http::compression::CompressionLayer::new())
+        .layer(tower::limit::ConcurrencyLimitLayer::new(1000))
+        // TimeoutLayer removed due to Error type incompatibility with Infallible
+        // Can be re-added with tower 0.4+ when using compatible error types
 }

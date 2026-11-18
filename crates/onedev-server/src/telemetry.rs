@@ -35,6 +35,13 @@ pub fn init_otel(_config: &crate::config::AppConfig) -> Result<()> {
     Ok(())
 }
 
+/// Initialize telemetry (OpenTelemetry + metrics) - alias for init_otel
+pub fn init_telemetry(config: &crate::config::AppConfig) -> Result<()> {
+    init_otel(config)?;
+    init_metrics(config)?;
+    Ok(())
+}
+
 /// Initialize metrics (stub - temporarily disabled)
 pub fn init_metrics(_config: &crate::config::AppConfig) -> Result<()> {
     tracing::info!("OpenTelemetry metrics initialization skipped (temporarily disabled)");

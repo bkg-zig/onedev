@@ -12,9 +12,8 @@ use tracing::{debug, error, info, warn};
 use uuid::Uuid;
 
 // Import types from onedev-build
-use onedev_build::models::{BuildReport, BuildSpec, BuildStatus, JobResult, LogLine, TriggerEvent};
-use onedev_build::models::{ExecuteCondition, StepResult};
-use onedev_build::services::{BuildRunner, HostExecutor};
+use onedev_build::models::{BuildReport, BuildSpec, BuildStatus};
+use onedev_build::services::BuildRunner;
 
 /// Build scheduler configuration
 #[derive(Debug, Clone)]
@@ -176,9 +175,9 @@ impl BuildScheduler {
         let runner = self.runner.clone();
         let db_pool = self.db_pool.clone();
         let running_builds = self.running_builds.clone();
-        let semaphore = self.semaphore.clone();
+        let _semaphore = self.semaphore.clone();
         let build_id = queued_build.build_id;
-        let project_id = queued_build.project_id;
+        let _project_id = queued_build.project_id;
 
         tokio::spawn(async move {
             let _permit = permit; // Release when done
@@ -276,7 +275,7 @@ impl BuildScheduler {
         let artifact_dir_clone = artifact_dir.clone();
         let spec_clone = spec.clone();
         let trigger_event_clone = trigger_event.clone();
-        let variables_clone = variables.clone();
+        let _variables_clone = variables.clone();
         let log_sender_clone = log_sender.clone();
 
         let report = tokio::task::spawn_blocking(move || {
@@ -392,8 +391,8 @@ impl BuildScheduler {
 
         for build in stuck_builds {
             let build_id: Uuid = build.get("id");
-            let project_id: Uuid = build.get("project_id");
-            warn!("Build {} appears stuck, marking as failed", build_id);
+            let _project_id: Uuid = build.get("project_id");
+            tracing::warn!("Build {} appears stuck, marking as failed", build_id);
             sqlx::query(
                 "UPDATE builds SET status = $1, finished_at = $2, error = $3 WHERE id = $4",
             )

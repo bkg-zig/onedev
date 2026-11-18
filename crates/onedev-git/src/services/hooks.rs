@@ -9,7 +9,7 @@ use std::sync::{Arc, RwLock};
 
 use crate::errors::{GitError, GitResult};
 use crate::models::{
-    GitActor, HookDecision, PostReceiveListener, ProtectionRules, PushContext,
+    GitActor, HookDecision, PostReceiveListener, ProtectionRule, ProtectionRules, PushContext,
     PushEvent, RefUpdate,
 };
 use crate::utils::{

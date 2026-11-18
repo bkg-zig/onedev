@@ -8,7 +8,7 @@ use serde_json::Value;
 use sqlx::{PgPool, Row};
 use std::sync::Arc;
 use tokio::sync::broadcast;
-use tokio::time::{Duration, Instant};
+use tokio::time::Duration;
 use tracing::{debug, error, info, warn};
 use uuid::Uuid;
 

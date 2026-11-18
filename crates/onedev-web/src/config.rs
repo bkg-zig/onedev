@@ -183,7 +183,7 @@ pub struct FeatureFlags {
 
 impl WebConfig {
     /// Load configuration from files and environment
-    pub fn load() -> Result<Self, figment::Error> {
+    pub fn load() -> Result<Self, Box<figment::Error>> {
         let config_dir = std::env::var("ONEDEV_WEB_CONFIG_DIR")
             .unwrap_or_else(|_| "/etc/onedev/web".to_string());
 
@@ -193,6 +193,7 @@ impl WebConfig {
             .merge(Json::file(format!("{}/config.json", config_dir)).nested())
             .merge(Env::prefixed("ONEDEV_WEB_").split("__").global())
             .extract()
+            .map_err(Box::new)
     }
 }
 

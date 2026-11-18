@@ -29,9 +29,9 @@ async fn main() -> anyhow::Result<()> {
         tracing::info!("Sentry initialized");
     }
 
-    // Initialize OpenTelemetry
-    if config.observability.tracing_enabled {
-        onedev_server::init_otel(&config)?;
+    // Initialize telemetry
+    if config.observability.tracing_enabled || config.observability.metrics_enabled {
+        onedev_server::init_telemetry(&config)?;
     }
 
     // Create application state

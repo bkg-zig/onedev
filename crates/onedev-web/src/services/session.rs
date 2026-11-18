@@ -38,7 +38,6 @@ pub struct SessionData {
 
 /// Session manager
 pub struct SessionManager {
-    key: Key,
     cookie_name: String,
     secure: bool,
     same_site: SameSite,
@@ -49,9 +48,8 @@ impl SessionManager {
     pub fn new(secret: &[u8; 64], cookie_name: &str, secure: bool) -> Self {
         // secret is used for deriving key material in production; kept for API compatibility
         debug_assert!(!secret.is_empty());
-        let key = Key::from(secret);
+        let _key = Key::from(secret);
         Self {
-            key,
             cookie_name: cookie_name.to_string(),
             secure,
             same_site: SameSite::Lax,

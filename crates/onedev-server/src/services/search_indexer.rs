@@ -5,8 +5,7 @@ use chrono::{DateTime, Utc};
 use sqlx::{PgPool, Row};
 use std::sync::Arc;
 use tokio::sync::broadcast;
-use tokio::task;
-use tracing::{debug, error, info, warn};
+use tracing::{debug, error, info};
 use uuid::Uuid;
 
 /// Search indexer configuration

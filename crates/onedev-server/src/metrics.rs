@@ -255,7 +255,7 @@ fn normalize_path(path: &str) -> String {
 
 /// Middleware to record HTTP metrics
 pub async fn metrics_middleware(
-    State(handle): State<MetricsHandle>,
+    State(_handle): State<MetricsHandle>,
     req: axum::http::Request<axum::body::Body>,
     next: axum::middleware::Next,
 ) -> Response {

@@ -84,7 +84,7 @@ async fn create_minimal_api_state() -> anyhow::Result<ApiState> {
 
 /// Create web router
 pub fn create_web_router(state: WebState) -> Router<WebState> {
-    let router = Router::new()
+    Router::new()
         .route(
             "/",
             axum::routing::get(handlers::dashboard::dashboard_handler),
@@ -240,9 +240,7 @@ pub fn create_web_router(state: WebState) -> Router<WebState> {
         // Add middleware
         .layer(tower_http::trace::TraceLayer::new_for_http())
         .layer(tower_http::compression::CompressionLayer::new())
-        .with_state(state);
-
-    router
+        .with_state(state)
 }
 
 // Template filters
@@ -289,10 +287,10 @@ pub fn date_filter(
                 return Ok(tera::Value::String(dt.format(format).to_string()));
             }
         }
-    } else if let Some(timestamp) = value.as_i64() {
-        if let Some(dt) = Utc.timestamp_opt(timestamp, 0).single() {
-            return Ok(tera::Value::String(dt.format(format).to_string()));
-        }
+    } else if let Some(timestamp) = value.as_i64()
+        && let Some(dt) = Utc.timestamp_opt(timestamp, 0).single()
+    {
+        return Ok(tera::Value::String(dt.format(format).to_string()));
     }
 
     Ok(tera::Value::String("".to_string()))

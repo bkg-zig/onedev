@@ -8,13 +8,25 @@ pub mod services;
 pub mod state;
 pub mod telemetry;
 
-pub use config::*;
-pub use lifecycle::*;
-pub use metrics::*;
-pub use middleware::*;
-pub use services::*;
-pub use state::*;
-pub use telemetry::*;
+// Explicit re-exports to avoid ambiguous glob re-exports
+pub use config::AppConfig;
+pub use config::CleanupConfig;
+pub use config::WebhookConfig;
+pub use config::AuthConfig;
+pub use lifecycle::LifecycleManager;
+pub use metrics::MetricsHandle;
+pub use metrics::init_metrics;
+pub use middleware::create_middleware_stack;
+pub use services::build_scheduler::BuildSchedulerConfig;
+pub use services::cleanup::CleanupConfig as CleanupServiceConfig;
+pub use services::git_gc::GitGcConfig;
+pub use services::search_indexer::SearchIndexerConfig;
+pub use services::webhook_dispatcher::WebhookDispatcherConfig;
+pub use state::AppState;
+pub use state::init_state;
+pub use telemetry::init_telemetry;
+pub use telemetry::init_otel;
+pub use telemetry::init_logging;
 
 pub use anyhow::Result;
 pub use chrono::{DateTime, Utc};
@@ -23,18 +35,10 @@ pub use thiserror::Error;
 /// Re-export commonly used types
 pub use uuid::Uuid;
 
-use crate::config::AppConfig;
 use axum::{Router, routing::get};
-use jsonwebtoken::Algorithm;
 use onedev_api::{AppState as ApiState, create_router as create_api_router};
 use onedev_db::{create_pool, run_migrations};
-use secrecy::SecretString;
-use sqlx::PgPool;
-use std::convert::Infallible;
 use std::sync::Arc;
-
-// Application state is defined in state module
-pub use state::AppState;
 
 // Allow nesting ApiState router inside AppState router
 impl axum::extract::FromRef<AppState> for ApiState {

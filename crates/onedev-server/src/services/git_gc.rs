@@ -2,15 +2,12 @@
 
 use anyhow::Result;
 use chrono::{DateTime, Utc};
-use gix_odb::Handle;
-use gix_odb::memory::Proxy as OdbProxy;
 use sqlx::{PgPool, Row};
 use std::path::PathBuf;
-use std::process::Command;
 use std::sync::Arc;
 use tokio::sync::broadcast;
 use tokio::task;
-use tracing::{debug, error, info, warn};
+use tracing::{error, info, warn};
 use uuid::Uuid;
 
 /// Git GC configuration
@@ -237,7 +234,7 @@ impl GitGcService {
         let repo_path = self.config.repos_root.join(&path);
 
         let stats = if repo_path.exists() {
-            let repo_path = repo_path.clone();
+            let _repo_path = repo_path.clone();
             task::spawn_blocking(move || -> Result<GitGcStats> {
                 // Return default stats since we can't easily get object counts without gix gc
                 Ok(GitGcStats {

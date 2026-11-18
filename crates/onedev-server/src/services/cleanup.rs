@@ -44,7 +44,7 @@ impl CleanupService {
     }
 
     /// Run the cleanup service
-    pub async fn run(mut self) {
+    pub async fn run(self) {
         tracing::info!("Cleanup service started (stub)");
 
         let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(

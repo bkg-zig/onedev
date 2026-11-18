@@ -2,11 +2,12 @@
 
 use crate::config::AppConfig;
 use crate::lifecycle::LifecycleManager;
-use crate::services::*;
-use crate::{
-    BuildScheduler, CleanupService, GitGcService, MetricsCollector, SearchIndexer,
-    WebhookDispatcher,
+use crate::services::{
+    BuildScheduler as BuildSchedulerInner, CleanupService as CleanupServiceInner,
+    GitGcService as GitGcServiceInner, SearchIndexer as SearchIndexerInner,
+    WebhookDispatcher as WebhookDispatcherInner,
 };
+use crate::{BuildScheduler, CleanupService, GitGcService, MetricsCollector, SearchIndexer, WebhookDispatcher};
 use onedev_api::AppState as ApiState;
 use sqlx::PgPool;
 use std::sync::Arc;
@@ -77,49 +78,44 @@ pub async fn init_services(
     Arc<MetricsCollector>,
 )> {
     // Build scheduler
-    let build_scheduler = Arc::new(BuildScheduler::new(
-        crate::services::build_scheduler::BuildScheduler::new(
-            db_pool.clone(),
-            config.build.clone().into(),
-            lifecycle.shutdown_rx(),
-        ),
-    ));
+    let build_scheduler_inner = BuildSchedulerInner::new(
+        db_pool.clone(),
+        config.build.clone().into(),
+        lifecycle.shutdown_rx(),
+    );
+    let build_scheduler = Arc::new(BuildScheduler::new(build_scheduler_inner));
 
     // Cleanup service
-    let cleanup_service = Arc::new(CleanupService::new(
-        crate::services::cleanup::CleanupService::new(
-            db_pool.clone(),
-            config.cleanup.clone().into(),
-            lifecycle.shutdown_rx(),
-        ),
-    ));
+    let cleanup_service_inner = CleanupServiceInner::new(
+        db_pool.clone(),
+        config.cleanup.clone().into(),
+        lifecycle.shutdown_rx(),
+    );
+    let cleanup_service = Arc::new(CleanupService::new(cleanup_service_inner));
 
     // Git GC service
-    let git_gc_service = Arc::new(GitGcService::new(
-        crate::services::git_gc::GitGcService::new(
-            db_pool.clone(),
-            config.git.clone().into(),
-            lifecycle.shutdown_rx(),
-        ),
-    ));
+    let git_gc_service_inner = GitGcServiceInner::new(
+        db_pool.clone(),
+        config.git.clone().into(),
+        lifecycle.shutdown_rx(),
+    );
+    let git_gc_service = Arc::new(GitGcService::new(git_gc_service_inner));
 
     // Search indexer
-    let search_indexer = Arc::new(SearchIndexer::new(
-        crate::services::search_indexer::SearchIndexer::new(
-            db_pool.clone(),
-            config.search.clone().into(),
-            lifecycle.shutdown_rx(),
-        ),
-    ));
+    let search_indexer_inner = SearchIndexerInner::new(
+        db_pool.clone(),
+        config.search.clone().into(),
+        lifecycle.shutdown_rx(),
+    );
+    let search_indexer = Arc::new(SearchIndexer::new(search_indexer_inner));
 
     // Webhook dispatcher
-    let webhook_dispatcher = Arc::new(WebhookDispatcher::new(
-        crate::services::webhook_dispatcher::WebhookDispatcher::new(
-            db_pool.clone(),
-            config.webhook.clone().into(),
-            lifecycle.shutdown_rx(),
-        )?,
-    ));
+    let webhook_dispatcher_inner = WebhookDispatcherInner::new(
+        db_pool.clone(),
+        config.webhook.clone().into(),
+        lifecycle.shutdown_rx(),
+    )?;
+    let webhook_dispatcher = Arc::new(WebhookDispatcher::new(webhook_dispatcher_inner));
 
     // Metrics collector
     let metrics_collector = Arc::new(MetricsCollector::new());
