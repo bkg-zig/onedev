@@ -1,0 +1,37 @@
+[workspace]
+resolver = "2"
+members = [
+    "onedev-frontend",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.89"
+license = "Apache-2.0"
+repository = "https://github.com/bkg-zig/onedev"
+description = "OneDev Frontend Workspace - Dioxus SPA for Web UI"
+
+[workspace.dependencies]
+dioxus = { version = "0.6", features = ["web", "router", "fullstack"] }
+dioxus-router = "0.6"
+dioxus-fullstack = { version = "0.6", features = ["axum"] }
+serde = { version = "1.0", features = ["derive", "rc"] }
+serde_json = "1.0"
+thiserror = "2.0"
+anyhow = "1.0"
+tracing = { version = "0.1", features = ["std", "log", "valuable"] }
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1.21", features = ["serde", "v4", "v7", "fast-rng"] }
+js-sys = "0.3"
+wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
+web-sys = { version = "0.3", features = ["console", "window", "document", "Element", "HtmlElement", "Node", "Event", "EventTarget", "KeyboardEvent", "MouseEvent", "FormData", "HtmlFormElement", "HtmlInputElement", "HtmlSelectElement", "HtmlTextAreaElement", "Url", "UrlSearchParams", "Fetch", "Request", "Response", "Headers", "AbortController", "AbortSignal"] }
+gloo = { version = "0.10", features = ["console", "timers", "events", "storage", "utils", "net"] }
+reqwest = { version = "0.12", features = ["json", "rustls-tls", "cookies", "gzip", "brotli"] }
+indexmap = "2.0"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true

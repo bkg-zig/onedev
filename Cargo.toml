@@ -24,9 +24,11 @@ description = "OneDev Rust Rewrite - Complete Git Server with CI/CD, Issue Track
 # Async runtime
 tokio = { version = "1.49", features = ["full", "tracing"] }
 tokio-util = { version = "0.7", features = ["full"] }
+# tokio without net feature for WASM targets
+tokio-wasm = { version = "1.49", features = ["rt", "rt-multi-thread", "macros", "tracing", "sync", "time", "process", "signal", "fs", "io-util", "io-std", "parking_lot", "bytes", "schedule-latency", "taskdump"], default-features = false }
 
 # Web framework
-axum = { version = "0.8", features = ["macros", "json", "multipart", "ws"] }
+axum = { version = "0.8", features = ["macros", "json", "multipart"] }
 axum-extra = { version = "0.9", features = ["cookie", "cookie-signed", "cookie-private"] }
 tower = { version = "0.4", features = ["full"] }
 tower-http = { version = "0.6", features = ["cors", "trace", "catch-panic", "compression-br", "compression-gzip", "compression-deflate", "normalize-path", "request-id", "set-header", "timeout"] }
@@ -180,8 +182,8 @@ lettre = { version = "0.11", features = ["tokio1", "native-tls", "smtp", "file-t
 lettre_email = "0.11"
 
 # WebSockets
-tokio-tungstenite = { version = "0.23", features = ["native-tls", "rustls-tls"] }
-tungstenite = { version = "0.23", features = ["native-tls", "rustls-tls"] }
+tokio-tungstenite = { version = "0.30", features = ["native-tls", "rustls-tls"] }
+tungstenite = { version = "0.30", features = ["native-tls", "rustls-tls"] }
 
 # Rate limiting
 governor = { version = "0.7", features = ["std"] }
