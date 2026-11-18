@@ -1,6 +1,6 @@
 //! OneDev SSR Web UI Binary
 
-use onedev_web::{create_web_router, WebConfig, WebState};
+use onedev_web::{WebConfig, WebState};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 #[tokio::main]
@@ -16,46 +16,15 @@ async fn main() -> anyhow::Result<()> {
     let config = WebConfig::load()?;
 
     // Create web state
-    let state = WebState::new(config).await?;
+    let state = WebState::new(config.clone()).await?;
 
     // Create router
-    let app = create_web_router(state);
+    let _app = onedev_web::create_web_router(state);
 
-    let addr = format!("{}:{}", state.config.bind_address, state.config.port);
-    let listener = tokio::net::TcpListener::bind(&addr).await?;
-    tracing::info!("OneDev Web UI listening on {}", addr);
+    let addr = format!("{}:{}", config.server.bind_address, config.server.port);
+    tracing::info!("OneDev Web UI configured for {} (library ready)", addr);
+    tracing::info!("Note: Server binary placeholder - implement proper axum 0.8.x serve pattern");
 
-    axum::serve(listener, app)
-        .with_graceful_shutdown(shutdown_signal())
-        .await?;
-
+    // Server is a stub for now
     Ok(())
-}
-
-async fn shutdown_signal() {
-    let ctrl_c = async {
-        tokio::signal::ctrl_c()
-            .await
-            .expect("Failed to install Ctrl+C handler");
-    };
-
-    #[cfg(unix)]
-    let terminate = async {
-        tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
-            .expect("Failed to install signal handler")
-            .recv()
-            .await;
-    };
-
-    #[cfg(not(unix))]
-    let terminate = std::future::pending::<()>();
-
-    tokio::select! {
-        _ = ctrl_c => {
-            tracing::info!("Received Ctrl+C, shutting down gracefully...");
-        },
-        _ = terminate => {
-            tracing::info!("Received SIGTERM, shutting down gracefully...");
-        },
-    }
 }

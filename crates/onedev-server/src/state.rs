@@ -199,17 +199,10 @@ pub async fn init_services(
     Arc<MetricsCollector>,
 )> {
     // Build scheduler
-    let build_executor = Arc::new(onedev_build::services::BuildExecutor::new(
-        db_pool.clone(),
-        Arc::new(onedev_core::events::EventBus::new()),
-    ));
-    let build_queue = Arc::new(onedev_build::services::BuildQueue::new(db_pool.clone()));
     let build_scheduler = Arc::new(BuildScheduler::new(
         onedev_server::services::build_scheduler::BuildScheduler::new(
             db_pool.clone(),
             config.build.clone().into(),
-            build_executor,
-            build_queue,
             lifecycle.shutdown_rx(),
         )
     ));

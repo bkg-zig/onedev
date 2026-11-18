@@ -1,4 +1,6 @@
-//! Server Services
+//! Background Services
+//!
+//! This module contains all background services that run as part of the OneDev server.
 
 pub mod build_scheduler;
 pub mod cleanup;

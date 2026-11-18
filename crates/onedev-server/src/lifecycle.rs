@@ -1,6 +1,7 @@
 //! Server Lifecycle Management
 
 use anyhow::Result;
+use async_trait::async_trait;
 use std::sync::Arc;
 use tokio::sync::broadcast;
 use tracing::{info, warn, error};
@@ -99,7 +100,7 @@ impl Default for LifecycleManager {
 }
 
 /// Lifecycle hooks for components
-#[async_trait::async_trait]
+#[async_trait]
 pub trait LifecycleHook: Send + Sync {
     /// Called during startup, before server accepts traffic
     async fn on_startup(&self) -> Result<()> {

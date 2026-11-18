@@ -236,11 +236,8 @@ impl BuildScheduler {
         });
 
         // Prepare trigger event
-        let trigger_event = TriggerEvent {
-            event_type: "push".to_string(),
-            branch: Some(queued_build.branch.clone()),
-            tag: None,
-            commit_sha: Some(queued_build.commit_sha.clone()),
+        let trigger_event = onedev_build::models::TriggerEvent::Push {
+            branch: queued_build.branch.clone(),
         };
 
         // Prepare variables

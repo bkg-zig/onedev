@@ -9,6 +9,7 @@ use axum::{
 };
 use metrics::{counter, gauge, histogram};
 use metrics_exporter_prometheus::{Matcher, PrometheusBuilder, PrometheusHandle};
+use regex::Regex;
 use sqlx::PgPool;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -231,11 +232,11 @@ fn normalize_path(path: &str) -> String {
     let mut normalized = path.to_string();
 
     // Replace UUIDs
-    let uuid_regex = regex::Regex::new(r"/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}").unwrap();
+    let uuid_regex = Regex::new(r"/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}").unwrap();
     normalized = uuid_regex.replace_all(&normalized, "/:id").to_string();
 
     // Replace numeric IDs
-    let id_regex = regex::Regex::new(r"/\d+").unwrap();
+    let id_regex = Regex::new(r"/\d+").unwrap();
     normalized = id_regex.replace_all(&normalized, "/:id").to_string();
 
     normalized

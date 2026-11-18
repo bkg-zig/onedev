@@ -6,6 +6,7 @@ use opentelemetry_otlp::WithExportConfig;
 use opentelemetry_sdk::{
     trace::{self, RandomIdGenerator, Sampler},
     Resource,
+    runtime::TokioCurrentThread,
 };
 use std::sync::OnceLock;
 use tracing_opentelemetry::OpenTelemetryLayer;
@@ -43,7 +44,7 @@ pub fn init_otel(config: &crate::config::AppConfig) -> Result<()> {
                         KeyValue::new("deployment.environment", config.server.environment.clone()),
                     ])),
             )
-            .install_batch(opentelemetry_sdk::runtime::Tokio)?;
+            .install_batch(TokioCurrentThread)?;
 
         // Create OpenTelemetry layer for tracing
         let otel_layer = OpenTelemetryLayer::new(tracer);
@@ -84,7 +85,7 @@ pub fn init_metrics(config: &crate::config::AppConfig) -> Result<()> {
             KeyValue::new("service.version", env!("CARGO_PKG_VERSION")),
             KeyValue::new("deployment.environment", config.server.environment.clone()),
         ]))
-        .install_batch(opentelemetry_sdk::runtime::Tokio)?;
+        .install_batch(TokioCurrentThread)?;
 
     global::set_meter_provider(meter_provider);
 
@@ -122,8 +123,8 @@ pub fn init_logging(config: &crate::config::AppConfig) -> Result<()> {
 
 /// Create a new span with common attributes
 pub fn create_span(name: &str) -> tracing::Span {
-    use tracing::{info_span, Span};
-    info_span!(name)
+    use tracing::info_span;
+    info_span!("", name = %name)
 }
 
 /// Add baggage to current span
