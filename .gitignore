@@ -36,3 +36,5 @@ infra/oci/bundles/
 .sl/
 .muse/
 **/.tbh-sandbox-mountpoint.*
+.claude/
+.*
