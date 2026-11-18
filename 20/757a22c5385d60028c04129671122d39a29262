@@ -1,0 +1,16 @@
+crates/onedev-api/src/handlers/mr_handlers.rs
+  h_76ea00ebfa3ec3 111-157,160-162,164-172,177-180,182-210,215-216,218-219,224-226,228-244,249-250,252-253
+crates/onedev-api/src/services/mr_service.rs
+  h_76ea00ebfa3ec3 1,3-5,10-14,19-104
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "20757a22c5385d60028c04129671122d39a29262",
+  "prompts": {},
+  "humans": {
+    "h_76ea00ebfa3ec3": {
+      "author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}
