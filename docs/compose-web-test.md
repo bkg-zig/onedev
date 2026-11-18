@@ -17,8 +17,17 @@
 
 ```bash
 cd /srv/bkg/services/bkg-core-admin/infra/onedev
+scripts/docker-build.sh up          # baut db/core/web und startet sie
+```
+
+Direkt mit Compose geht es auch (Projektverzeichnis pinnen!):
+
+```bash
 docker compose --project-directory . -f docker/compose.yml up -d --build db core web
 ```
+
+Alle Befehle laufen über ein Skript (`scripts/docker-build.sh` —
+`build|up|up-all|down|stop|start|restart|update|logs|ps|config`):
 
 > Wichtig: immer mit `--project-directory .` aus dem Repo-Root starten.
 > Ohne den Pin hängt das Projektverzeichnis von der Compose-Version ab
