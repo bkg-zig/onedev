@@ -1,0 +1,18 @@
+crates/onedev-web/src/handlers/projects.rs
+  h_76ea00ebfa3ec3 119-155
+crates/onedev-web/src/lib.rs
+  h_76ea00ebfa3ec3 57-59,78,82-87,104,113
+crates/onedev-web/templates/projects/list.html
+  h_76ea00ebfa3ec3 2-10,12-50
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "55fba90a1ef87e74f231c23a5a9c585d277a5c71",
+  "prompts": {},
+  "humans": {
+    "h_76ea00ebfa3ec3": {
+      "author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}
