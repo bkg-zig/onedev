@@ -1,0 +1,25 @@
+.gitignore
+  s_0de1f439e1761a::t_3b0a123034781e 39
+  h_76ea00ebfa3ec3 40
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "a5a297674c4c87798ec2f264876d67395ae1b5f0",
+  "prompts": {},
+  "humans": {
+    "h_76ea00ebfa3ec3": {
+      "author": "bkg <bkg@skill.eysho.info>"
+    }
+  },
+  "sessions": {
+    "s_0de1f439e1761a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0f2f81bd-eb11-4834-95c4-07542b095264",
+        "model": "poolside/laguna-xs-2.1"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}
