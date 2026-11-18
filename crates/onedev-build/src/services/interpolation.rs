@@ -12,7 +12,7 @@
 //! `properties:`, `secrets:`), `file:path` (content of a workspace file) and
 //! `attribute:name`. An unknown name is an error, never silently kept.
 
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
@@ -36,6 +36,9 @@ pub enum InterpolationError {
     UndefinedProperty(String),
     #[error("Undefined secret: {0}")]
     UndefinedSecret(String),
+    /// The secret exists but its `authorization` does not admit this build.
+    #[error("No authorized job secret found (project: {project}, job secret: {name})")]
+    UnauthorizedSecret { project: String, name: String },
     #[error("cannot read `{path}` for @file:{path}@: {reason}")]
     File { path: String, reason: String },
     #[error("{0}")]
@@ -131,7 +134,7 @@ pub const JOB_VARIABLES: &[&str] = &[
 ];
 
 /// Everything a job's strings can refer to.
-#[derive(Debug, Clone, Default)]
+#[derive(Clone, Default)]
 pub struct Variables {
     /// `JobVariable` values (lower-case names). Absent entries resolve to "".
     pub job: BTreeMap<String, String>,
@@ -139,12 +142,34 @@ pub struct Variables {
     pub properties: BTreeMap<String, String>,
     /// Secret values. They are masked in the build log.
     pub secrets: BTreeMap<String, String>,
+    /// Secrets that exist but may not be used by this build; referencing one
+    /// fails with [`InterpolationError::UnauthorizedSecret`].
+    pub denied_secrets: BTreeSet<String>,
+    /// Values masked in the log although they are not usable (the values of
+    /// `denied_secrets`: vanilla masks every secret of the project hierarchy).
+    pub extra_masked: Vec<String>,
     /// `build_version`, settable at run time by `SetBuildVersionStep`.
     pub build_version: Arc<Mutex<Option<String>>>,
     /// Build attributes (`@attribute:name@`).
     pub attributes: BTreeMap<String, String>,
     /// Workspace for `@file:path@`.
     pub workspace: Option<PathBuf>,
+}
+
+/// Secret values must never reach a log by accident: only names are shown.
+impl std::fmt::Debug for Variables {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Variables")
+            .field("job", &self.job)
+            .field("params", &self.params)
+            .field("properties", &self.properties)
+            .field("secrets", &self.secrets.keys().collect::<Vec<_>>())
+            .field("denied_secrets", &self.denied_secrets)
+            .field("build_version", &self.build_version())
+            .field("attributes", &self.attributes)
+            .field("workspace", &self.workspace)
+            .finish()
+    }
 }
 
 impl Variables {
@@ -242,12 +267,16 @@ impl Variables {
                 .ok_or(InterpolationError::UndefinedProperty(property));
         }
         if let Some(secret) = strip("secret:", "secrets:") {
-            return self
-                .secrets
-                .get(&secret)
-                .cloned()
-                .map(Some)
-                .ok_or(InterpolationError::UndefinedSecret(secret));
+            return match self.secrets.get(&secret) {
+                Some(value) => Ok(Some(value.clone())),
+                None if self.denied_secrets.contains(&secret) => {
+                    Err(InterpolationError::UnauthorizedSecret {
+                        project: self.job.get("project_path").cloned().unwrap_or_default(),
+                        name: secret,
+                    })
+                }
+                None => Err(InterpolationError::UndefinedSecret(secret)),
+            };
         }
         if let Some(path) = name.strip_prefix("file:") {
             return self.read_workspace_file(path).map(Some);
@@ -323,6 +352,7 @@ impl Variables {
     pub fn secret_values(&self) -> Vec<String> {
         self.secrets
             .values()
+            .chain(self.extra_masked.iter())
             .filter(|value| value.len() >= MASK.len())
             .cloned()
             .collect()
@@ -636,6 +666,43 @@ mod tests {
             short.secret_values()
         );
         assert!(!short.secret_values().contains(&"123456".to_owned()));
+    }
+
+    #[test]
+    fn unauthorized_secrets_fail_loudly_but_are_still_masked() {
+        let mut variables = vars();
+        variables.denied_secrets.insert("deploy-key".to_owned());
+        variables.extra_masked.push("denied-secret-value".to_owned());
+
+        assert_eq!(
+            variables.interpolate("@secret:deploy-key@").unwrap_err(),
+            InterpolationError::UnauthorizedSecret {
+                project: "group/app".to_owned(),
+                name: "deploy-key".to_owned(),
+            }
+        );
+        assert_eq!(
+            variables.interpolate("@secret:deploy-key@").unwrap_err().to_string(),
+            "No authorized job secret found (project: group/app, job secret: deploy-key)"
+        );
+        // unknown names stay a different error
+        assert_eq!(
+            variables.interpolate("@secret:nope@").unwrap_err(),
+            InterpolationError::UndefinedSecret("nope".to_owned())
+        );
+        // the denied value must never show up in a log
+        let masker = SecretMasker::new(variables.secret_values());
+        assert_eq!(masker.mask("leak: denied-secret-value"), format!("leak: {MASK}"));
+    }
+
+    #[test]
+    fn debug_output_never_contains_secret_values() {
+        let mut variables = vars();
+        variables.extra_masked.push("denied-secret-value".to_owned());
+        let shown = format!("{variables:?}");
+        assert!(shown.contains("token"), "names are shown: {shown}");
+        assert!(!shown.contains("s3cr3t-value"), "{shown}");
+        assert!(!shown.contains("denied-secret-value"), "{shown}");
     }
 
     #[test]

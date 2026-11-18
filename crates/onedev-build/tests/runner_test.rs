@@ -22,6 +22,9 @@ jobs:
   - name: test
     jobDependencies:
       - jobName: build
+    triggers:
+      - type: BranchUpdateTrigger
+        branches: main
     steps:
       - type: CommandStep
         interpreter:
@@ -43,9 +46,7 @@ fn example_job_runs_green_and_collects_artifacts() {
     let report = run_buildspec(
         root.path(),
         &artifacts,
-        &TriggerEvent::Push {
-            branch: "main".into(),
-        },
+        &TriggerEvent::push("main"),
         Some(tx),
     )
     .unwrap();
@@ -71,9 +72,7 @@ fn non_matching_trigger_selects_no_jobs() {
     let report = run_buildspec(
         root.path(),
         &artifacts,
-        &TriggerEvent::Push {
-            branch: "dev".into(),
-        },
+        &TriggerEvent::push("dev"),
         None,
     )
     .unwrap();
@@ -93,9 +92,7 @@ fn failing_job_skips_dependents() {
     let report = run_buildspec(
         root.path(),
         &root.path().join("artifacts"),
-        &TriggerEvent::Push {
-            branch: "main".into(),
-        },
+        &TriggerEvent::push("main"),
         None,
     )
     .unwrap();

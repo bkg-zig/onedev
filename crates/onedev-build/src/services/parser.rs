@@ -123,47 +123,22 @@ pub fn execution_order(spec: &BuildSpec) -> BuildResult<Vec<String>> {
     Ok(ordered)
 }
 
-/// Names of jobs started by `event`, in dependency order: jobs whose
-/// triggers match, plus jobs that (transitively) depend on them.
-/// Jobs without any trigger only run manually or as a dependency.
+/// Names of the jobs `event` starts, in dependency order: exactly the jobs
+/// with a trigger that fires (a manual run starts every job). Like in vanilla
+/// OneDev a job without a trigger of its own never runs automatically, not
+/// even when a job it depends on does (think of a `deploy` job that needs
+/// `build`); the *dependencies* of started jobs are run by the runner.
 pub fn jobs_for_event(spec: &BuildSpec, event: &TriggerEvent) -> BuildResult<Vec<String>> {
     let order = execution_order(spec)?;
-    let by_name: HashMap<&str, &crate::models::JobSpec> = spec
-        .jobs
-        .iter()
-        .map(|job| (job.name.as_str(), job))
-        .collect();
-
-    let mut selected: HashSet<&str> = HashSet::new();
-    if matches!(event, TriggerEvent::Manual) {
-        selected = by_name.keys().copied().collect();
+    let selected: HashSet<&str> = if matches!(event, TriggerEvent::Manual) {
+        spec.jobs.iter().map(|job| job.name.as_str()).collect()
     } else {
-        for job in &spec.jobs {
-            if job.triggers.iter().any(|t: &Trigger| t.matches(event)) {
-                selected.insert(job.name.as_str());
-            }
-        }
-        // Pull in dependents whose dependencies are all selected.
-        loop {
-            let mut added = false;
-            for job in &spec.jobs {
-                if !selected.contains(job.name.as_str())
-                    && !job.needs().is_empty()
-                    && job
-                        .needs()
-                        .iter()
-                        .all(|need| selected.contains(need.as_str()))
-                {
-                    selected.insert(job.name.as_str());
-                    added = true;
-                }
-            }
-            if !added {
-                break;
-            }
-        }
-    }
-
+        spec.jobs
+            .iter()
+            .filter(|job| job.triggers.iter().any(|t: &Trigger| t.matches(event)))
+            .map(|job| job.name.as_str())
+            .collect()
+    };
     Ok(order
         .into_iter()
         .filter(|name| selected.contains(name.as_str()))
@@ -216,21 +191,62 @@ jobs:
         let spec = parse_buildspec(SPEC).unwrap();
         let on_main = jobs_for_event(
             &spec,
-            &TriggerEvent::Push {
-                branch: "main".into(),
-            },
+            &TriggerEvent::push("main"),
         )
         .unwrap();
-        assert_eq!(on_main, vec!["build", "test"]); // dependent job is pulled in
+        // `test` depends on `build` but has no trigger: it does not run on its own
+        assert_eq!(on_main, vec!["build"]);
         let on_dev = jobs_for_event(
             &spec,
-            &TriggerEvent::Push {
-                branch: "dev".into(),
-            },
+            &TriggerEvent::push("dev"),
         )
         .unwrap();
         assert!(on_dev.is_empty());
         let manual = jobs_for_event(&spec, &TriggerEvent::Manual).unwrap();
         assert_eq!(manual, vec!["build", "test"]);
+    }
+
+    #[test]
+    fn dependents_only_run_with_a_trigger_of_their_own() {
+        let step = "steps:\n      - type: CommandStep\n        interpreter:\n          type: PosixInterpreter\n          commands: \"true\"";
+        let yaml = format!(
+            r#"
+version: 59
+jobs:
+  - name: build
+    {step}
+    triggers:
+      - type: BranchUpdateTrigger
+  - name: test
+    jobDependencies: [ {{ jobName: build }} ]
+    {step}
+    triggers:
+      - type: BranchUpdateTrigger
+        branches: main
+  - name: deploy
+    jobDependencies: [ {{ jobName: test }} ]
+    {step}
+  - name: nightly
+    {step}
+    triggers:
+      - type: ScheduleTrigger
+        cronExpression: "0 0 * * * ?"
+"#
+        );
+        let spec = parse_buildspec(&yaml).unwrap();
+        // `deploy` has no trigger: it never starts automatically
+        assert_eq!(
+            jobs_for_event(&spec, &TriggerEvent::push("main")).unwrap(),
+            vec!["build", "test"]
+        );
+        assert_eq!(
+            jobs_for_event(&spec, &TriggerEvent::push("dev")).unwrap(),
+            vec!["build"]
+        );
+        assert_eq!(
+            jobs_for_event(&spec, &TriggerEvent::Schedule).unwrap(),
+            vec!["nightly"]
+        );
+        assert!(jobs_for_event(&spec, &TriggerEvent::tag("v1")).unwrap().is_empty());
     }
 }

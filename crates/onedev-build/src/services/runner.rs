@@ -529,9 +529,7 @@ mod tests {
             .run_with(
                 &s,
                 &ctx,
-                &TriggerEvent::Push {
-                    branch: "main".into(),
-                },
+                &TriggerEvent::push("main"),
             )
             .unwrap();
         assert_eq!(report.status, BuildStatus::Success, "{report:?}");
