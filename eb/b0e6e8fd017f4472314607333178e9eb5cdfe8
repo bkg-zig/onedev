@@ -1,0 +1,19 @@
+docs/progress.md
+  s_4dc460dbf339a2::t_a42c7da70baa96 56-57
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "ebb0e6e8fd017f4472314607333178e9eb5cdfe8",
+  "prompts": {},
+  "sessions": {
+    "s_4dc460dbf339a2": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e163f433bffe5t2PzgPpubA64u",
+        "model": "big-pickle"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}
