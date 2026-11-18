@@ -1,0 +1,17 @@
+# OneDev Web UI (SSR) image
+FROM rust:1.89-slim AS builder
+WORKDIR /src
+COPY Cargo.toml Cargo.lock ./
+COPY crates ./crates/
+RUN cargo build --release -p onedev-web --bin onedev-web
+
+FROM debian:bookworm-slim
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
+COPY --from=builder /src/target/release/onedev-web /app/onedev-web
+COPY crates/onedev-web/templates /app/crates/onedev-web/templates
+COPY crates/onedev-web/static /app/crates/onedev-web/static
+COPY docker/web/config.yaml /etc/onedev/web/config.yaml
+ENV ONEDEV_WEB_CONFIG_DIR=/etc/onedev/web
+EXPOSE 18081
+CMD ["/app/onedev-web"]

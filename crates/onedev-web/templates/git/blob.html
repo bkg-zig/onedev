@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}Blob · OneDev{% endblock title %}
+{% block page_title %}Blob{% endblock page_title %}
+{% block content %}
+<div class="p-2 p-sm-5"><h1>{{ path | default(value='') }}</h1><pre>{{ content | default(value='') }}</pre></div>
+{% endblock content %}

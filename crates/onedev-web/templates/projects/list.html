@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}Projects · OneDev{% endblock title %}
+{% block page_title %}Projects{% endblock page_title %}
+{% block content %}
+<div class="p-2 p-sm-5"><h1>{{ title }}</h1><a href="/projects/new">New Project</a>
+<ul>{% for project in projects | default(value=[]) %}<li><a href="/projects/{{ project.id }}">{{ project.name }}</a></li>{% else %}<li>No projects.</li>{% endfor %}</ul></div>
+{% endblock content %}

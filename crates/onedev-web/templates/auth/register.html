@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}Sign Up · OneDev{% endblock title %}
+{% block page_title %}Sign Up{% endblock page_title %}
+{% block content %}
+<div class="p-2 p-sm-5"><h1>{{ title }}</h1>
+<form method="post" action="/register"><input name="username" placeholder="Username"><input name="email" placeholder="Email"><input name="password" type="password" placeholder="Password"><button type="submit">Sign Up</button></form></div>
+{% endblock content %}

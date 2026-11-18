@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}Issues · OneDev{% endblock title %}
+{% block page_title %}Issues{% endblock page_title %}
+{% block content %}
+<div class="p-2 p-sm-5"><div class="side-main"><div class="side card"><a href="/projects/{{ project_id | default(value='') }}/issues/new">New Issue</a></div>
+<div class="main"><h1>{{ title | default(value='Issues') }}</h1><ul>{% for issue in issues | default(value=[]) %}<li><a href="/projects/{{ project_id | default(value='') }}/issues/{{ issue.id }}">{{ issue.title }}</a></li>{% else %}<li>No issues.</li>{% endfor %}</ul></div></div></div>
+{% endblock content %}

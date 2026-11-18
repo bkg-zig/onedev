@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block title %}New Project · OneDev{% endblock title %}
+{% block page_title %}New Project{% endblock page_title %}
+{% block content %}
+<div class="p-2 p-sm-5"><h1>{{ title }}</h1>
+{% if error is defined and error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
+<form method="post" action="/projects/new"><input name="name" placeholder="Name"><input name="path" placeholder="Path"><button type="submit">Create</button></form></div>
+{% endblock content %}

@@ -1,6 +1,6 @@
 //! OneDev SSR Web UI Binary
 
-use onedev_web::{WebConfig, WebState};
+use onedev_web::{WebConfig, WebState, create_web_router};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 #[tokio::main]
@@ -15,18 +15,17 @@ async fn main() -> anyhow::Result<()> {
         .init();
 
     // Load configuration
-    let config = WebConfig::load()?;
+    let config = WebConfig::load().map_err(|e| anyhow::anyhow!("{e}"))?;
 
     // Create web state
     let state = WebState::new(config.clone()).await?;
 
-    // Create router
-    let _app = onedev_web::create_web_router(state);
-
+    // Create router and serve
+    let app = create_web_router(state);
     let addr = format!("{}:{}", config.server.bind_address, config.server.port);
-    tracing::info!("OneDev Web UI configured for {} (library ready)", addr);
-    tracing::info!("Note: Server binary placeholder - implement proper axum 0.8.x serve pattern");
+    let listener = tokio::net::TcpListener::bind(&addr).await?;
+    tracing::info!("OneDev Web UI listening on {}", addr);
+    axum::serve(listener, app).await?;
 
-    // Server is a stub for now
     Ok(())
 }

@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}Commit · OneDev{% endblock title %}
+{% block page_title %}Commit{% endblock page_title %}
+{% block content %}
+<div class="p-2 p-sm-5"><h1>{{ commit.id | default(value='') }}</h1><p>{{ commit.message | default(value='') }}</p></div>
+{% endblock content %}

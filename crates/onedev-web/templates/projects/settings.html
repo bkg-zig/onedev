@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}Settings · OneDev{% endblock title %}
+{% block page_title %}Settings{% endblock page_title %}
+{% block content %}
+<div class="p-2 p-sm-5"><h1>{{ title }}</h1><form method="post"><input name="name" value="{{ project.name | default(value='') }}"><button type="submit">Save</button></form></div>
+{% endblock content %}

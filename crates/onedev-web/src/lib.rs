@@ -46,7 +46,10 @@ use std::sync::Arc;
 /// Web application state
 #[derive(Clone)]
 pub struct WebState {
-    pub api_state: ApiState,
+    /// Connected API state once the web UI talks to a live backend.
+    /// `None` until then: handlers render with placeholder data so the
+    /// UI is testable without a database.
+    pub api_state: Option<ApiState>,
     pub config: Arc<WebConfig>,
     pub tera: Arc<tera::Tera>,
 }
@@ -63,27 +66,16 @@ impl WebState {
         tera.register_filter("datefmt", date_filter);
         tera.register_filter("truncate", truncate_filter);
 
-        // Create API state (would connect to actual API)
-        // For now, create a minimal state
-        let api_state = create_minimal_api_state().await?;
-
         Ok(Self {
-            api_state,
+            api_state: None,
             config: Arc::new(config),
             tera: Arc::new(tera),
         })
     }
 }
 
-/// Create minimal API state for web UI
-async fn create_minimal_api_state() -> anyhow::Result<ApiState> {
-    // This would normally connect to the API services
-    // For now, return a placeholder
-    Err(anyhow::anyhow!("API state not implemented for web UI"))
-}
-
 /// Create web router
-pub fn create_web_router(state: WebState) -> Router<WebState> {
+pub fn create_web_router(state: WebState) -> Router {
     Router::new()
         .route(
             "/",
@@ -117,87 +109,87 @@ pub fn create_web_router(state: WebState) -> Router<WebState> {
             axum::routing::post(handlers::projects::create_project),
         )
         .route(
-            "/projects/:id",
+            "/projects/{id}",
             axum::routing::get(handlers::projects::project_detail),
         )
         .route(
-            "/projects/:id/settings",
+            "/projects/{id}/settings",
             axum::routing::get(handlers::projects::project_settings),
         )
         .route(
-            "/projects/:id/settings",
+            "/projects/{id}/settings",
             axum::routing::post(handlers::projects::update_project),
         )
         // Issues
         .route(
-            "/projects/:project_id/issues",
+            "/projects/{project_id}/issues",
             axum::routing::get(handlers::issues::list_issues),
         )
         .route(
-            "/projects/:project_id/issues/new",
+            "/projects/{project_id}/issues/new",
             axum::routing::get(handlers::issues::new_issue_page),
         )
         .route(
-            "/projects/:project_id/issues/new",
+            "/projects/{project_id}/issues/new",
             axum::routing::post(handlers::issues::create_issue),
         )
         .route(
-            "/projects/:project_id/issues/:id",
+            "/projects/{project_id}/issues/{id}",
             axum::routing::get(handlers::issues::issue_detail),
         )
         .route(
-            "/projects/:project_id/issues/:id/edit",
+            "/projects/{project_id}/issues/{id}/edit",
             axum::routing::get(handlers::issues::edit_issue_page),
         )
         .route(
-            "/projects/:project_id/issues/:id/edit",
+            "/projects/{project_id}/issues/{id}/edit",
             axum::routing::post(handlers::issues::update_issue),
         )
         // Merge Requests
         .route(
-            "/projects/:project_id/merge-requests",
+            "/projects/{project_id}/merge-requests",
             axum::routing::get(handlers::merge_requests::list_mrs),
         )
         .route(
-            "/projects/:project_id/merge-requests/new",
+            "/projects/{project_id}/merge-requests/new",
             axum::routing::get(handlers::merge_requests::new_mr_page),
         )
         .route(
-            "/projects/:project_id/merge-requests/new",
+            "/projects/{project_id}/merge-requests/new",
             axum::routing::post(handlers::merge_requests::create_mr),
         )
         .route(
-            "/projects/:project_id/merge-requests/:id",
+            "/projects/{project_id}/merge-requests/{id}",
             axum::routing::get(handlers::merge_requests::mr_detail),
         )
         // Builds
         .route(
-            "/projects/:project_id/builds",
+            "/projects/{project_id}/builds",
             axum::routing::get(handlers::builds::list_builds),
         )
         .route(
-            "/projects/:project_id/builds/:id",
+            "/projects/{project_id}/builds/{id}",
             axum::routing::get(handlers::builds::build_detail),
         )
         // Git
         .route(
-            "/projects/:project_id/git",
+            "/projects/{project_id}/git",
             axum::routing::get(handlers::git::git_overview),
         )
         .route(
-            "/projects/:project_id/git/tree/:ref",
+            "/projects/{project_id}/git/tree/{ref}",
             axum::routing::get(handlers::git::git_tree),
         )
         .route(
-            "/projects/:project_id/git/blob/:ref/*path",
+            "/projects/{project_id}/git/blob/{ref}/{*path}",
             axum::routing::get(handlers::git::git_blob),
         )
         .route(
-            "/projects/:project_id/git/commits",
+            "/projects/{project_id}/git/commits",
             axum::routing::get(handlers::git::git_commits),
         )
         .route(
-            "/projects/:project_id/git/commits/:sha",
+            "/projects/{project_id}/git/commits/{sha}",
             axum::routing::get(handlers::git::git_commit),
         )
         // Profile
@@ -234,6 +226,13 @@ pub fn create_web_router(state: WebState) -> Router<WebState> {
         .nest_service(
             "/static",
             tower_http::services::ServeDir::new(&state.config.static_assets.static_dir),
+        )
+        // Vendored 1:1 vanilla stylesheets (web/**/*.css from v17.2.1)
+        .nest_service(
+            "/static/vanilla",
+            tower_http::services::ServeDir::new(
+                state.config.static_assets.static_dir.join("vanilla"),
+            ),
         )
         // Health
         .route("/health", axum::routing::get(|| async { "OK" }))

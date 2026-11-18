@@ -188,9 +188,9 @@ impl WebConfig {
             .unwrap_or_else(|_| "/etc/onedev/web".to_string());
 
         Figment::new()
-            .merge(Toml::file(format!("{}/config.toml", config_dir)).nested())
-            .merge(Yaml::file(format!("{}/config.yaml", config_dir)).nested())
-            .merge(Json::file(format!("{}/config.json", config_dir)).nested())
+            .merge(Toml::file(format!("{}/config.toml", config_dir)))
+            .merge(Yaml::file(format!("{}/config.yaml", config_dir)))
+            .merge(Json::file(format!("{}/config.json", config_dir)))
             .merge(Env::prefixed("ONEDEV_WEB_").split("__").global())
             .extract()
             .map_err(Box::new)

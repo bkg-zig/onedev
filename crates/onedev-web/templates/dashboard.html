@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} · OneDev{% endblock title %}
+{% block page_title %}{{ title }}{% endblock page_title %}
+{% block content %}
+<div class="p-2 p-sm-5">
+  <div class="side-main">
+    <div class="main">
+      <h1>{{ title }}</h1>
+      <p>Signed in as <strong>{{ user.username }}</strong> ({{ user.email }})</p>
+      <section>
+        <h2>Stats</h2>
+        <ul>
+          <li>Projects: {{ stats.projects_count }}</li>
+          <li>Issues assigned: {{ stats.issues_assigned }}</li>
+          <li>Open merge requests: {{ stats.merge_requests_open }}</li>
+          <li>Builds running: {{ stats.builds_running }}</li>
+        </ul>
+      </section>
+      <section>
+        <h2>Projects</h2>
+        <ul>
+        {% for project in projects %}
+          <li><a href="/projects/{{ project.id }}">{{ project.name }}</a></li>
+        {% else %}
+          <li>No projects yet.</li>
+        {% endfor %}
+        </ul>
+      </section>
+      <section>
+        <h2>Recent activity</h2>
+        <ul>
+        {% for item in recent_activity %}
+          <li>{{ item.type }}: {{ item.title }} ({{ item.project }})</li>
+        {% endfor %}
+        </ul>
+      </section>
+    </div>
+  </div>
+</div>
+{% endblock content %}

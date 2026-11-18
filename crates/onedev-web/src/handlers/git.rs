@@ -101,7 +101,7 @@ pub async fn git_commit(
     Path((project_id, sha)): Path<(String, String)>,
 ) -> impl IntoResponse {
     let mut context = Context::new();
-    context.insert("title", &format!("Commit {}", &sha[..8]));
+    context.insert("title", &format!("Commit {}", sha.get(..8).unwrap_or(&sha)));
     context.insert("project_id", &project_id);
     context.insert("project", &get_project(&state, &project_id).await);
     context.insert("commit", &get_commit(&state, &project_id, &sha).await);

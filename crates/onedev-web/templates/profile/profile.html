@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}Profile · OneDev{% endblock title %}
+{% block page_title %}Profile{% endblock page_title %}
+{% block content %}
+<div class="p-2 p-sm-5"><h1>{{ user.username | default(value='Profile') }}</h1></div>
+{% endblock content %}

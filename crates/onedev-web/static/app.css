@@ -1,0 +1,3 @@
+/* Minimal bridge styles until the full vanilla bundle ships. */
+body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+.main { margin-left: var(--sidebar-width, 275px); padding-top: var(--topbar-height, 50px); }

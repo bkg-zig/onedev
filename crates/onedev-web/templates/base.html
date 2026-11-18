@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+{# 1:1 port of LayoutPage.html (vanilla): same sidebar/topbar/main       #}
+{# structure and CSS classes; wicket:id bindings become Tera variables    #}
+{# and htmx partial swaps, static wicket:svg icons become inline text.   #}
+<html lang="en" class="community-edition">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}OneDev{% endblock title %}</title>
+  <link rel="stylesheet" href="/static/vanilla/web/page/layout/layout.css">
+  <link rel="stylesheet" href="/static/vanilla/web/component/menu/menu.css">
+  <link rel="stylesheet" href="/static/app.css">
+  <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+  {% block head %}{% endblock head %}
+</head>
+<body class="LayoutPage">
+  <div class="sidebar sidebar-docked">
+    <div class="sidebar-header">
+      <a href="/" class="sidebar-brand">
+        <span class="brand-name">OneDev</span>
+      </a>
+    </div>
+    <div class="sidebar-body ps ps-scroll">
+      <div class="sidebar-menu">
+        {% for section in menus | default(value=[]) %}
+        <div class="menu-header">{{ section.header }}</div>
+        <div class="menu-body">
+          {% for item in section.items %}
+          <div class="menu-item">
+            <a href="{{ item.href }}" class="menu-link{% if item.active %} active{% endif %}">
+              <span class="menu-text"><span>{{ item.label }}</span></span>
+            </a>
+          </div>
+          {% endfor %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="sidebar-footer">
+      <a href="https://code.onedev.io" target="_blank" class="sidebar-version">{{ version | default(value="v17.2.1") }}</a>
+    </div>
+  </div>
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-title">{% block page_title %}OneDev{% endblock page_title %}</div>
+    </div>
+    <div class="topbar-right text-nowrap">
+      {% if user is defined and user %}
+      <span class="user-info topbar-link">{{ user.username }}</span>
+      <a href="/logout" class="topbar-link sign-in">Sign Out</a>
+      {% else %}
+      <a href="/login" class="topbar-link sign-in">Sign In</a>
+      {% endif %}
+    </div>
+  </div>
+  <div class="main autofit d-flex flex-column resize-aware">
+    {% block content %}{% endblock content %}
+  </div>
+  {% block scripts %}{% endblock scripts %}
+</body>
+</html>

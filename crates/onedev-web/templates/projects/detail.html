@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}Project · OneDev{% endblock title %}
+{% block page_title %}Project{% endblock page_title %}
+{% block content %}
+<div class="p-2 p-sm-5"><h1>{{ title }}</h1><p>{{ project.description | default(value='') }}</p>
+<nav><a href="/projects/{{ project.id | default(value='') }}/issues">Issues</a> · <a href="/projects/{{ project.id | default(value='') }}/merge-requests">Merge Requests</a> · <a href="/projects/{{ project.id | default(value='') }}/builds">Builds</a> · <a href="/projects/{{ project.id | default(value='') }}/git">Code</a></nav></div>
+{% endblock content %}

@@ -56,6 +56,7 @@ Vollständige 1-to-1 Portierung von OneDev v17.2.1 von Java zu Rust. **KEIN MVP!
 - Auth-/User-/Project-/Group-/Issue-/MR-Handler echt gegen DB-Services verdrahtet
 - Build-Handler echt verdrahtet (`BuildService` mit DB-Tracking: Liste/Detail/Trigger mit Build-Nummern)
 - Git-Smart-HTTP- und LFS-Handler echt gegen `onedev-git` verdrahtet (Batch/Download/Upload/Locks mit Owner-Regeln)
+- Web-UI 1:1 begonnen: 267 Vanilla-CSS unter `static/vanilla` vendored, `base.html`/`dashboard.html` + 26 Seiten-Templates nach `LayoutPage.html`-Struktur (Sidebar/Topbar/Main, HTMX statt Wicket-AJAX), Binary serviert echt, Axum-0.8-Routen, `docker/web/config.yaml` + `Dockerfile.web` + Compose-Service `web` (:46316); alle 30 Seiten + Assets per Smoke-Test 200
 - Git-Smart-HTTP-Handler echt gegen `onedev-git` verdrahtet (`GitService` mit `SmartHttpService` + `HookEngine`; Push nur authentifiziert, Routen als Wildcard für verschachtelte Pfade)
 - Stack Control APIs: `GET /api/stack/status`, `GET /api/stack/logs`
 - `onedev-server`: Lifecycle, Services, Middleware

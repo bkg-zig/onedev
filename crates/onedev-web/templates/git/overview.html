@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}Code · OneDev{% endblock title %}
+{% block page_title %}Code{% endblock page_title %}
+{% block content %}
+<div class="p-2 p-sm-5"><h1>{{ title | default(value='Code') }}</h1><p>Branch: {{ ref | default(value='main') }}</p></div>
+{% endblock content %}

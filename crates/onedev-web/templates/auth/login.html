@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Sign In · OneDev{% endblock title %}
+{% block page_title %}Sign In{% endblock page_title %}
+{% block content %}
+<div class="p-2 p-sm-5"><h1>{{ title }}</h1>
+{% if error is defined and error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
+<form method="post" action="/login" hx-post="/login" hx-swap="outerHTML">
+<input name="username" value="{{ username | default(value='') }}" placeholder="Username or email">
+<input name="password" type="password" placeholder="Password">
+<button type="submit">Sign In</button></form>
+<p>No account? <a href="/register">Sign up</a></p></div>
+{% endblock content %}

@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}New Issue · OneDev{% endblock title %}
+{% block page_title %}New Issue{% endblock page_title %}
+{% block content %}
+<div class="p-2 p-sm-5"><h1>{{ title }}</h1><form method="post"><input name="title" placeholder="Title"><textarea name="description"></textarea><button type="submit">Create</button></form></div>
+{% endblock content %}

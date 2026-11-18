@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}Merge Requests · OneDev{% endblock title %}
+{% block page_title %}Merge Requests{% endblock page_title %}
+{% block content %}
+<div class="p-2 p-sm-5"><h1>{{ title | default(value='Merge Requests') }}</h1><ul>{% for mr in merge_requests | default(value=[]) %}<li><a href="/projects/{{ project_id | default(value='') }}/merge-requests/{{ mr.id }}">{{ mr.title }}</a></li>{% else %}<li>No merge requests.</li>{% endfor %}</ul></div>
+{% endblock content %}

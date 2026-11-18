@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}Tree · OneDev{% endblock title %}
+{% block page_title %}Tree{% endblock page_title %}
+{% block content %}
+<div class="p-2 p-sm-5"><h1>{{ title | default(value='Tree') }}</h1><ul>{% for entry in entries | default(value=[]) %}<li>{{ entry.name }}</li>{% endfor %}</ul></div>
+{% endblock content %}
