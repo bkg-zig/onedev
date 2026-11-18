@@ -3,7 +3,7 @@ services:
   db:
     image: bkg-core-admin-db:mango
     build:
-      context: ../../pgrust/bkg/docker/db
+      context: ../pgrust/bkg/docker/db
       dockerfile: Dockerfile
     container_name: bkg-core-admin-db
     restart: unless-stopped
@@ -30,7 +30,7 @@ services:
   core:
     image: bkg-core-admin-core:mango
     build:
-      context: ..
+      context: .
       dockerfile: docker/Dockerfile.core
     container_name: bkg-core-admin-core
     restart: unless-stopped
@@ -85,7 +85,7 @@ services:
       - artifact_data:/var/opt/onedev/artifacts
       - cache_data:/var/opt/onedev/cache
       - oci_data:/var/opt/onedev/oci
-      - ./config.yaml:/etc/onedev/config.yaml:ro
+      - ./docker/config.yaml:/etc/onedev/config.yaml:ro
     depends_on:
       db:
         condition: service_healthy
@@ -110,7 +110,7 @@ services:
   web:
     image: bkg-core-admin-web:mango
     build:
-      context: ..
+      context: .
       dockerfile: docker/Dockerfile.web
     container_name: bkg-core-admin-web
     restart: unless-stopped
@@ -121,7 +121,7 @@ services:
     ports:
       - "${BKG_WEB_PORT:-46316}:${BKG_WEB_INTERNAL_PORT:-18081}"
     volumes:
-      - ./web/config.yaml:/etc/onedev/web/config.yaml:ro
+      - ./docker/web/config.yaml:/etc/onedev/web/config.yaml:ro
     networks:
       - bkg-core-admin-network
 
@@ -129,7 +129,7 @@ services:
   gateway:
     image: bkg-core-ruxen:mango
     build:
-      context: ../../ruxen
+      context: ../ruxen
       dockerfile: contrib/docker/Dockerfile
     container_name: bkg-core-admin-gateway
     restart: unless-stopped
@@ -143,7 +143,7 @@ services:
     ports:
       - "${BKG_GATEWAY_PORT:-36697}:8080"
     volumes:
-      - ./ruxen.conf:/etc/ruxen/ruxen.conf:ro
+      - ./docker/ruxen.conf:/etc/ruxen/ruxen.conf:ro
       - ruxen_certs:/etc/ruxen/certs
     depends_on:
       core:
@@ -163,7 +163,7 @@ services:
   # youki:
   #   image: bkg-youki:mango
   #   build:
-  #     context: ../../youki
+  #     context: ../youki
   #     dockerfile: Dockerfile
   #   container_name: bkg-core-admin-youki
   #   restart: unless-stopped
@@ -215,10 +215,10 @@ secrets:
   db_password:
     file: /srv/bkg/admin-state/db.env
   jwt_private_key:
-    file: ../secrets/private_key.pem
+    file: docker/secrets/private_key.pem
   jwt_public_key:
-    file: ../secrets/public_key.pem
+    file: docker/secrets/public_key.pem
   webhook_secret:
-    file: ../secrets/webhook_secret.txt
+    file: docker/secrets/webhook_secret.txt
   db_url:
-    file: ../secrets/db_url.txt
+    file: docker/secrets/db_url.txt
