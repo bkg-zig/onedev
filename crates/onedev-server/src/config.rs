@@ -1,884 +1,307 @@
-//! Configuration for OneDev Server
+//! Configuration for the OneDev server.
+//!
+//! Layering (later wins):
+//! 1. built-in defaults,
+//! 2. `config.toml` / `config.yaml` / `config.yml` / `config.json` inside
+//!    `ONEDEV_CONFIG_DIR` (default `/etc/onedev`),
+//! 3. `ONEDEV_*` environment variables, `__` separates nesting levels
+//!    (`ONEDEV_DATABASE__URL`, `ONEDEV_SECURITY__CORS_ORIGINS='["https://x"]'`).
+//!
+//! Every section has defaults, so a minimal production setup only needs the
+//! database URL (and the JWT key material when it should not be generated).
 
-use figment::{
-    Figment,
-    providers::{Env, Format, Json, Toml, Yaml},
-};
+use std::collections::BTreeMap;
+use std::fmt;
+use std::net::IpAddr;
+use std::path::{Path, PathBuf};
+use std::time::Duration;
+
+use figment::providers::{Env, Format, Json, Serialized, Toml, Yaml};
+use figment::Figment;
+use ipnet::IpNet;
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
 
-/// Application configuration
+const REDACTED: &str = "[redacted]";
+
+/// Complete application configuration.
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[serde(default)]
 pub struct AppConfig {
-    /// Server configuration
     pub server: ServerConfig,
-    /// Database configuration
     pub database: DatabaseConfig,
-    /// Authentication configuration
     pub auth: AuthConfig,
-    /// Build configuration
     pub build: BuildConfig,
-    /// Git configuration
     pub git: GitConfig,
-    /// Webhook configuration
     pub webhook: WebhookConfig,
-    /// Cleanup configuration
     pub cleanup: CleanupConfig,
-    /// Search configuration
     pub search: SearchConfig,
-    /// Email configuration
-    pub email: EmailConfig,
-    /// Storage configuration
     pub storage: StorageConfig,
-    /// Observability configuration
     pub observability: ObservabilityConfig,
-    /// Security configuration
     pub security: SecurityConfig,
-    /// Feature flags
     pub features: FeatureFlags,
 }
 
-/// Server configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
+/// HTTP server settings.
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(default)]
 pub struct ServerConfig {
-    /// Bind address
-    #[serde(default = "default_bind_address")]
     pub bind_address: String,
-    /// Port
-    #[serde(default = "default_port")]
     pub port: u16,
-    /// Maximum concurrent requests
-    #[serde(default = "default_max_concurrent_requests")]
+    /// Upper bound of concurrently processed requests (0 = unlimited).
     pub max_concurrent_requests: usize,
-    /// Request timeout in seconds
-    #[serde(default = "default_request_timeout_secs")]
+    /// Timeout for regular requests; git, LFS and artifact transfers are exempt.
     pub request_timeout_secs: u64,
-    /// Enable TLS
-    #[serde(default)]
+    /// Maximum request body in MiB for transfers (git pushes, LFS, artifacts).
+    pub max_body_mb: u64,
+    /// Maximum request body in MiB for regular JSON / form endpoints.
+    pub max_api_body_mb: u64,
+    /// Seconds to wait for in-flight requests and background jobs on shutdown.
+    pub shutdown_grace_secs: u64,
+    /// In-process TLS is not supported: terminate TLS at the gateway.
     pub tls_enabled: bool,
-    /// TLS cert path
     pub tls_cert_path: Option<PathBuf>,
-    /// TLS key path
     pub tls_key_path: Option<PathBuf>,
-    /// Environment (development, staging, production)
-    #[serde(default = "default_environment")]
+    /// `development`, `staging` or `production`.
     pub environment: String,
-    /// Sentry DSN
+    /// Externally visible base URL (used in links, e.g. webhook payloads).
+    pub public_url: Option<String>,
     pub sentry_dsn: Option<String>,
-    /// OpenTelemetry enabled
-    #[serde(default)]
+    pub sentry_traces_sample_rate: f32,
+    /// Export traces over OTLP/HTTP (JSON) to `otlp_endpoint`.
     pub otel_enabled: bool,
-    /// OTLP endpoint
+    /// Base URL of the OTLP/HTTP collector, e.g. `http://otel-collector:4318`.
     pub otlp_endpoint: Option<String>,
-}
-
-fn default_bind_address() -> String {
-    "0.0.0.0".to_string()
-}
-
-fn default_port() -> u16 {
-    46315
-}
-
-fn default_max_concurrent_requests() -> usize {
-    1000
-}
-
-fn default_request_timeout_secs() -> u64 {
-    60
-}
-
-fn default_environment() -> String {
-    "development".to_string()
-}
-
-/// Database configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct DatabaseConfig {
-    /// Database URL
-    pub url: String,
-    /// Database URL file path (for secrets)
-    #[serde(default, alias = "DATABASE_URL_FILE")]
-    pub url_file: Option<PathBuf>,
-    /// Maximum connections in pool
-    #[serde(default = "default_max_connections")]
-    pub max_connections: u32,
-    /// Minimum connections in pool
-    #[serde(default = "default_min_connections")]
-    pub min_connections: u32,
-    /// Connection timeout in seconds
-    #[serde(default = "default_connect_timeout")]
-    pub connect_timeout_secs: u64,
-    /// Idle timeout in seconds
-    #[serde(default = "default_idle_timeout")]
-    pub idle_timeout_secs: u64,
-    /// Max lifetime in seconds
-    #[serde(default = "default_max_lifetime")]
-    pub max_lifetime_secs: u64,
-    /// Enable SQLx query logging
-    #[serde(default)]
-    pub sqlx_logging: bool,
-}
-
-fn default_max_connections() -> u32 {
-    20
-}
-
-fn default_min_connections() -> u32 {
-    5
-}
-
-fn default_connect_timeout() -> u64 {
-    30
-}
-
-fn default_idle_timeout() -> u64 {
-    600
-}
-
-fn default_max_lifetime() -> u64 {
-    1800
-}
-
-/// Authentication configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AuthConfig {
-    /// JWT secret key (base64 encoded) - for HS256
-    #[serde(default)]
-    pub jwt_secret: String,
-    /// RSA private key for JWT signing (PEM format) - for RS256
-    #[serde(default, alias = "JWT_PRIVATE_KEY_FILE")]
-    pub private_key_file: Option<PathBuf>,
-    /// RSA public key for JWT verification (PEM format) - for RS256
-    #[serde(default, alias = "JWT_PUBLIC_KEY_FILE")]
-    pub public_key_file: Option<PathBuf>,
-    /// RSA private key for JWT signing (PEM format, loaded from file)
-    #[serde(skip)]
-    pub private_key: Option<String>,
-    /// RSA public key for JWT verification (PEM format, loaded from file)
-    #[serde(skip)]
-    pub public_key: Option<String>,
-    /// Token expiry in hours
-    #[serde(default = "default_token_expiry_hours")]
-    pub token_expiry_hours: i64,
-    /// Refresh token expiry in days
-    #[serde(default = "default_refresh_expiry_days")]
-    pub refresh_expiry_days: i64,
-    /// Argon2 memory cost (KB)
-    #[serde(default = "default_argon2_memory")]
-    pub argon2_memory_kb: u32,
-    /// Argon2 iterations
-    #[serde(default = "default_argon2_iterations")]
-    pub argon2_iterations: u32,
-    /// Argon2 parallelism
-    #[serde(default = "default_argon2_parallelism")]
-    pub argon2_parallelism: u32,
-    /// Enable 2FA
-    #[serde(default = "default_true")]
-    pub enable_2fa: bool,
-    /// 2FA issuer name
-    #[serde(default = "default_2fa_issuer")]
-    pub two_fa_issuer: String,
-    /// Password min length
-    #[serde(default = "default_password_min_length")]
-    pub password_min_length: usize,
-    /// Password require uppercase
-    #[serde(default = "default_true")]
-    pub password_require_uppercase: bool,
-    /// Password require lowercase
-    #[serde(default = "default_true")]
-    pub password_require_lowercase: bool,
-    /// Password require digits
-    #[serde(default = "default_true")]
-    pub password_require_digits: bool,
-    /// Password require special chars
-    #[serde(default = "default_true")]
-    pub password_require_special: bool,
-    /// Session timeout in minutes
-    #[serde(default = "default_session_timeout_minutes")]
-    pub session_timeout_minutes: i64,
-    /// Max failed login attempts before lockout
-    #[serde(default = "default_max_failed_attempts")]
-    pub max_failed_attempts: u32,
-    /// Lockout duration in minutes
-    #[serde(default = "default_lockout_duration_minutes")]
-    pub lockout_duration_minutes: i64,
-    /// OAuth providers
-    pub oauth: OAuthConfig,
-}
-
-fn default_token_expiry_hours() -> i64 {
-    24
-}
-
-fn default_refresh_expiry_days() -> i64 {
-    30
-}
-
-fn default_argon2_memory() -> u32 {
-    65536
-}
-
-fn default_argon2_iterations() -> u32 {
-    3
-}
-
-fn default_argon2_parallelism() -> u32 {
-    4
-}
-
-fn default_true() -> bool {
-    true
-}
-
-fn default_2fa_issuer() -> String {
-    "OneDev".to_string()
-}
-
-fn default_password_min_length() -> usize {
-    12
-}
-
-fn default_session_timeout_minutes() -> i64 {
-    60
-}
-
-fn default_max_failed_attempts() -> u32 {
-    5
-}
-
-fn default_lockout_duration_minutes() -> i64 {
-    15
-}
-
-/// OAuth configuration
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub struct OAuthConfig {
-    pub github: Option<OAuthProviderConfig>,
-    pub gitlab: Option<OAuthProviderConfig>,
-    pub google: Option<OAuthProviderConfig>,
-    pub microsoft: Option<OAuthProviderConfig>,
-    #[serde(default)]
-    pub generic: Vec<OAuthProviderConfig>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct OAuthProviderConfig {
-    pub client_id: String,
-    pub client_secret: String,
-    pub redirect_url: String,
-    pub scopes: Vec<String>,
-}
-
-/// Build configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BuildConfig {
-    /// Default build timeout in minutes
-    #[serde(default = "default_build_timeout_minutes")]
-    pub default_timeout_minutes: i64,
-    /// Max concurrent builds
-    #[serde(default = "default_max_concurrent_builds")]
-    pub max_concurrent_builds: usize,
-    /// Build log retention days
-    #[serde(default = "default_build_log_retention_days")]
-    pub log_retention_days: i64,
-    /// Artifact retention days
-    #[serde(default = "default_artifact_retention_days")]
-    pub artifact_retention_days: i64,
-    /// Default Docker image for builds
-    #[serde(default = "default_build_image")]
-    pub default_image: String,
-    /// Build executor type
-    #[serde(default = "default_executor_type")]
-    pub executor_type: String,
-    /// Shared volume path
-    pub shared_volume: Option<PathBuf>,
-    /// Enable build cache
-    #[serde(default = "default_true")]
-    pub enable_cache: bool,
-    /// Cache directory
-    pub cache_dir: Option<PathBuf>,
-    /// Resource limits
-    pub resources: BuildResources,
-}
-
-fn default_build_timeout_minutes() -> i64 {
-    60
-}
-
-fn default_max_concurrent_builds() -> usize {
-    4
-}
-
-fn default_build_log_retention_days() -> i64 {
-    30
-}
-
-fn default_artifact_retention_days() -> i64 {
-    90
-}
-
-fn default_build_image() -> String {
-    "docker:latest".to_string()
-}
-
-fn default_executor_type() -> String {
-    "docker".to_string()
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BuildResources {
-    /// CPU limit (cores)
-    #[serde(default = "default_cpu_limit")]
-    pub cpu_limit: f32,
-    /// Memory limit (MB)
-    #[serde(default = "default_memory_limit")]
-    pub memory_limit_mb: u64,
-    /// Disk limit (GB)
-    #[serde(default = "default_disk_limit")]
-    pub disk_limit_gb: u64,
-    /// Max processes
-    #[serde(default = "default_max_processes")]
-    pub max_processes: u32,
-}
-
-fn default_cpu_limit() -> f32 {
-    2.0
-}
-
-fn default_memory_limit() -> u64 {
-    4096
-}
-
-fn default_disk_limit() -> u64 {
-    10
-}
-
-fn default_max_processes() -> u32 {
-    256
-}
-
-/// Git configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct GitConfig {
-    /// Repositories root directory
-    pub repos_root: PathBuf,
-    /// Git HTTP backend
-    #[serde(default = "default_git_http_backend")]
-    pub http_backend: String,
-    /// Max pack size (MB)
-    #[serde(default = "default_max_pack_size")]
-    pub max_pack_size_mb: u64,
-    /// Receive pack timeout (seconds)
-    #[serde(default = "default_receive_timeout")]
-    pub receive_timeout_secs: u64,
-    /// Enable git LFS
-    #[serde(default = "default_true")]
-    pub enable_lfs: bool,
-    /// LFS storage path
-    pub lfs_storage_path: Option<PathBuf>,
-    /// Enable git hooks
-    #[serde(default = "default_true")]
-    pub enable_hooks: bool,
-    /// Hook timeout (seconds)
-    #[serde(default = "default_hook_timeout")]
-    pub hook_timeout_secs: u64,
-    /// GC enabled
-    #[serde(default = "default_true")]
-    pub gc_enabled: bool,
-    /// GC interval (hours)
-    #[serde(default = "default_gc_interval")]
-    pub gc_interval_hours: u64,
-}
-
-fn default_git_http_backend() -> String {
-    "smart-http".to_string()
-}
-
-fn default_max_pack_size() -> u64 {
-    100
-}
-
-fn default_receive_timeout() -> u64 {
-    300
-}
-
-fn default_hook_timeout() -> u64 {
-    60
-}
-
-fn default_gc_interval() -> u64 {
-    24
-}
-
-/// Webhook configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct WebhookConfig {
-    /// Max retries
-    #[serde(default = "default_webhook_max_retries")]
-    pub max_retries: u32,
-    /// Retry delay base (seconds)
-    #[serde(default = "default_webhook_retry_delay")]
-    pub retry_delay_secs: u64,
-    /// Max retry delay (seconds)
-    #[serde(default = "default_webhook_max_retry_delay")]
-    pub max_retry_delay_secs: u64,
-    /// Timeout (seconds)
-    #[serde(default = "default_webhook_timeout")]
-    pub timeout_secs: u64,
-    /// Enable SSL verification
-    #[serde(default = "default_true")]
-    pub verify_ssl: bool,
-    /// Allowed hosts (empty = all)
-    pub allowed_hosts: Vec<String>,
-    /// Blocked hosts
-    pub blocked_hosts: Vec<String>,
-    /// Secret header name
-    #[serde(default = "default_webhook_secret_header")]
-    pub secret_header: String,
-}
-
-/// Cleanup configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CleanupConfig {
-    /// Build log retention in days
-    #[serde(default = "default_build_log_retention_days")]
-    pub build_log_retention_days: i64,
-    /// Artifact retention in days
-    #[serde(default = "default_artifact_retention_days")]
-    pub artifact_retention_days: i64,
-    /// Temp file retention in hours
-    #[serde(default = "default_temp_file_retention_hours")]
-    pub temp_file_retention_hours: i64,
-    /// Audit log retention in days
-    #[serde(default = "default_audit_log_retention_days")]
-    pub audit_log_retention_days: i64,
-    /// Webhook log retention in days
-    #[serde(default = "default_webhook_log_retention_days")]
-    pub webhook_log_retention_days: i64,
-    /// Search index cleanup in days
-    #[serde(default = "default_search_index_cleanup_days")]
-    pub search_index_cleanup_days: i64,
-    /// Run interval in hours
-    #[serde(default = "default_cleanup_run_interval_hours")]
-    pub run_interval_hours: u64,
-}
-
-fn default_temp_file_retention_hours() -> i64 {
-    24
-}
-
-fn default_audit_log_retention_days() -> i64 {
-    365
-}
-
-fn default_webhook_log_retention_days() -> i64 {
-    30
-}
-
-fn default_search_index_cleanup_days() -> i64 {
-    7
-}
-
-fn default_cleanup_run_interval_hours() -> u64 {
-    1
-}
-
-/// Search configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SearchConfig {
-    /// Batch size for indexing
-    #[serde(default = "default_search_batch_size")]
-    pub batch_size: usize,
-    /// Index interval in seconds
-    #[serde(default = "default_search_index_interval_secs")]
-    pub index_interval_secs: u64,
-    /// Full reindex interval in hours
-    #[serde(default = "default_search_full_reindex_interval_hours")]
-    pub full_reindex_interval_hours: u64,
-    /// Enable code search
-    #[serde(default = "default_true")]
-    pub enable_code_search: bool,
-    /// Enable issue search
-    #[serde(default = "default_true")]
-    pub enable_issue_search: bool,
-    /// Enable wiki search
-    #[serde(default = "default_true")]
-    pub enable_wiki_search: bool,
-}
-
-fn default_search_batch_size() -> usize {
-    100
-}
-
-fn default_search_index_interval_secs() -> u64 {
-    60
-}
-
-fn default_search_full_reindex_interval_hours() -> u64 {
-    24
-}
-
-fn default_webhook_max_retries() -> u32 {
-    3
-}
-
-fn default_webhook_retry_delay() -> u64 {
-    10
-}
-
-fn default_webhook_max_retry_delay() -> u64 {
-    300
-}
-
-fn default_webhook_timeout() -> u64 {
-    30
-}
-
-fn default_webhook_secret_header() -> String {
-    "X-OneDev-Signature".to_string()
-}
-
-/// Email configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct EmailConfig {
-    /// SMTP host
-    pub smtp_host: String,
-    /// SMTP port
-    #[serde(default = "default_smtp_port")]
-    pub smtp_port: u16,
-    /// SMTP username
-    pub smtp_username: Option<String>,
-    /// SMTP password
-    pub smtp_password: Option<String>,
-    /// Use STARTTLS
-    #[serde(default = "default_true")]
-    pub starttls: bool,
-    /// Use SSL/TLS
-    #[serde(default)]
-    pub ssl: bool,
-    /// From address
-    pub from_address: String,
-    /// From name
-    #[serde(default = "default_from_name")]
-    pub from_name: String,
-    /// Enable email
-    #[serde(default)]
-    pub enabled: bool,
-    /// Queue directory
-    pub queue_dir: Option<PathBuf>,
-}
-
-fn default_smtp_port() -> u16 {
-    587
-}
-
-fn default_from_name() -> String {
-    "OneDev".to_string()
-}
-
-/// Storage configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct StorageConfig {
-    /// Type: local, s3, gcs, azure
-    #[serde(default = "default_storage_type")]
-    pub storage_type: String,
-    /// Local storage path
-    pub local_path: Option<PathBuf>,
-    /// S3 configuration
-    pub s3: Option<S3Config>,
-    /// GCS configuration
-    pub gcs: Option<GcsConfig>,
-    /// Azure configuration
-    pub azure: Option<AzureConfig>,
-    /// Max file size (MB)
-    #[serde(default = "default_max_file_size")]
-    pub max_file_size_mb: u64,
-    /// Allowed MIME types
-    pub allowed_mime_types: Vec<String>,
-}
-
-fn default_storage_type() -> String {
-    "local".to_string()
-}
-
-fn default_max_file_size() -> u64 {
-    100
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct S3Config {
-    pub bucket: String,
-    pub region: String,
-    pub endpoint: Option<String>,
-    pub access_key: String,
-    pub secret_key: String,
-    pub force_path_style: bool,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct GcsConfig {
-    pub bucket: String,
-    pub credentials_path: Option<String>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AzureConfig {
-    pub container: String,
-    pub account: String,
-    pub key: String,
-}
-
-/// Observability configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ObservabilityConfig {
-    /// Log level
-    #[serde(default = "default_log_level")]
-    pub log_level: String,
-    /// Log format: json, text
-    #[serde(default = "default_log_format")]
-    pub log_format: String,
-    /// Metrics enabled
-    #[serde(default = "default_true")]
-    pub metrics_enabled: bool,
-    /// Metrics port
-    #[serde(default = "default_metrics_port")]
-    pub metrics_port: u16,
-    /// Tracing enabled
-    #[serde(default = "default_true")]
-    pub tracing_enabled: bool,
-    /// Tracing sample rate
-    #[serde(default = "default_trace_sample_rate")]
-    pub trace_sample_rate: f64,
-    /// Profiling enabled
-    #[serde(default)]
-    pub profiling_enabled: bool,
-}
-
-fn default_log_level() -> String {
-    "info".to_string()
-}
-
-fn default_log_format() -> String {
-    "json".to_string()
-}
-
-fn default_metrics_port() -> u16 {
-    9090
-}
-
-fn default_trace_sample_rate() -> f64 {
-    0.1
-}
-
-/// Security configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SecurityConfig {
-    /// Allowed origins for CORS
-    pub cors_origins: Vec<String>,
-    /// Trusted proxies
-    pub trusted_proxies: Vec<String>,
-    /// Content Security Policy
-    pub csp: Option<String>,
-    /// HSTS enabled
-    #[serde(default = "default_true")]
-    pub hsts_enabled: bool,
-    /// HSTS max age (seconds)
-    #[serde(default = "default_hsts_max_age")]
-    pub hsts_max_age: u64,
-    /// Referrer policy
-    #[serde(default = "default_referrer_policy")]
-    pub referrer_policy: String,
-    /// Permissions policy
-    pub permissions_policy: Option<String>,
-    /// Rate limiting
-    pub rate_limit: RateLimitConfig,
-}
-
-fn default_hsts_max_age() -> u64 {
-    31536000
-}
-
-fn default_referrer_policy() -> String {
-    "strict-origin-when-cross-origin".to_string()
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct RateLimitConfig {
-    /// Requests per minute
-    #[serde(default = "default_rpm")]
-    pub requests_per_minute: u32,
-    /// Burst allowance
-    #[serde(default = "default_burst")]
-    pub burst: u32,
-    /// Enable rate limiting
-    #[serde(default = "default_true")]
-    pub enabled: bool,
-}
-
-fn default_rpm() -> u32 {
-    1000
-}
-
-fn default_burst() -> u32 {
-    200
-}
-
-/// Feature flags
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct FeatureFlags {
-    /// Enable CI/CD builds
-    #[serde(default = "default_true")]
-    pub builds: bool,
-    /// Enable merge requests
-    #[serde(default = "default_true")]
-    pub merge_requests: bool,
-    /// Enable issues
-    #[serde(default = "default_true")]
-    pub issues: bool,
-    /// Enable wiki
-    #[serde(default = "default_true")]
-    pub wiki: bool,
-    /// Enable packages
-    #[serde(default = "default_true")]
-    pub packages: bool,
-    /// Enable code search
-    #[serde(default = "default_true")]
-    pub code_search: bool,
-    /// Enable code navigation
-    #[serde(default = "default_true")]
-    pub code_navigation: bool,
-    /// Enable webhooks
-    #[serde(default = "default_true")]
-    pub webhooks: bool,
-    /// Enable LDAP
-    #[serde(default)]
-    pub ldap: bool,
-    /// Enable SAML
-    #[serde(default)]
-    pub saml: bool,
-    /// Enable OIDC
-    #[serde(default)]
-    pub oidc: bool,
-    /// Enable 2FA
-    #[serde(default = "default_true")]
-    pub two_fa: bool,
-    /// Enable audit logs
-    #[serde(default = "default_true")]
-    pub audit_logs: bool,
-    /// Enable project templates
-    #[serde(default = "default_true")]
-    pub project_templates: bool,
-}
-
-impl AppConfig {
-    /// Load configuration from files and environment
-    pub fn load() -> Result<Self, Box<figment::Error>> {
-        let config_dir =
-            std::env::var("ONEDEV_CONFIG_DIR").unwrap_or_else(|_| "/etc/onedev".to_string());
-
-        let mut config: AppConfig = Figment::new()
-            .merge(Toml::file(format!("{}/config.toml", config_dir)))
-            .merge(Yaml::file(format!("{}/config.yaml", config_dir)))
-            .merge(Json::file(format!("{}/config.json", config_dir)))
-            .merge(Env::prefixed("ONEDEV_").split("__").global())
-            .extract()
-            .map_err(Box::new)?;
-
-        // If database URL file is specified, read the URL from the file
-        if let Some(url_file) = &config.database.url_file {
-            let url_from_file = std::fs::read_to_string(url_file).map_err(|e| {
-                Box::new(figment::Error::from(format!(
-                    "Failed to read database URL file: {}",
-                    e
-                )))
-            })?;
-            config.database.url = url_from_file.trim().to_string();
-        }
-
-        // If JWT private key file is specified, read the key from the file
-        if let Some(key_file) = &config.auth.private_key_file {
-            let key_from_file = std::fs::read_to_string(key_file).map_err(|e| {
-                Box::new(figment::Error::from(format!(
-                    "Failed to read JWT private key file: {}",
-                    e
-                )))
-            })?;
-            config.auth.private_key = Some(key_from_file.trim().to_string());
-        }
-
-        // If JWT public key file is specified, read the key from the file
-        if let Some(key_file) = &config.auth.public_key_file {
-            let key_from_file = std::fs::read_to_string(key_file).map_err(|e| {
-                Box::new(figment::Error::from(format!(
-                    "Failed to read JWT public key file: {}",
-                    e
-                )))
-            })?;
-            config.auth.public_key = Some(key_from_file.trim().to_string());
-        }
-
-        Ok(config)
-    }
+    /// Extra request headers for the collector (e.g. `authorization`).
+    pub otlp_headers: BTreeMap<String, String>,
+    /// Fraction of traces that are exported (0.0 - 1.0).
+    pub otel_sample_rate: f64,
+    /// `service.name` resource attribute of exported traces.
+    pub service_name: String,
 }
 
 impl Default for ServerConfig {
     fn default() -> Self {
         Self {
-            bind_address: default_bind_address(),
-            port: default_port(),
-            max_concurrent_requests: default_max_concurrent_requests(),
-            request_timeout_secs: default_request_timeout_secs(),
+            bind_address: "127.0.0.1".to_string(),
+            port: 18080,
+            max_concurrent_requests: 1000,
+            request_timeout_secs: 60,
+            max_body_mb: 512,
+            max_api_body_mb: 16,
+            shutdown_grace_secs: 30,
             tls_enabled: false,
             tls_cert_path: None,
             tls_key_path: None,
-            environment: default_environment(),
+            environment: "development".to_string(),
+            public_url: None,
             sentry_dsn: None,
+            sentry_traces_sample_rate: 0.1,
             otel_enabled: false,
             otlp_endpoint: None,
+            otlp_headers: BTreeMap::new(),
+            otel_sample_rate: 0.1,
+            service_name: "onedev-server".to_string(),
         }
     }
+}
+
+impl fmt::Debug for ServerConfig {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("ServerConfig")
+            .field("bind_address", &self.bind_address)
+            .field("port", &self.port)
+            .field("max_concurrent_requests", &self.max_concurrent_requests)
+            .field("request_timeout_secs", &self.request_timeout_secs)
+            .field("max_body_mb", &self.max_body_mb)
+            .field("max_api_body_mb", &self.max_api_body_mb)
+            .field("shutdown_grace_secs", &self.shutdown_grace_secs)
+            .field("tls_enabled", &self.tls_enabled)
+            .field("environment", &self.environment)
+            .field("public_url", &self.public_url)
+            .field("sentry_dsn", &self.sentry_dsn.as_ref().map(|_| REDACTED))
+            .field("sentry_traces_sample_rate", &self.sentry_traces_sample_rate)
+            .field("otel_enabled", &self.otel_enabled)
+            .field("otlp_endpoint", &self.otlp_endpoint)
+            .field(
+                "otlp_headers",
+                &self.otlp_headers.keys().collect::<Vec<_>>(),
+            )
+            .field("otel_sample_rate", &self.otel_sample_rate)
+            .field("service_name", &self.service_name)
+            .finish()
+    }
+}
+
+/// PostgreSQL connection settings.
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct DatabaseConfig {
+    pub url: String,
+    pub max_connections: u32,
+    pub min_connections: u32,
+    pub connect_timeout_secs: u64,
+    pub idle_timeout_secs: u64,
+    pub max_lifetime_secs: u64,
+    pub sqlx_logging: bool,
+    /// Apply embedded migrations on startup.
+    pub run_migrations: bool,
 }
 
 impl Default for DatabaseConfig {
     fn default() -> Self {
         Self {
             url: "postgresql://onedev:onedev@localhost:5432/onedev".to_string(),
-            url_file: None,
-            max_connections: default_max_connections(),
-            min_connections: default_min_connections(),
-            connect_timeout_secs: default_connect_timeout(),
-            idle_timeout_secs: default_idle_timeout(),
-            max_lifetime_secs: default_max_lifetime(),
+            max_connections: 20,
+            min_connections: 2,
+            connect_timeout_secs: 30,
+            idle_timeout_secs: 600,
+            max_lifetime_secs: 1800,
             sqlx_logging: false,
+            run_migrations: true,
         }
     }
+}
+
+impl fmt::Debug for DatabaseConfig {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("DatabaseConfig")
+            .field("url", &REDACTED)
+            .field("max_connections", &self.max_connections)
+            .field("min_connections", &self.min_connections)
+            .field("connect_timeout_secs", &self.connect_timeout_secs)
+            .field("idle_timeout_secs", &self.idle_timeout_secs)
+            .field("max_lifetime_secs", &self.max_lifetime_secs)
+            .field("run_migrations", &self.run_migrations)
+            .finish()
+    }
+}
+
+/// Authentication settings.
+///
+/// Access tokens are RS256 JWTs. The key pair is read from the configured PEM
+/// files; when none is configured a key pair is generated once and persisted
+/// below `storage.local_path/keys` (mode 0600).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct AuthConfig {
+    pub jwt_private_key_file: Option<PathBuf>,
+    pub jwt_public_key_file: Option<PathBuf>,
+    pub jwt_issuer: String,
+    pub jwt_audience: String,
+    pub access_token_ttl_minutes: i64,
+    pub refresh_token_ttl_days: i64,
+    pub two_fa_issuer: String,
+    pub session_timeout_minutes: i64,
+    pub remember_me_days: i64,
+    pub max_failed_attempts: u32,
+    pub lockout_duration_minutes: i64,
+    pub password_reset_ttl_minutes: i64,
 }
 
 impl Default for AuthConfig {
     fn default() -> Self {
         Self {
-            jwt_secret: "change-me-in-production-use-strong-random-secret".to_string(),
-            private_key_file: None,
-            public_key_file: None,
-            private_key: None,
-            public_key: None,
-            token_expiry_hours: default_token_expiry_hours(),
-            refresh_expiry_days: default_refresh_expiry_days(),
-            argon2_memory_kb: default_argon2_memory(),
-            argon2_iterations: default_argon2_iterations(),
-            argon2_parallelism: default_argon2_parallelism(),
-            enable_2fa: default_true(),
-            two_fa_issuer: default_2fa_issuer(),
-            password_min_length: default_password_min_length(),
-            password_require_uppercase: default_true(),
-            password_require_lowercase: default_true(),
-            password_require_digits: default_true(),
-            password_require_special: default_true(),
-            session_timeout_minutes: default_session_timeout_minutes(),
-            max_failed_attempts: default_max_failed_attempts(),
-            lockout_duration_minutes: default_lockout_duration_minutes(),
-            oauth: OAuthConfig::default(),
+            jwt_private_key_file: None,
+            jwt_public_key_file: None,
+            jwt_issuer: "onedev".to_string(),
+            jwt_audience: "onedev-api".to_string(),
+            access_token_ttl_minutes: 15,
+            refresh_token_ttl_days: 7,
+            two_fa_issuer: "OneDev".to_string(),
+            session_timeout_minutes: 24 * 60,
+            remember_me_days: 30,
+            max_failed_attempts: 5,
+            lockout_duration_minutes: 15,
+            password_reset_ttl_minutes: 60,
+        }
+    }
+}
+
+/// Build scheduler settings.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct BuildConfig {
+    /// Fallback build timeout (a project's `build_timeout` wins).
+    pub default_timeout_minutes: i64,
+    pub max_concurrent_builds: usize,
+    /// Seconds between scheduler polls (LISTEN/NOTIFY wakes it earlier).
+    pub poll_interval_secs: u64,
+    /// A running build whose heartbeat is older than this is failed.
+    pub stale_after_secs: u64,
+    /// Maximum stored log lines per build.
+    pub max_log_lines: u64,
+    pub log_retention_days: i64,
+    pub artifact_retention_days: i64,
+    /// Override of `<storage.local_path>/builds`.
+    pub work_dir: Option<PathBuf>,
+    /// Override of `<storage.local_path>/artifacts`.
+    pub artifact_dir: Option<PathBuf>,
+    /// How command steps are executed (`host`, `docker` or `youki`).
+    pub executor: BuildExecutorKind,
+    /// Docker CLI used by the `docker` executor.
+    pub docker_binary: PathBuf,
+    /// OCI runtime used by the `youki` executor.
+    pub youki_binary: PathBuf,
+    /// Runtime state directory of the `youki` executor
+    /// (default `<storage.local_path>/youki`).
+    pub youki_root: Option<PathBuf>,
+    /// Pulled image layers and unpacked root filesystems of the `youki`
+    /// executor (default `<storage.local_path>/images`).
+    pub image_cache_dir: Option<PathBuf>,
+    /// Network of `youki` step containers: `host` shares the server's
+    /// network (builds can reach the internet, but also local services),
+    /// `none` gives every container an empty network namespace.
+    pub youki_network: YoukiNetworkKind,
+    /// Absolute cgroup (v2) directory below which `youki` creates the
+    /// container cgroups, e.g. `/system.slice/onedev.service/builds`. The
+    /// server user must own it (systemd `Delegate=yes`). Default: below the
+    /// cgroup of the server process.
+    pub youki_cgroup_parent: Option<String>,
+    /// Docker-style `config.json` (`{"auths": {"<registry>": {"auth": "<base64>"}}}`)
+    /// with registry credentials; the secrets stay out of this file.
+    pub registry_credentials_file: Option<PathBuf>,
+    /// Image of command steps that do not name one (container executors).
+    pub default_image: Option<String>,
+    /// Memory limit per step container, e.g. `2g`.
+    pub container_memory: Option<String>,
+    /// CPU limit per step container, e.g. `2`.
+    pub container_cpus: Option<String>,
+    /// Maximum number of processes per step container.
+    pub container_pids_limit: Option<u32>,
+    /// Grace period between SIGTERM and SIGKILL when stopping a step.
+    pub term_grace_secs: u64,
+    /// Maximum size of the artifacts one job may publish.
+    pub max_artifact_mb: u64,
+}
+
+/// Where command steps run.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum BuildExecutorKind {
+    /// Directly on the server host. No isolation: only for trusted projects.
+    #[default]
+    Host,
+    /// In a container started through the Docker CLI.
+    Docker,
+    /// In a rootless OCI container run by `youki`.
+    Youki,
+}
+
+/// Network mode of `youki` step containers.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum YoukiNetworkKind {
+    #[default]
+    Host,
+    None,
+}
+
+impl BuildExecutorKind {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Host => "host",
+            Self::Docker => "docker",
+            Self::Youki => "youki",
         }
     }
 }
@@ -886,189 +309,629 @@ impl Default for AuthConfig {
 impl Default for BuildConfig {
     fn default() -> Self {
         Self {
-            default_timeout_minutes: default_build_timeout_minutes(),
-            max_concurrent_builds: default_max_concurrent_builds(),
-            log_retention_days: default_build_log_retention_days(),
-            artifact_retention_days: default_artifact_retention_days(),
-            default_image: default_build_image(),
-            executor_type: default_executor_type(),
-            shared_volume: None,
-            enable_cache: default_true(),
-            cache_dir: None,
-            resources: BuildResources::default(),
+            default_timeout_minutes: 60,
+            max_concurrent_builds: 4,
+            poll_interval_secs: 5,
+            stale_after_secs: 120,
+            max_log_lines: 200_000,
+            log_retention_days: 30,
+            artifact_retention_days: 90,
+            work_dir: None,
+            artifact_dir: None,
+            executor: BuildExecutorKind::Host,
+            docker_binary: PathBuf::from("docker"),
+            youki_binary: PathBuf::from("youki"),
+            youki_root: None,
+            image_cache_dir: None,
+            youki_network: YoukiNetworkKind::Host,
+            youki_cgroup_parent: None,
+            registry_credentials_file: None,
+            default_image: None,
+            container_memory: None,
+            container_cpus: None,
+            container_pids_limit: Some(4096),
+            term_grace_secs: 5,
+            max_artifact_mb: 1024,
         }
     }
 }
 
-impl Default for BuildResources {
-    fn default() -> Self {
-        Self {
-            cpu_limit: default_cpu_limit(),
-            memory_limit_mb: default_memory_limit(),
-            disk_limit_gb: default_disk_limit(),
-            max_processes: default_max_processes(),
-        }
-    }
+/// Git storage and maintenance settings.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct GitConfig {
+    /// Directory containing the bare repositories.
+    pub repos_root: PathBuf,
+    pub git_binary: PathBuf,
+    pub default_branch: String,
+    pub max_pack_size_mb: u64,
+    pub max_lfs_object_mb: u64,
+    pub lfs_storage_path: Option<PathBuf>,
+    pub gc_enabled: bool,
+    pub gc_interval_hours: u64,
+    /// Repositories processed per GC cycle.
+    pub gc_batch_size: usize,
+    /// Loose objects above which a repository is repacked.
+    pub gc_loose_object_threshold: u64,
+    /// `git prune --expire` value.
+    pub gc_prune_expire: String,
+    /// Timeout of a single git maintenance command.
+    pub gc_command_timeout_secs: u64,
 }
 
 impl Default for GitConfig {
     fn default() -> Self {
         Self {
-            repos_root: PathBuf::from("/var/lib/onedev/repos"),
-            http_backend: default_git_http_backend(),
-            max_pack_size_mb: default_max_pack_size(),
-            receive_timeout_secs: default_receive_timeout(),
-            enable_lfs: default_true(),
+            repos_root: PathBuf::from("/var/opt/onedev/git"),
+            git_binary: PathBuf::from("git"),
+            default_branch: "main".to_string(),
+            max_pack_size_mb: 512,
+            max_lfs_object_mb: 512,
             lfs_storage_path: None,
-            enable_hooks: default_true(),
-            hook_timeout_secs: default_hook_timeout(),
-            gc_enabled: default_true(),
-            gc_interval_hours: default_gc_interval(),
+            gc_enabled: true,
+            gc_interval_hours: 24,
+            gc_batch_size: 10,
+            gc_loose_object_threshold: 1000,
+            gc_prune_expire: "2.weeks.ago".to_string(),
+            gc_command_timeout_secs: 1800,
         }
     }
+}
+
+/// Webhook delivery settings.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct WebhookConfig {
+    pub max_retries: u32,
+    pub retry_delay_secs: u64,
+    pub max_retry_delay_secs: u64,
+    pub timeout_secs: u64,
+    pub poll_interval_secs: u64,
+    pub batch_size: usize,
+    pub verify_ssl: bool,
+    /// When non-empty only these hosts (`example.com` or `*.example.com`) may be called.
+    pub allowed_hosts: Vec<String>,
+    /// Hosts that are never called.
+    pub blocked_hosts: Vec<String>,
+    /// Allow targets in private / loopback / link-local ranges (SSRF guard off).
+    pub allow_private_targets: bool,
+    /// Maximum stored response body per delivery.
+    pub max_response_bytes: usize,
 }
 
 impl Default for WebhookConfig {
     fn default() -> Self {
         Self {
-            max_retries: default_webhook_max_retries(),
-            retry_delay_secs: default_webhook_retry_delay(),
-            max_retry_delay_secs: default_webhook_max_retry_delay(),
-            timeout_secs: default_webhook_timeout(),
-            verify_ssl: default_true(),
+            max_retries: 5,
+            retry_delay_secs: 10,
+            max_retry_delay_secs: 3600,
+            timeout_secs: 30,
+            poll_interval_secs: 10,
+            batch_size: 50,
+            verify_ssl: true,
             allowed_hosts: Vec::new(),
             blocked_hosts: Vec::new(),
-            secret_header: default_webhook_secret_header(),
+            allow_private_targets: false,
+            max_response_bytes: 8192,
         }
     }
+}
+
+/// Retention settings of the cleanup service.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct CleanupConfig {
+    pub enabled: bool,
+    pub run_interval_hours: u64,
+    pub build_log_retention_days: i64,
+    pub artifact_retention_days: i64,
+    pub temp_file_retention_hours: i64,
+    pub audit_log_retention_days: i64,
+    pub webhook_log_retention_days: i64,
+    pub revoked_token_retention_days: i64,
 }
 
 impl Default for CleanupConfig {
     fn default() -> Self {
         Self {
-            build_log_retention_days: default_build_log_retention_days(),
-            artifact_retention_days: default_artifact_retention_days(),
-            temp_file_retention_hours: default_temp_file_retention_hours(),
-            audit_log_retention_days: default_audit_log_retention_days(),
-            webhook_log_retention_days: default_webhook_log_retention_days(),
-            search_index_cleanup_days: default_search_index_cleanup_days(),
-            run_interval_hours: default_cleanup_run_interval_hours(),
+            enabled: true,
+            run_interval_hours: 1,
+            build_log_retention_days: 30,
+            artifact_retention_days: 90,
+            temp_file_retention_hours: 24,
+            audit_log_retention_days: 365,
+            webhook_log_retention_days: 30,
+            revoked_token_retention_days: 30,
         }
     }
+}
+
+/// Search indexer settings.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct SearchConfig {
+    pub batch_size: usize,
+    pub index_interval_secs: u64,
+    pub full_reindex_interval_hours: u64,
+    pub enable_code_search: bool,
+    pub enable_issue_search: bool,
+    /// Files larger than this are not indexed (KiB).
+    pub max_indexed_file_kb: u64,
+    /// Maximum files indexed per project and cycle.
+    pub max_files_per_project: usize,
 }
 
 impl Default for SearchConfig {
     fn default() -> Self {
         Self {
-            batch_size: default_search_batch_size(),
-            index_interval_secs: default_search_index_interval_secs(),
-            full_reindex_interval_hours: default_search_full_reindex_interval_hours(),
-            enable_code_search: default_true(),
-            enable_issue_search: default_true(),
-            enable_wiki_search: default_true(),
+            batch_size: 200,
+            index_interval_secs: 60,
+            full_reindex_interval_hours: 24,
+            enable_code_search: true,
+            enable_issue_search: true,
+            max_indexed_file_kb: 512,
+            max_files_per_project: 20_000,
         }
     }
 }
 
-impl Default for EmailConfig {
-    fn default() -> Self {
-        Self {
-            smtp_host: "localhost".to_string(),
-            smtp_port: default_smtp_port(),
-            smtp_username: None,
-            smtp_password: None,
-            starttls: default_true(),
-            ssl: false,
-            from_address: "noreply@onedev.local".to_string(),
-            from_name: default_from_name(),
-            enabled: false,
-            queue_dir: None,
-        }
-    }
+/// Local storage settings.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct StorageConfig {
+    pub local_path: PathBuf,
+    pub max_file_size_mb: u64,
 }
 
 impl Default for StorageConfig {
     fn default() -> Self {
         Self {
-            storage_type: default_storage_type(),
-            local_path: Some(PathBuf::from("/var/lib/onedev/storage")),
-            s3: None,
-            gcs: None,
-            azure: None,
-            max_file_size_mb: default_max_file_size(),
-            allowed_mime_types: vec![
-                "application/octet-stream".to_string(),
-                "text/plain".to_string(),
-                "image/png".to_string(),
-                "image/jpeg".to_string(),
-                "image/gif".to_string(),
-                "application/pdf".to_string(),
-                "application/zip".to_string(),
-                "application/x-tar".to_string(),
-                "application/gzip".to_string(),
-            ],
+            local_path: PathBuf::from("/var/opt/onedev/storage"),
+            max_file_size_mb: 512,
         }
     }
+}
+
+/// Logging / metrics / tracing settings.
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct ObservabilityConfig {
+    pub log_level: String,
+    /// `json` or `text`.
+    pub log_format: String,
+    pub metrics_enabled: bool,
+    /// When set, `/metrics` requires `Authorization: Bearer <token>`.
+    pub metrics_token: Option<String>,
+    pub db_metrics_interval_secs: u64,
 }
 
 impl Default for ObservabilityConfig {
     fn default() -> Self {
         Self {
-            log_level: default_log_level(),
-            log_format: default_log_format(),
-            metrics_enabled: default_true(),
-            metrics_port: default_metrics_port(),
-            tracing_enabled: default_true(),
-            trace_sample_rate: default_trace_sample_rate(),
-            profiling_enabled: false,
+            log_level: "info".to_string(),
+            log_format: "json".to_string(),
+            metrics_enabled: true,
+            metrics_token: None,
+            db_metrics_interval_secs: 15,
         }
     }
+}
+
+impl fmt::Debug for ObservabilityConfig {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("ObservabilityConfig")
+            .field("log_level", &self.log_level)
+            .field("log_format", &self.log_format)
+            .field("metrics_enabled", &self.metrics_enabled)
+            .field("metrics_token", &self.metrics_token.as_ref().map(|_| REDACTED))
+            .field("db_metrics_interval_secs", &self.db_metrics_interval_secs)
+            .finish()
+    }
+}
+
+/// HTTP hardening settings.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct SecurityConfig {
+    /// Allowed CORS origins (`*` is rejected in production).
+    pub cors_origins: Vec<String>,
+    /// Proxies (IP or CIDR) whose `X-Forwarded-For` / `X-Real-IP` is trusted.
+    pub trusted_proxies: Vec<String>,
+    pub csp: Option<String>,
+    pub hsts_enabled: bool,
+    pub hsts_max_age: u64,
+    pub referrer_policy: String,
+    pub permissions_policy: Option<String>,
+    pub rate_limit: RateLimitConfig,
 }
 
 impl Default for SecurityConfig {
     fn default() -> Self {
         Self {
-            cors_origins: vec!["*".to_string()],
+            cors_origins: Vec::new(),
             trusted_proxies: Vec::new(),
-            csp: Some(
-                "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' wss: https:;".to_string()
-            ),
-            hsts_enabled: default_true(),
-            hsts_max_age: default_hsts_max_age(),
-            referrer_policy: default_referrer_policy(),
+            csp: None,
+            hsts_enabled: true,
+            hsts_max_age: 31_536_000,
+            referrer_policy: "strict-origin-when-cross-origin".to_string(),
             permissions_policy: None,
             rate_limit: RateLimitConfig::default(),
         }
     }
 }
 
+/// Per-client request rate limit.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct RateLimitConfig {
+    pub enabled: bool,
+    pub requests_per_minute: u32,
+    pub burst: u32,
+}
+
 impl Default for RateLimitConfig {
     fn default() -> Self {
         Self {
-            requests_per_minute: default_rpm(),
-            burst: default_burst(),
-            enabled: default_true(),
+            enabled: true,
+            requests_per_minute: 1200,
+            burst: 200,
         }
     }
+}
+
+/// Feature switches for background services.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct FeatureFlags {
+    pub builds: bool,
+    pub webhooks: bool,
+    pub code_search: bool,
+    pub issue_search: bool,
+    pub git_gc: bool,
+    pub cleanup: bool,
 }
 
 impl Default for FeatureFlags {
     fn default() -> Self {
         Self {
-            builds: default_true(),
-            merge_requests: default_true(),
-            issues: default_true(),
-            wiki: default_true(),
-            packages: default_true(),
-            code_search: default_true(),
-            code_navigation: default_true(),
-            webhooks: default_true(),
-            ldap: false,
-            saml: false,
-            oidc: false,
-            two_fa: default_true(),
-            audit_logs: default_true(),
-            project_templates: default_true(),
+            builds: true,
+            webhooks: true,
+            code_search: true,
+            issue_search: true,
+            git_gc: true,
+            cleanup: true,
         }
+    }
+}
+
+/// Configuration loading / validation failure.
+#[derive(Debug, thiserror::Error)]
+pub enum ConfigError {
+    #[error("failed to load configuration: {0}")]
+    Load(String),
+    #[error("invalid configuration:\n  - {}", .0.join("\n  - "))]
+    Invalid(Vec<String>),
+}
+
+impl AppConfig {
+    /// Load the configuration (defaults → files → environment).
+    pub fn load() -> Result<Self, ConfigError> {
+        let dir = std::env::var("ONEDEV_CONFIG_DIR").unwrap_or_else(|_| "/etc/onedev".to_string());
+        Self::load_from(Path::new(&dir))
+    }
+
+    /// Load the configuration with `dir` as configuration directory.
+    pub fn load_from(dir: &Path) -> Result<Self, ConfigError> {
+        let mut figment = Figment::from(Serialized::defaults(AppConfig::default()));
+        let toml = dir.join("config.toml");
+        let yaml = dir.join("config.yaml");
+        let yml = dir.join("config.yml");
+        let json = dir.join("config.json");
+        if toml.is_file() {
+            figment = figment.merge(Toml::file(toml));
+        }
+        if yaml.is_file() {
+            figment = figment.merge(Yaml::file(yaml));
+        }
+        if yml.is_file() {
+            figment = figment.merge(Yaml::file(yml));
+        }
+        if json.is_file() {
+            figment = figment.merge(Json::file(json));
+        }
+        figment = figment.merge(Env::prefixed("ONEDEV_").split("__"));
+        figment
+            .extract::<AppConfig>()
+            .map_err(|e| ConfigError::Load(e.to_string()))
+    }
+
+    pub fn is_production(&self) -> bool {
+        self.server.environment.eq_ignore_ascii_case("production")
+    }
+
+    pub fn request_timeout(&self) -> Duration {
+        Duration::from_secs(self.server.request_timeout_secs.max(1))
+    }
+
+    /// Maximum request body in bytes.
+    pub fn max_body_bytes(&self) -> usize {
+        let mb = self
+            .server
+            .max_body_mb
+            .max(self.git.max_pack_size_mb)
+            .max(self.storage.max_file_size_mb);
+        usize::try_from(mb.saturating_mul(1024 * 1024)).unwrap_or(usize::MAX)
+    }
+
+    /// Parsed `security.trusted_proxies` (single addresses become host networks).
+    pub fn trusted_proxy_nets(&self) -> Result<Vec<IpNet>, ConfigError> {
+        self.security
+            .trusted_proxies
+            .iter()
+            .map(|entry| parse_net(entry))
+            .collect::<Result<_, _>>()
+    }
+
+    /// Directory below which build work trees are created.
+    pub fn build_work_dir(&self) -> PathBuf {
+        self.build
+            .work_dir
+            .clone()
+            .unwrap_or_else(|| self.storage.local_path.join("builds"))
+    }
+
+    /// Directory below which build artifacts are stored.
+    pub fn build_artifact_dir(&self) -> PathBuf {
+        self.build
+            .artifact_dir
+            .clone()
+            .unwrap_or_else(|| self.storage.local_path.join("artifacts"))
+    }
+
+    /// Runtime state directory of the `youki` executor.
+    pub fn youki_root(&self) -> PathBuf {
+        self.build
+            .youki_root
+            .clone()
+            .unwrap_or_else(|| self.storage.local_path.join("youki"))
+    }
+
+    /// Image layer / root filesystem cache of the `youki` executor.
+    pub fn image_cache_dir(&self) -> PathBuf {
+        self.build
+            .image_cache_dir
+            .clone()
+            .unwrap_or_else(|| self.storage.local_path.join("images"))
+    }
+
+    /// Directory for temporary files (cleaned up by the cleanup service).
+    pub fn temp_dir(&self) -> PathBuf {
+        self.storage.local_path.join("tmp")
+    }
+
+    /// Directory holding generated key material.
+    pub fn key_dir(&self) -> PathBuf {
+        self.storage.local_path.join("keys")
+    }
+
+    /// Check the configuration, reporting every problem at once.
+    pub fn validate(&self) -> Result<(), ConfigError> {
+        let mut problems = Vec::new();
+
+        if !["development", "staging", "production"]
+            .contains(&self.server.environment.to_ascii_lowercase().as_str())
+        {
+            problems.push(format!(
+                "server.environment must be development, staging or production (got `{}`)",
+                self.server.environment
+            ));
+        }
+        if self.server.bind_address.parse::<IpAddr>().is_err() {
+            problems.push(format!(
+                "server.bind_address `{}` is not an IP address",
+                self.server.bind_address
+            ));
+        }
+        if self.server.port == 0 {
+            problems.push("server.port must not be 0".to_string());
+        }
+        if self.server.tls_enabled {
+            problems.push(
+                "server.tls_enabled is not supported: terminate TLS at the gateway".to_string(),
+            );
+        }
+        if self.database.url.trim().is_empty() {
+            problems.push("database.url must not be empty".to_string());
+        }
+        if self.database.max_connections == 0 {
+            problems.push("database.max_connections must be at least 1".to_string());
+        }
+        if self.database.min_connections > self.database.max_connections {
+            problems.push("database.min_connections exceeds database.max_connections".to_string());
+        }
+        if self.build.max_concurrent_builds == 0 {
+            problems.push("build.max_concurrent_builds must be at least 1".to_string());
+        }
+        if self.build.term_grace_secs == 0 || self.build.max_artifact_mb == 0 {
+            problems.push("build.term_grace_secs and build.max_artifact_mb must be at least 1".to_string());
+        }
+        if let Some(memory) = &self.build.container_memory {
+            let digits = memory.trim_end_matches(|c: char| c.is_ascii_alphabetic());
+            let unit = &memory[digits.len()..];
+            if digits.is_empty()
+                || !digits.chars().all(|c| c.is_ascii_digit())
+                || !["", "b", "k", "m", "g", "kb", "mb", "gb", "K", "M", "G", "KB", "MB", "GB"].contains(&unit)
+            {
+                problems.push(format!(
+                    "build.container_memory must look like `512m` or `2g` (got `{memory}`)"
+                ));
+            }
+        }
+        if let Some(cpus) = &self.build.container_cpus {
+            if cpus.parse::<f64>().map_or(true, |value| !(value > 0.0)) {
+                problems.push(format!("build.container_cpus must be a positive number (got `{cpus}`)"));
+            }
+        }
+        if self.webhook.max_retries == 0 {
+            problems.push("webhook.max_retries must be at least 1".to_string());
+        }
+        if self.security.rate_limit.enabled
+            && (self.security.rate_limit.requests_per_minute == 0 || self.security.rate_limit.burst == 0)
+        {
+            problems.push(
+                "security.rate_limit.requests_per_minute and burst must be positive".to_string(),
+            );
+        }
+        if self.auth.jwt_private_key_file.is_some() != self.auth.jwt_public_key_file.is_some() {
+            problems.push(
+                "auth.jwt_private_key_file and auth.jwt_public_key_file must be set together"
+                    .to_string(),
+            );
+        }
+        if self.auth.access_token_ttl_minutes <= 0 || self.auth.refresh_token_ttl_days <= 0 {
+            problems.push("auth token lifetimes must be positive".to_string());
+        }
+        if !["json", "text"].contains(&self.observability.log_format.to_ascii_lowercase().as_str()) {
+            problems.push(format!(
+                "observability.log_format must be json or text (got `{}`)",
+                self.observability.log_format
+            ));
+        }
+        if let Err(e) = tracing_subscriber::EnvFilter::try_new(&self.observability.log_level) {
+            problems.push(format!("observability.log_level is not a valid filter: {e}"));
+        }
+        if self.server.otel_enabled {
+            match self.server.otlp_endpoint.as_deref() {
+                Some(endpoint) if endpoint.starts_with("http://") || endpoint.starts_with("https://") => {}
+                _ => problems.push(
+                    "server.otlp_endpoint must be an http(s) URL when server.otel_enabled is set"
+                        .to_string(),
+                ),
+            }
+        }
+        if !(0.0..=1.0).contains(&self.server.otel_sample_rate)
+            || !(0.0..=1.0).contains(&self.server.sentry_traces_sample_rate)
+        {
+            problems.push("trace sample rates must be between 0.0 and 1.0".to_string());
+        }
+        if let Err(e) = self.trusted_proxy_nets() {
+            problems.push(e.to_string());
+        }
+        for origin in &self.security.cors_origins {
+            if origin != "*" && origin.parse::<axum::http::HeaderValue>().is_err() {
+                problems.push(format!("security.cors_origins contains invalid origin `{origin}`"));
+            }
+        }
+
+        if self.is_production() {
+            if self.security.cors_origins.iter().any(|o| o == "*") {
+                problems.push("security.cors_origins must not contain `*` in production".to_string());
+            }
+            if self.database.url.contains("onedev:onedev@") {
+                problems.push(
+                    "database.url uses the default onedev:onedev credentials in production"
+                        .to_string(),
+                );
+            }
+            if self.webhook.allow_private_targets {
+                problems.push(
+                    "webhook.allow_private_targets must be false in production".to_string(),
+                );
+            }
+            if !self.webhook.verify_ssl {
+                problems.push("webhook.verify_ssl must be true in production".to_string());
+            }
+        }
+
+        if problems.is_empty() {
+            Ok(())
+        } else {
+            Err(ConfigError::Invalid(problems))
+        }
+    }
+}
+
+fn parse_net(entry: &str) -> Result<IpNet, ConfigError> {
+    let entry = entry.trim();
+    if let Ok(net) = entry.parse::<IpNet>() {
+        return Ok(net);
+    }
+    entry
+        .parse::<IpAddr>()
+        .map(IpNet::from)
+        .map_err(|_| ConfigError::Invalid(vec![format!("invalid trusted proxy `{entry}`")]))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn defaults_are_valid_in_development() {
+        AppConfig::default().validate().expect("defaults must validate");
+    }
+
+    #[test]
+    fn production_rejects_default_credentials_and_wildcard_cors() {
+        let mut config = AppConfig::default();
+        config.server.environment = "production".into();
+        config.security.cors_origins = vec!["*".into()];
+        let err = config.validate().unwrap_err().to_string();
+        assert!(err.contains("cors_origins"), "{err}");
+        assert!(err.contains("default onedev:onedev"), "{err}");
+    }
+
+    #[test]
+    fn production_accepts_hardened_config() {
+        let mut config = AppConfig::default();
+        config.server.environment = "production".into();
+        config.database.url = "postgresql://onedev:s3cret@db:5432/onedev".into();
+        config.security.cors_origins = vec!["https://git.example.com".into()];
+        config.validate().expect("hardened config must validate");
+    }
+
+    #[test]
+    fn tls_is_rejected_because_it_is_unsupported() {
+        let mut config = AppConfig::default();
+        config.server.tls_enabled = true;
+        assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn trusted_proxies_accept_single_addresses_and_cidrs() {
+        let mut config = AppConfig::default();
+        config.security.trusted_proxies = vec!["10.0.0.0/8".into(), "127.0.0.1".into(), "::1".into()];
+        let nets = config.trusted_proxy_nets().unwrap();
+        assert!(nets[0].contains(&"10.1.2.3".parse::<IpAddr>().unwrap()));
+        assert!(nets[1].contains(&"127.0.0.1".parse::<IpAddr>().unwrap()));
+        config.security.trusted_proxies = vec!["not-an-ip".into()];
+        assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn layering_applies_file_then_environment() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(
+            dir.path().join("config.toml"),
+            "[server]\nport = 9001\n[build]\nmax_concurrent_builds = 7\n",
+        )
+        .unwrap();
+        let config = AppConfig::load_from(dir.path()).unwrap();
+        assert_eq!(config.server.port, 9001);
+        assert_eq!(config.build.max_concurrent_builds, 7);
+        // untouched sections keep their defaults
+        assert_eq!(config.webhook.max_retries, WebhookConfig::default().max_retries);
+    }
+
+    #[test]
+    fn debug_output_never_contains_secrets() {
+        let mut config = AppConfig::default();
+        config.database.url = "postgresql://u:topsecret@h/db".into();
+        config.server.sentry_dsn = Some("https://key@sentry.example/1".into());
+        config.observability.metrics_token = Some("tok-123".into());
+        let debug = format!("{config:?}");
+        assert!(!debug.contains("topsecret"));
+        assert!(!debug.contains("key@sentry"));
+        assert!(!debug.contains("tok-123"));
     }
 }

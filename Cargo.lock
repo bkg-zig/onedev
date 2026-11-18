@@ -2430,7 +2430,7 @@ dependencies = [
  "gix-mailmap",
  "gix-negotiate",
  "gix-object 0.49.1",
- "gix-odb 0.69.1",
+ "gix-odb",
  "gix-pack 0.59.1",
  "gix-path 0.10.22",
  "gix-pathspec",
@@ -2488,20 +2488,6 @@ dependencies = [
  "itoa",
  "thiserror 2.0.21",
  "winnow 0.6.26",
-]
-
-[[package]]
-name = "gix-actor"
-version = "0.34.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f438c87d4028aca4b82f82ba8d8ab1569823cfb3e5bc5fa8456a71678b2a20e7"
-dependencies = [
- "bstr",
- "gix-date 0.9.4",
- "gix-utils 0.2.0",
- "itoa",
- "thiserror 2.0.21",
- "winnow 0.7.15",
 ]
 
 [[package]]
@@ -2918,15 +2904,8 @@ version = "0.41.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "016d6050219458d14520fe22bdfdeb9cb71631dec9bc2724767c983f60109634"
 dependencies = [
- "crc32fast",
- "flate2",
- "gix-path 0.10.22",
  "gix-trace",
- "gix-utils 0.2.0",
  "libc",
- "prodash 29.0.2",
- "thiserror 2.0.21",
- "walkdir",
 ]
 
 [[package]]
@@ -2996,20 +2975,6 @@ dependencies = [
 
 [[package]]
 name = "gix-fs"
-version = "0.14.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "951e886120dc5fa8cac053e5e5c89443f12368ca36811b2e43d1539081f9c111"
-dependencies = [
- "bstr",
- "fastrand",
- "gix-features 0.41.1",
- "gix-path 0.10.22",
- "gix-utils 0.2.0",
- "thiserror 2.0.21",
-]
-
-[[package]]
-name = "gix-fs"
 version = "0.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "67a0637149b4ef24d3ea55f81f77231401c8463fae6da27331c987957eb597c7"
@@ -3073,18 +3038,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e81c5ec48649b1821b3ed066a44efb95f1a268b35c1d91295e61252539fbe9f8"
 dependencies = [
  "faster-hex 0.9.0",
- "thiserror 2.0.21",
-]
-
-[[package]]
-name = "gix-hash"
-version = "0.17.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "834e79722063958b03342edaa1e17595cd2939bb2b3306b3225d0815566dcb49"
-dependencies = [
- "faster-hex 0.9.0",
- "gix-features 0.41.1",
- "sha1-checked",
  "thiserror 2.0.21",
 ]
 
@@ -3359,27 +3312,6 @@ dependencies = [
 
 [[package]]
 name = "gix-object"
-version = "0.48.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4943fcdae6ffc135920c9ea71e0362ed539182924ab7a85dd9dac8d89b0dd69a"
-dependencies = [
- "bstr",
- "gix-actor 0.34.0",
- "gix-date 0.9.4",
- "gix-features 0.41.1",
- "gix-hash 0.17.0",
- "gix-hashtable 0.8.1",
- "gix-path 0.10.22",
- "gix-utils 0.2.0",
- "gix-validate 0.9.4",
- "itoa",
- "smallvec",
- "thiserror 2.0.21",
- "winnow 0.7.15",
-]
-
-[[package]]
-name = "gix-object"
 version = "0.49.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d957ca3640c555d48bb27f8278c67169fa1380ed94f6452c5590742524c40fbb"
@@ -3397,27 +3329,6 @@ dependencies = [
  "smallvec",
  "thiserror 2.0.21",
  "winnow 0.7.15",
-]
-
-[[package]]
-name = "gix-odb"
-version = "0.68.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "50306d40dcc982eb6b7593103f066ea6289c7b094cb9db14f3cd2be0b9f5e610"
-dependencies = [
- "arc-swap",
- "gix-date 0.9.4",
- "gix-features 0.41.1",
- "gix-fs 0.14.0",
- "gix-hash 0.17.0",
- "gix-hashtable 0.8.1",
- "gix-object 0.48.0",
- "gix-pack 0.58.0",
- "gix-path 0.10.22",
- "gix-quote 0.5.0",
- "parking_lot",
- "tempfile",
- "thiserror 2.0.21",
 ]
 
 [[package]]
@@ -3458,22 +3369,6 @@ dependencies = [
  "gix-traverse 0.43.1",
  "memmap2",
  "parking_lot",
- "smallvec",
- "thiserror 2.0.21",
-]
-
-[[package]]
-name = "gix-pack"
-version = "0.58.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9b65fffb09393c26624ca408d32cfe8776fb94cd0a5cdf984905e1d2f39779cb"
-dependencies = [
- "gix-chunk 0.4.12",
- "gix-features 0.41.1",
- "gix-hash 0.17.0",
- "gix-object 0.48.0",
- "gix-path 0.10.22",
- "memmap2",
  "smallvec",
  "thiserror 2.0.21",
 ]
@@ -4495,6 +4390,7 @@ dependencies = [
  "http 1.5.0",
  "http-body",
  "pin-project-lite",
+ "tokio",
 ]
 
 [[package]]
@@ -5337,16 +5233,6 @@ dependencies = [
 
 [[package]]
 name = "metrics"
-version = "0.23.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3045b4193fbdc5b5681f32f11070da9be3609f189a79f3390706d42587f46bb5"
-dependencies = [
- "ahash 0.8.12",
- "portable-atomic",
-]
-
-[[package]]
-name = "metrics"
 version = "0.24.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "89550ee9f79e88fef3119de263694973a8adb26c21d75322164fb8c493039fe2"
@@ -5368,7 +5254,7 @@ dependencies = [
  "hyper-util",
  "indexmap 2.14.2",
  "ipnet",
- "metrics 0.24.6",
+ "metrics",
  "metrics-util",
  "quanta",
  "thiserror 1.0.69",
@@ -5385,7 +5271,7 @@ dependencies = [
  "crossbeam-epoch",
  "crossbeam-utils",
  "hashbrown 0.15.5",
- "metrics 0.24.6",
+ "metrics",
  "quanta",
  "rand 0.9.5",
  "rand_xoshiro",
@@ -6160,24 +6046,23 @@ name = "onedev-server"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "async-channel",
  "async-trait",
  "axum 0.8.9",
+ "bytes",
  "chrono",
- "clap",
- "config",
  "figment",
  "flume",
  "futures",
- "gix",
- "gix-odb 0.68.0",
+ "glob",
  "governor",
  "hex",
  "hmac 0.12.1",
+ "http 1.5.0",
+ "http-body-util",
+ "ipnet",
  "jsonwebtoken",
- "metrics 0.23.1",
+ "metrics",
  "metrics-exporter-prometheus",
- "once_cell",
  "onedev-api",
  "onedev-auth",
  "onedev-build",
@@ -6185,19 +6070,18 @@ dependencies = [
  "onedev-db",
  "onedev-git",
  "onedev-web",
- "parking_lot",
+ "rand 0.9.5",
  "regex",
  "reqwest",
- "scopeguard",
+ "rsa",
  "secrecy",
  "sentry",
  "sentry-tracing",
  "serde",
  "serde_json",
- "serde_yaml",
  "sha2 0.10.9",
  "sqlx",
- "tera",
+ "tempfile",
  "thiserror 2.0.21",
  "tokio",
  "tokio-util",
@@ -6206,6 +6090,7 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "uuid 1.29.3",
+ "walkdir",
 ]
 
 [[package]]
