@@ -213,3 +213,47 @@ pub fn create_router(state: AppState) -> Router {
         )
         .with_state(state)
 }
+
+/// Create application state with all services
+pub async fn create_app_state(
+    db_pool: sqlx::PgPool,
+    auth_config: onedev_auth::AuthConfig,
+) -> anyhow::Result<AppState> {
+    use crate::services::{
+        AuthService, AuthorizationService, BuildService, GitService, GroupService,
+        IssueService, LfsService, MergeRequestService, ProjectService, SystemService, UserService,
+    };
+    use onedev_auth::services::authorization_service::AuthorizationService as InnerAuthzService;
+    use onedev_db::DbPool;
+
+    // Create auth services
+    let auth_service = AuthService::new(auth_config, db_pool.clone())?;
+    
+    let inner_authz_service = InnerAuthzService::new(db_pool.clone());
+    let authorization_service = AuthorizationService::new(inner_authz_service);
+
+    // Create API services (they create their own repositories internally)
+    let user_service = UserService::new(db_pool.clone());
+    let project_service = ProjectService::new(db_pool.clone());
+    let group_service = GroupService::new(db_pool.clone());
+    let issue_service = IssueService::new(db_pool.clone());
+    let mr_service = MergeRequestService::new(db_pool.clone());
+    let build_service = BuildService::new(db_pool.clone());
+    let git_service = GitService::new(db_pool.clone());
+    let lfs_service = LfsService::new(db_pool.clone());
+    let system_service = SystemService::new(db_pool.clone());
+
+    Ok(AppState {
+        auth_service: std::sync::Arc::new(auth_service),
+        authorization_service: std::sync::Arc::new(authorization_service),
+        user_service: std::sync::Arc::new(user_service),
+        project_service: std::sync::Arc::new(project_service),
+        group_service: std::sync::Arc::new(group_service),
+        issue_service: std::sync::Arc::new(issue_service),
+        mr_service: std::sync::Arc::new(mr_service),
+        build_service: std::sync::Arc::new(build_service),
+        git_service: std::sync::Arc::new(git_service),
+        lfs_service: std::sync::Arc::new(lfs_service),
+        system_service: std::sync::Arc::new(system_service),
+    })
+}

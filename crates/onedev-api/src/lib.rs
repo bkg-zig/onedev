@@ -34,6 +34,7 @@ pub use errors::*;
 pub use handlers::*;
 pub use models::*;
 pub use routes::*;
+pub use routes::create_app_state;
 pub use services::*;
 pub use utils::*;
 

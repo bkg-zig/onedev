@@ -209,9 +209,6 @@ impl Default for MetricsCollector {
 
 /// Create the main application router
 pub fn create_app_router(state: AppState) -> Router {
-    // Initialize Tera template engine for web UI
-    let _tera = tera::Tera::new("templates/**/*").unwrap_or_else(|_| tera::Tera::default());
-
     // Health check endpoint
     async fn health_handler() -> &'static str { "OK" }
 
@@ -252,8 +249,31 @@ pub async fn create_app_state(config: &AppConfig) -> Result<AppState> {
     // Initialize lifecycle manager
     let lifecycle = Arc::new(LifecycleManager::new());
 
-    // Initialize API state (services)
-    let api_state = create_api_state(db_pool.clone(), config, lifecycle.clone()).await?;
+    // Create AuthConfig for onedev-auth
+    let auth_config = onedev_auth::AuthConfig {
+        jwt_config: onedev_auth::models::token::TokenConfig {
+            secret: config.auth.jwt_secret.clone(),
+            issuer: "onedev".to_string(),
+            audience: "onedev".to_string(),
+            access_token_ttl: std::time::Duration::from_secs(config.auth.token_expiry_hours as u64 * 3600),
+            refresh_token_ttl: std::time::Duration::from_secs(config.auth.refresh_expiry_days as u64 * 86400),
+            algorithm: onedev_auth::models::token::TokenAlgorithm::RS256,
+        },
+        totp_config: onedev_auth::models::two_factor::TotpConfig {
+            algorithm: onedev_auth::models::two_factor::TotpAlgorithm::Sha1,
+            digits: 6,
+            period: 30,
+            skew: 1,
+        },
+        session_ttl_seconds: config.auth.session_timeout_minutes * 60,
+        remember_me_ttl_seconds: 30 * 24 * 60 * 60,
+        max_failed_attempts: config.auth.max_failed_attempts,
+        lockout_duration_seconds: config.auth.lockout_duration_minutes * 60,
+        password_reset_ttl_seconds: 60 * 60,
+    };
+
+    // Create API state using the onedev-api factory
+    let api_state = onedev_api::create_app_state(db_pool.clone(), auth_config).await?;
 
     // Initialize all services
     let (
@@ -285,170 +305,6 @@ pub async fn create_app_state(config: &AppConfig) -> Result<AppState> {
         webhook_dispatcher,
         metrics_collector,
     })
-}
-
-/// Create API state with all services
-async fn create_api_state(
-    db_pool: Arc<PgPool>,
-    config: &AppConfig,
-    lifecycle: Arc<LifecycleManager>,
-) -> Result<ApiState> {
-    use onedev_auth::{AuthService, AuthorizationService, SessionService, TokenService, TwoFactorService};
-    use onedev_db::{
-        UserRepository, ProjectRepository, GroupRepository, IssueRepository,
-        PullRequestRepository, BuildRepository, RoleRepository, MembershipRepository,
-    };
-
-    // Create repositories
-    let user_repo = UserRepository::new();
-    let project_repo = ProjectRepository::new();
-    let group_repo = GroupRepository::new();
-    let issue_repo = IssueRepository::new();
-    let mr_repo = PullRequestRepository::new();
-    let build_repo = BuildRepository::new();
-    let role_repo = RoleRepository::new();
-    let membership_repo = MembershipRepository::new();
-
-    // Create auth services
-    let auth_config = onedev_auth::AuthConfig {
-        jwt_secret: config.auth.jwt_secret.clone(),
-        token_expiry_hours: config.auth.token_expiry_hours,
-        refresh_expiry_days: config.auth.refresh_expiry_days,
-        argon2_memory_kb: config.auth.argon2_memory_kb,
-        argon2_iterations: config.auth.argon2_iterations,
-        argon2_parallelism: config.auth.argon2_parallelism,
-        enable_2fa: config.auth.enable_2fa,
-        two_fa_issuer: config.auth.two_fa_issuer.clone(),
-        password_min_length: config.auth.password_min_length,
-        password_require_uppercase: config.auth.password_require_uppercase,
-        password_require_lowercase: config.auth.password_require_lowercase,
-        password_require_digits: config.auth.password_require_digits,
-        password_require_special: config.auth.password_require_special,
-        session_timeout_minutes: config.auth.session_timeout_minutes,
-        max_failed_attempts: config.auth.max_failed_attempts,
-        lockout_duration_minutes: config.auth.lockout_duration_minutes,
-    };
-
-    let auth_service = AuthService::new(
-        db_pool.clone(),
-        user_repo.clone(),
-        auth_config,
-        lifecycle.shutdown_rx(),
-    );
-
-    let authorization_service = AuthorizationService::new(
-        db_pool.clone(),
-        user_repo.clone(),
-        project_repo.clone(),
-        role_repo.clone(),
-        membership_repo.clone(),
-        group_repo.clone(),
-    );
-
-    let session_service = SessionService::new(db_pool.clone(), config.auth.session_timeout_minutes);
-    let token_service = TokenService::new(db_pool.clone());
-    let two_factor_service = TwoFactorService::new(db_pool.clone());
-
-    // Create API services
-    let auth_svc = Arc::new(crate::services::auth::AuthService::new(auth_service));
-    let authz_svc = Arc::new(crate::services::authz::AuthorizationService::new(authorization_service));
-    let user_svc = Arc::new(crate::services::UserService::new(user_repo));
-    let project_svc = Arc::new(crate::services::ProjectService::new(project_repo));
-    let group_svc = Arc::new(crate::services::GroupService::new(group_repo));
-    let issue_svc = Arc::new(crate::services::IssueService::new(issue_repo));
-    let mr_svc = Arc::new(crate::services::MergeRequestService::new(mr_repo));
-    let build_svc = Arc::new(crate::services::BuildService::new(build_repo));
-
-    // Create stub services for git, lfs, system
-    let git_svc = Arc::new(crate::services::GitService::new(db_pool.clone()));
-    let lfs_svc = Arc::new(crate::services::LfsService::new(db_pool.clone()));
-    let system_svc = Arc::new(crate::services::SystemService::new(db_pool.clone()));
-
-    Ok(ApiState {
-        auth_service: auth_svc,
-        authorization_service: authz_svc,
-        user_service: user_svc,
-        project_service: project_svc,
-        group_service: group_svc,
-        issue_service: issue_svc,
-        mr_service: mr_svc,
-        build_service: build_svc,
-        git_service: git_svc,
-        lfs_service: lfs_svc,
-        system_service: system_svc,
-    })
-}
-
-/// Initialize all services and return handles
-pub async fn init_services(
-    db_pool: Arc<PgPool>,
-    config: Arc<AppConfig>,
-    api_state: ApiState,
-    lifecycle: Arc<LifecycleManager>,
-) -> anyhow::Result<(
-    Arc<BuildScheduler>,
-    Arc<CleanupService>,
-    Arc<GitGcService>,
-    Arc<SearchIndexer>,
-    Arc<WebhookDispatcher>,
-    Arc<MetricsCollector>,
-)> {
-    // Build scheduler
-    let build_scheduler = Arc::new(BuildScheduler::new(
-        crate::services::build_scheduler::BuildScheduler::new(
-            db_pool.clone(),
-            config.build.clone().into(),
-            lifecycle.shutdown_rx(),
-        )
-    ));
-
-    // Cleanup service
-    let cleanup_service = Arc::new(CleanupService::new(
-        crate::services::cleanup::CleanupService::new(
-            db_pool.clone(),
-            config.cleanup.clone().into(),
-            lifecycle.shutdown_rx(),
-        )
-    ));
-
-    // Git GC service
-    let git_gc_service = Arc::new(GitGcService::new(
-        crate::services::git_gc::GitGcService::new(
-            db_pool.clone(),
-            config.git.clone().into(),
-            lifecycle.shutdown_rx(),
-        )
-    ));
-
-    // Search indexer
-    let search_indexer = Arc::new(SearchIndexer::new(
-        crate::services::search_indexer::SearchIndexer::new(
-            db_pool.clone(),
-            config.search.clone().into(),
-            lifecycle.shutdown_rx(),
-        )
-    ));
-
-    // Webhook dispatcher
-    let webhook_dispatcher = Arc::new(WebhookDispatcher::new(
-        crate::services::webhook_dispatcher::WebhookDispatcher::new(
-            db_pool.clone(),
-            config.webhook.clone().into(),
-            lifecycle.shutdown_rx(),
-        )?
-    ));
-
-    // Metrics collector
-    let metrics_collector = Arc::new(MetricsCollector::new());
-
-    Ok((
-        build_scheduler,
-        cleanup_service,
-        git_gc_service,
-        search_indexer,
-        webhook_dispatcher,
-        metrics_collector,
-    ))
 }
 
 /// Run the HTTP server

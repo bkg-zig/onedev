@@ -8,7 +8,7 @@ use crate::models::principal::{AccessTokenPrincipal, UserPrincipal};
 use crate::models::session::{CreateSession, Session};
 use crate::models::subject::Subject;
 use crate::models::token::{Claims, JwtService, TokenConfig, TokenPair, TokenType};
-use crate::models::two_factor::{TotpConfig, TwoFactorService, TwoFactorSetup};
+use crate::models::two_factor::{TotpConfig, TwoFactorModel, TwoFactorSetup};
 use crate::repositories::SessionRepository;
 use crate::services::token_mapping::{access_token_from_db, scopes_to_db};
 use chrono::{DateTime, Utc};
@@ -122,7 +122,7 @@ pub struct AuthService {
     token_repo: AccessTokenRepository,
     session_repo: SessionRepository,
     jwt_service: JwtService,
-    two_factor_service: TwoFactorService,
+    two_factor_service: TwoFactorModel,
     pub(crate) db_pool: DbPool,
 }
 
@@ -130,7 +130,7 @@ impl AuthService {
     /// Create a new authentication service
     pub fn new(config: AuthConfig, db_pool: DbPool) -> Result<Self, AuthError> {
         let jwt_service = JwtService::new(config.jwt_config.clone())?;
-        let two_factor_service = TwoFactorService::new(config.totp_config.clone());
+        let two_factor_service = TwoFactorModel::new(config.totp_config.clone());
 
         Ok(Self {
             config,
@@ -613,7 +613,7 @@ impl AuthService {
         }
 
         // Hash backup codes
-        let hashed_backup_codes = TwoFactorService::hash_backup_codes(&backup_codes);
+        let hashed_backup_codes = TwoFactorModel::hash_backup_codes(&backup_codes);
 
         self.user_repo
             .update(
@@ -694,8 +694,8 @@ impl AuthService {
         }
 
         // Generate new backup codes
-        let backup_codes = TwoFactorService::generate_backup_codes(10);
-        let hashed_backup_codes = TwoFactorService::hash_backup_codes(&backup_codes);
+        let backup_codes = TwoFactorModel::generate_backup_codes(10);
+        let hashed_backup_codes = TwoFactorModel::hash_backup_codes(&backup_codes);
 
         self.user_repo
             .update(
@@ -794,7 +794,7 @@ impl AuthService {
     }
 
     /// Get the 2FA service
-    pub fn two_factor_service(&self) -> &TwoFactorService {
+    pub fn two_factor_service(&self) -> &TwoFactorModel {
         &self.two_factor_service
     }
 }

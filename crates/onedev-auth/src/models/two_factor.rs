@@ -119,12 +119,12 @@ pub struct VerifyTwoFactor {
     pub backup_code: Option<String>,
 }
 
-/// Two-factor authentication service
-pub struct TwoFactorService {
+/// Two-factor authentication model (without database)
+pub struct TwoFactorModel {
     config: TotpConfig,
 }
 
-impl TwoFactorService {
+impl TwoFactorModel {
     pub fn new(config: TotpConfig) -> Self {
         Self { config }
     }
