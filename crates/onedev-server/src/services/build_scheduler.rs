@@ -253,6 +253,9 @@ impl BuildScheduler {
         // Prepare trigger event
         let trigger_event = onedev_build::models::TriggerEvent::Push {
             branch: queued_build.branch.clone(),
+            // Path filters need the push's changed files, which the queue
+            // row does not carry yet; treated as unknown (matches).
+            changed_paths: None,
         };
 
         // Prepare variables

@@ -169,7 +169,7 @@ insta = { version = "1.37", features = ["json", "ron", "yaml", "csv"] }
 
 # Compression
 flate2 = "1.0"
-zstd = { version = "0.13", features = ["multithreading"] }
+zstd = "0.13"
 bzip2 = "0.4"
 tar = "0.4"
 
@@ -187,6 +187,12 @@ tungstenite = { version = "0.30", features = ["native-tls", "rustls-tls"] }
 
 # Rate limiting
 governor = { version = "0.7", features = ["std"] }
+
+# Networking helpers
+ipnet = "2.9"
+hex = "0.4"
+libc = "0.2"
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls", "gzip", "brotli"] }
 
 # Sentry
 sentry = { version = "0.38", features = ["tokio", "tracing", "anyhow", "backtrace"] }
