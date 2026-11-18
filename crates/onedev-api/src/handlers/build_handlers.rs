@@ -101,28 +101,84 @@ pub struct BuildQuery {
     pub pagination: OffsetPagination,
 }
 
+async fn to_response(state: &AppState, build: &onedev_db::models::build::DbBuild) -> BuildResponse {
+    let author = state.user_service.get(build.author_id).await.map(|user| crate::models::users::UserRef {
+        id: user.id,
+        uuid: user.uuid,
+        name: user.name,
+        full_name: user.full_name,
+        avatar_url: user.avatar_url,
+        user_type: user.user_type,
+    }).unwrap_or(crate::models::users::UserRef {
+        id: build.author_id,
+        uuid: uuid::Uuid::nil(),
+        name: String::new(),
+        full_name: None,
+        avatar_url: None,
+        user_type: crate::models::users::UserType::Ordinary,
+    });
+    BuildResponse {
+        build: BuildRef {
+            id: build.id,
+            uuid: build.uuid,
+            project_id: build.project_id,
+            number: build.number,
+            status: crate::services::build_service::status_api(build.status),
+            ref_name: build.ref_name.clone(),
+            commit_sha: build.commit_sha.clone(),
+            author,
+            started_at: build.started_at,
+            finished_at: build.finished_at,
+            created_at: build.created_at,
+        },
+        pipeline_id: None,
+        jobs: Vec::new(),
+        variables: Vec::new(),
+    }
+}
+
 /// GET /api/projects/{project_id}/builds
 pub async fn list_builds(
-    State(_state): State<crate::AppState>,
-    Path(_project_id): Path<i64>,
-    Query(_query): Query<BuildQuery>,
+    State(state): State<crate::AppState>,
+    Path(project_id): Path<i64>,
+    Query(query): Query<BuildQuery>,
 ) -> Result<Json<PaginatedResponse<BuildRef>>, AuthError> {
-    Err(AuthError::Internal("Not implemented".to_string()))
+    let limit = query.pagination.per_page.max(1) as i64;
+    let offset = query.pagination.page as i64 * limit;
+    let total = state.build_service.count(project_id).await? as u64;
+    let rows = state.build_service.list(project_id, limit, offset).await?;
+    let mut refs = Vec::with_capacity(rows.len());
+    for row in &rows {
+        refs.push(to_response(&state, row).await.build);
+    }
+    Ok(Json(PaginatedResponse::new(refs, total, query.pagination)))
 }
 
 /// POST /api/projects/{project_id}/builds
 pub async fn trigger_build(
-    State(_state): State<crate::AppState>,
-    Path(_project_id): Path<i64>,
-    Json(_request): Json<TriggerBuildRequest>,
+    State(state): State<crate::AppState>,
+    crate::utils::extractors::CurrentSubject(subject): crate::utils::extractors::CurrentSubject,
+    Path(project_id): Path<i64>,
+    Json(request): Json<TriggerBuildRequest>,
 ) -> Result<Json<BuildResponse>, AuthError> {
-    Err(AuthError::Internal("Not implemented".to_string()))
+    let variables = request
+        .variables
+        .unwrap_or_default()
+        .into_iter()
+        .map(|variable| (variable.key, variable.value))
+        .collect();
+    let build = state
+        .build_service
+        .trigger(project_id, subject.effective_user_id().unwrap_or(1), request.ref_name, variables)
+        .await?;
+    Ok(Json(to_response(&state, &build).await))
 }
 
 /// GET /api/projects/{project_id}/builds/{id}
 pub async fn get_build(
-    State(_state): State<crate::AppState>,
-    Path((_project_id, _id)): Path<(i64, i64)>,
+    State(state): State<crate::AppState>,
+    Path((project_id, id)): Path<(i64, i64)>,
 ) -> Result<Json<BuildResponse>, AuthError> {
-    Err(AuthError::Internal("Not implemented".to_string()))
+    let build = state.build_service.get(project_id, id).await?;
+    Ok(Json(to_response(&state, &build).await))
 }

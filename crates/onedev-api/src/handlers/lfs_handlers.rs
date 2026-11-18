@@ -104,56 +104,156 @@ pub struct LfsErrorResponse {
     pub message: String,
 }
 
+fn git_err(err: onedev_git::GitError) -> LfsError {
+    use onedev_git::GitError;
+    match err {
+        GitError::NotFound(_) => LfsError::NotFound,
+        GitError::PermissionDenied(message) => LfsError::Forbidden(message),
+        GitError::InvalidProjectPath(_)
+        | GitError::InvalidRef(_)
+        | GitError::InvalidRevision(_)
+        | GitError::Protocol(_) => LfsError::BadRequest(err.to_string()),
+        _ => LfsError::Internal(err.to_string()),
+    }
+}
+
+fn lock_response(lock: &onedev_git::models::LfsLock) -> LfsLockResponse {
+    LfsLockResponse {
+        id: lock.id.clone(),
+        path: lock.path.clone(),
+        owner: LfsLockOwner { name: lock.owner.clone() },
+        locked_at: lock.locked_at,
+    }
+}
+
 /// POST /api/git/{project_path}/info/lfs/objects/batch
 pub async fn lfs_batch(
-    State(_state): State<crate::AppState>,
-    Path(_project_path): Path<String>,
-    Json(_request): Json<LfsBatchRequest>,
+    State(state): State<crate::AppState>,
+    Path(project_path): Path<String>,
+    headers: HeaderMap,
+    Json(request): Json<LfsBatchRequest>,
 ) -> Result<Json<LfsBatchResponse>, LfsError> {
-    Err(LfsError::Internal("Not implemented".to_string()))
+    let objects = request
+        .objects
+        .iter()
+        .map(|object| (object.oid.clone(), object.size))
+        .collect();
+    // Download/upload URLs point back at this server's LFS object endpoints.
+    let base = headers
+        .get("x-forwarded-prefix")
+        .and_then(|value| value.to_str().ok())
+        .unwrap_or("")
+        .to_owned();
+    let batch = state
+        .lfs_service
+        .batch(&project_path, &request.operation, objects, |project, oid, operation| {
+            format!("{base}/api/git/{project}/info/lfs/objects/{oid}?operation={operation}")
+        })
+        .map_err(git_err)?;
+
+    Ok(Json(LfsBatchResponse {
+        transfer: batch.transfer.to_owned(),
+        objects: batch
+            .objects
+            .into_iter()
+            .map(|object| {
+                let actions = object.actions.map(|actions| LfsActions {
+                    download: actions.download.map(|action| LfsAction {
+                        href: action.href,
+                        header: None,
+                        expires_at: None,
+                    }),
+                    upload: actions.upload.map(|action| LfsAction {
+                        href: action.href,
+                        header: None,
+                        expires_at: None,
+                    }),
+                });
+                LfsObjectResponse {
+                    oid: object.oid,
+                    size: object.size,
+                    actions,
+                    error: object.error.map(|error| LfsErrorResponse {
+                        code: error.code,
+                        message: error.message,
+                    }),
+                }
+            })
+            .collect(),
+    }))
 }
 
 /// GET /api/git/{project_path}/info/lfs/objects/{oid}
 pub async fn lfs_download(
-    State(_state): State<crate::AppState>,
-    Path((_project_path, _oid)): Path<(String, String)>,
+    State(state): State<crate::AppState>,
+    Path((project_path, oid)): Path<(String, String)>,
 ) -> Result<Response, LfsError> {
-    Err(LfsError::Internal("Not implemented".to_string()))
+    let content = state.lfs_service.download(&project_path, &oid).map_err(git_err)?;
+    Ok(Response::builder()
+        .status(StatusCode::OK)
+        .header(header::CONTENT_TYPE, "application/octet-stream")
+        .body(Body::from(content))
+        .unwrap())
 }
 
 /// PUT /api/git/{project_path}/info/lfs/objects/{oid}
 pub async fn lfs_upload(
-    State(_state): State<crate::AppState>,
-    Path((_project_path, _oid)): Path<(String, String)>,
+    State(state): State<crate::AppState>,
+    Path((project_path, oid)): Path<(String, String)>,
     body: axum::body::Bytes,
 ) -> Result<StatusCode, LfsError> {
-    Err(LfsError::Internal("Not implemented".to_string()))
+    state.lfs_service.upload(&project_path, &oid, &body).map_err(git_err)?;
+    Ok(StatusCode::OK)
 }
 
 /// GET /api/git/{project_path}/info/lfs/locks
 pub async fn lfs_locks(
-    State(_state): State<crate::AppState>,
-    Path(_project_path): Path<String>,
-    Query(_query): Query<LfsLocksQuery>,
+    State(state): State<crate::AppState>,
+    Path(project_path): Path<String>,
+    Query(query): Query<LfsLocksQuery>,
 ) -> Result<Json<LfsLocksResponse>, LfsError> {
-    Err(LfsError::Internal("Not implemented".to_string()))
+    let locks = state
+        .lfs_service
+        .locks(&project_path, query.path.as_deref())
+        .map_err(git_err)?;
+    Ok(Json(LfsLocksResponse {
+        locks: locks.iter().map(lock_response).collect(),
+        next_cursor: None,
+    }))
 }
 
 /// POST /api/git/{project_path}/info/lfs/locks
 pub async fn lfs_create_lock(
-    State(_state): State<crate::AppState>,
-    Path(_project_path): Path<String>,
-    Json(_request): Json<LfsCreateLockRequest>,
+    State(state): State<crate::AppState>,
+    Path(project_path): Path<String>,
+    crate::utils::extractors::CurrentSubject(subject): crate::utils::extractors::CurrentSubject,
+    Json(request): Json<LfsCreateLockRequest>,
 ) -> Result<Json<LfsLockResponse>, LfsError> {
-    Err(LfsError::Internal("Not implemented".to_string()))
+    let owner = subject
+        .effective_user_id()
+        .map(|user_id| format!("u-{user_id}"))
+        .unwrap_or_else(|| "anonymous".to_owned());
+    let lock = state
+        .lfs_service
+        .create_lock(&project_path, &request.path, &owner)
+        .map_err(git_err)?;
+    Ok(Json(lock_response(&lock)))
 }
 
 /// DELETE /api/git/{project_path}/info/lfs/locks/{id}
 pub async fn lfs_unlock(
-    State(_state): State<crate::AppState>,
-    Path((_project_path, _id)): Path<(String, String)>,
+    State(state): State<crate::AppState>,
+    Path((project_path, id)): Path<(String, String)>,
+    crate::utils::extractors::CurrentSubject(subject): crate::utils::extractors::CurrentSubject,
 ) -> Result<StatusCode, LfsError> {
-    Err(LfsError::Internal("Not implemented".to_string()))
+    let owner = subject
+        .effective_user_id()
+        .map(|user_id| format!("u-{user_id}"))
+        .unwrap_or_else(|| "anonymous".to_owned());
+    // Only the lock owner (or an admin user id 1) may unlock.
+    let effective_owner = if owner == "u-1" { "admin" } else { owner.as_str() };
+    state.lfs_service.unlock(&project_path, &id, effective_owner).map_err(git_err)?;
+    Ok(StatusCode::NO_CONTENT)
 }
 
 /// LFS locks query
