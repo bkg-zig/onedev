@@ -1,0 +1,582 @@
+crates/onedev-db/src/repositories/gpg_key.rs
+  s_fc4968d509c3df::t_81d01bf55ab9e4 5-6,25-28,62-67,98-108,118
+crates/onedev-core/src/models/access_token.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 6-17,70,177-180,215-233,235-237,241
+  s_fc4968d509c3df::t_eb9242ebaf0240 163
+crates/onedev-web/src/models/mod.rs
+  s_b4d4a7c7a80ee3::t_bcafa533a8caf2 1-21
+crates/onedev-db/src/repositories/sso_account.rs
+  s_fc4968d509c3df::t_81d01bf55ab9e4 5-8,21-25,31-34,39-44,77-82,94-99,123-133,143
+crates/onedev-web/src/routes/mod.rs
+  s_b4d4a7c7a80ee3::t_febf8181b7e393 1-5,7-10
+  s_b4d4a7c7a80ee3::t_45919a8da4a3dc 6
+crates/onedev-core/src/models/email.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 6-8,78-80,121-123,176-178,196
+crates/onedev-db/src/repositories/pull_request.rs
+  s_fc4968d509c3df::t_41e39cc977a9ae 188-190
+  s_fc4968d509c3df::t_81d01bf55ab9e4 5-8,21-26,39,62,86,110,154-159,171-176,206-216,226
+crates/onedev-build/src/services/executor.rs
+  s_e213d8b74427f6::t_48d6a8fef9d7f2 3-7,15,38-39,42,46-57,59-81,83-106,108-140,142-171,173-177,179,182-185,187-189,193-195
+crates/onedev-server/src/services/cleanup.rs
+  s_b4d4a7c7a80ee3::t_94572574938b2b 226,237-240
+  s_b4d4a7c7a80ee3::t_ee2175b2a5930c 118,125-128,143,147-150,153,155-156,161-163,177-179,193-195,209-211
+  s_b4d4a7c7a80ee3::t_75cc01109bc036 1-117,119-124,129-142,144-146,151-152,154,157-160,164-176,180-192,196-208,212-225,227-236,241-253
+crates/onedev-core/src/models/webhook.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 24,35-37,98-100,281
+crates/onedev-auth/src/utils/mod.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 5-6,15,37-40,42-45,82,86,119,124-126,140,147,154,162,164,175,188,197,209
+crates/onedev-core/src/models/dashboard.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 22-24,60-62,153
+crates/onedev-api/src/handlers/system_handlers.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 4-5,41,66,68,73,78-80,82
+crates/onedev-db/src/models/watch.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 150
+  s_fc4968d509c3df::t_4f6d2e54eb914a 5
+crates/onedev-web/src/models/profile.rs
+  s_b4d4a7c7a80ee3::t_f44b172b645f2c 1-106
+crates/onedev-db/src/repositories/label.rs
+  s_fc4968d509c3df::t_81d01bf55ab9e4 5-6,19-23,29-32,37-42,70-75,108-117,127
+crates/onedev-db/src/models/issue.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 245
+  s_fc4968d509c3df::t_4f6d2e54eb914a 5
+crates/onedev-core/src/models/mod.rs
+  s_fc4968d509c3df::t_8d43102a76f87d 34,37,49-50,54-56,62
+  s_fc4968d509c3df::t_df288a2c24d114 32,39-40
+  s_fc4968d509c3df::t_a8631bbf8a26d1 3-4,6-9,11-15,19,21,25-26,28-29
+  s_fc4968d509c3df::t_a5899048a8b694 31,33,35-36,38,41-42,44-47,51-53,60-61
+crates/onedev-web/src/handlers/projects.rs
+  s_b4d4a7c7a80ee3::t_68c30e45ebf195 1-207
+crates/onedev-db/src/repositories/issue.rs
+  s_fc4968d509c3df::t_41e39cc977a9ae 137-138,172-174
+  s_fc4968d509c3df::t_81d01bf55ab9e4 5-6,19-24,37,59-63,81-85,103-107,142-147,190-194,196-199,209
+crates/onedev-web/src/services/mod.rs
+  s_b4d4a7c7a80ee3::t_b2738503ad99ee 1-7
+crates/onedev-auth/src/models/token.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 3,5,8,83,85,116-121,160-165,199-204,206-211,223-229,261-266,268-273,285-290,308-313,320,327,338,352,379,393
+Cargo.toml
+  s_b4d4a7c7a80ee3::t_78c2879a7d5558 131
+  s_b4d4a7c7a80ee3::t_e769a10289bd97 44
+  s_b4d4a7c7a80ee3::t_a4247585e789c3 73
+  s_b4d4a7c7a80ee3::t_0109c8aae1e249 72
+crates/onedev-api/src/models/projects.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 3,218
+crates/onedev-api/src/handlers/mod.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 6-7,9-10,12,17-18,20-23
+crates/onedev-core/src/models/role.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 47-52,65
+  s_fc4968d509c3df::t_63f70b410cab8c 40,44
+crates/onedev-server/Cargo.toml
+  s_b4d4a7c7a80ee3::t_2de36b0aaa3fb6 47-48
+  s_c4a35a3002ac14::t_306ac6278fbd06 17-18
+  s_b4d4a7c7a80ee3::t_dfc778f235fde9 49-53
+crates/onedev-api/src/handlers/lfs_handlers.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 3-4,6-7,32-35,40,46,194
+crates/onedev-db/src/models/role.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 108
+crates/onedev-api/src/services/authz.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 37-39,48-50
+crates/onedev-api/src/routes/mod.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 3-5,8,32-35,58-61,69-72,74-81,83-94,101-120,122-141,143-162,164-175,177-188,190-213,215
+crates/onedev-core/src/search/mod.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 148-159,223-226,233-244,275-277,282-284,289-292,297-301,329
+crates/onedev-auth/src/services/auth_service.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 3-8,10-14,16-17,21,23,99,102,134,157-159,161-163,170,177-179,181,199-202,205-207,234-237,248-251,256-265,274-277,280-282,308-311,316-320,324-326,329-332,356-357,359-363,379-380,382-386,391-395,398-401,443-445,451-454,462-465,474-476,495-497,508-511,516-518,520,529-538,548-551,561,566-570,577-585,597-607,618-629,636-639,643-645,647,654-665,671-679,687-689,691,700-709,720-723,738-739,748-752,760-763,767-790,800
+crates/onedev-db/src/repositories/pack.rs
+  s_fc4968d509c3df::t_81d01bf55ab9e4 5-6,19-24,31-34,39-44,81-86,127-130,140
+crates/onedev-api/src/handlers/user_handlers.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 3-5,7
+  s_fc4968d509c3df::t_a807e1b2db44c2 1,13-14,16-20,25-26,28,33-34,36,41-43,45,50-51,53-54,59-60,62,67-68,70,75-76,78,83-84,86,91-98,103-104,106-113
+crates/onedev-web/src/lib.rs
+  s_b4d4a7c7a80ee3::t_374f5e4e915164 41
+  s_b4d4a7c7a80ee3::t_3c51590ef243b1 115
+  s_b4d4a7c7a80ee3::t_90dd86a90abbbb 3-4,6,8,11-12,14,16,24-40,42-68,71-114,116,119-126,128-144,146-169,171-185
+  s_b4d4a7c7a80ee3::t_1d4b92b3ec1ced 69-70,117-118
+  s_b4d4a7c7a80ee3::t_2d84a62e79e772 127,145,170
+  s_0de1f439e1761a::t_7297b38fd2f978 186-227
+crates/onedev-server/src/main.rs
+  s_b4d4a7c7a80ee3::t_80bd4c9b32f0d1 1-42
+crates/onedev-api/src/handlers/group_handlers.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 3-7,9,95
+crates/onedev-auth/src/lib.rs
+  s_fc4968d509c3df::t_c90a888f022125 3-21
+  s_fc4968d509c3df::t_a8631bbf8a26d1 24-27,29-30,34-36,38-39,41-44
+crates/onedev-web/src/handlers/admin.rs
+  s_b4d4a7c7a80ee3::t_7bc04de755b1e6 1-282
+crates/onedev-db/src/repositories/audit.rs
+  s_fc4968d509c3df::t_81d01bf55ab9e4 5-6,19-25,33-36,41-48,57-60,65-71,79-82,87-94,103-106,111-115,146-151,165-170,182-192,202
+crates/onedev-auth/src/handlers/session_handlers.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 3-5,7,56-58,64-68,80,86-88,92-93,96-98,104-108,112-114,122-124,128-129,132-134,140-144,148-150,159-161,166-170,175
+crates/onedev-server/src/state.rs
+  s_b4d4a7c7a80ee3::t_2df53758fbcddb 1-330
+crates/onedev-api/src/services/mr_service.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 13
+crates/onedev-auth/tests/utils_test.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 1
+crates/onedev-db/src/models/oauth.rs
+  s_fc4968d509c3df::t_4f6d2e54eb914a 5
+  s_fc4968d509c3df::t_a8631bbf8a26d1 242
+crates/onedev-db/src/models/build.rs
+  s_fc4968d509c3df::t_4f6d2e54eb914a 5
+  s_fc4968d509c3df::t_a8631bbf8a26d1 213
+crates/onedev-auth/src/services/token_service.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 3-5,50-54,59-63,90-92,106-111,137-144,148-156,160-167,169
+crates/onedev-core/src/models/workspace.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 6-8,22-24,49,82,112-114,141-143,198-201,209-212,217-221,226
+crates/onedev-db/src/repositories/oauth.rs
+  s_fc4968d509c3df::t_81d01bf55ab9e4 5-10,23-27,37-42,49-52,58-65,84-89,101-106,127-132,134,141-144,164-168,178-182,192-196,206-211,218-221,255-260,272-277,300-310,320
+crates/onedev-db/src/repositories/role.rs
+  s_fc4968d509c3df::t_81d01bf55ab9e4 4,65-70,147-150
+crates/onedev-auth/src/services/mod.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 14
+crates/onedev-api/src/handlers/auth_handlers.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 3-6,8,11-12,59-123
+  s_fc4968d509c3df::t_13e9427f1aea03 1,124-155,158,161-179,184-185,187-201,206-207,209-216,222-223,225-238,243-244,246-261,268
+crates/onedev-web/src/services/api_client.rs
+  s_b4d4a7c7a80ee3::t_9a2d9d39076d7b 1-124
+crates/onedev-auth/src/models/principal.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 3,5,142
+  s_fc4968d509c3df::t_5d65a31048c817 85
+crates/onedev-db/src/repositories/ssh_key.rs
+  s_fc4968d509c3df::t_81d01bf55ab9e4 5-6,25-28,33-37,77-82,114-124,134
+crates/onedev-server/src/services/webhook_dispatcher.rs
+  s_b4d4a7c7a80ee3::t_f4901678c28ea5 1-142,144-152,157-164,171-172,178-191,195-198,206-209,211-212,214-217,223-224,226-227,229-232,239-248,250-255,261-262,264,268-282,286-296,299-343,345-347,357-362,364-375,379-380,382-388,391-393,395-404
+  s_b4d4a7c7a80ee3::t_45b23d07229bc0 143,153-156,165-170,173-177,192-194,199-205,210,213,218-222,225,228,233-238
+  s_b4d4a7c7a80ee3::t_5041b9dc2815b2 344,348-356,363,376-378,381,389-390,394
+  s_b4d4a7c7a80ee3::t_068fd385755b06 249,256-260,263,265-267,283-285,297-298
+crates/onedev-auth/src/models/subject.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 9,12,73-75,84-86,132-136,149-151,165
+crates/onedev-server/src/lib.rs
+  s_b4d4a7c7a80ee3::t_7c6ccb741535a5 3-6,8-9,11-14,16-17,24-51,76-78,80-286
+  s_b4d4a7c7a80ee3::t_adf2bf95314bfd 52-75,79
+crates/onedev-auth/Cargo.toml
+  s_b4d4a7c7a80ee3::t_ab6af5493d29a1 48
+crates/onedev-db/src/repositories/setting.rs
+  s_fc4968d509c3df::t_81d01bf55ab9e4 5-9,88-93,105-110,131-136,138-141,161-165,171-174,179-184,195-201,233-241,243-246,251-261,267-273,292
+crates/onedev-web/src/models/builds.rs
+  s_b4d4a7c7a80ee3::t_3bf308cd77daf5 1-92
+crates/onedev-api/src/handlers/git_handlers.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 3-4,6-7,32-35,40,46,48-51,57,70,83,99
+crates/onedev-api/src/models/groups.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 3,180
+crates/onedev-db/src/models/ssh_key.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 126
+  s_fc4968d509c3df::t_4f6d2e54eb914a 5
+crates/onedev-db/src/models/sso_account.rs
+  s_fc4968d509c3df::t_4f6d2e54eb914a 5
+  s_fc4968d509c3df::t_a8631bbf8a26d1 123
+crates/onedev-api/src/models/pagination.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 111
+crates/onedev-web/src/handlers/profile.rs
+  s_b4d4a7c7a80ee3::t_91f23938c7a939 1-189
+crates/onedev-db/src/models/audit.rs
+  s_fc4968d509c3df::t_4f6d2e54eb914a 5
+  s_fc4968d509c3df::t_a8631bbf8a26d1 113
+crates/onedev-core/src/models/audit.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 31-33,84-86,161-163,235
+crates/onedev-web/src/models/issues.rs
+  s_b4d4a7c7a80ee3::t_ba5f4b1084d54c 1-96
+crates/onedev-api/src/handlers/build_handlers.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 3-5,7,128
+crates/onedev-api/src/handlers/mr_handlers.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 3-5,7,152
+crates/onedev-db/src/models/label.rs
+  s_fc4968d509c3df::t_4f6d2e54eb914a 5
+  s_fc4968d509c3df::t_a8631bbf8a26d1 94
+crates/onedev-core/src/models/gpg_key.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 11,13,34-45,94-97,101-104,108-113,117-118,124
+  s_fc4968d509c3df::t_98eb7d21ecb4b9 86
+crates/onedev-server/src/config.rs
+  s_b4d4a7c7a80ee3::t_1ab4b3109cd73a 22-25
+  s_b4d4a7c7a80ee3::t_1bb424d36dba06 1-21,26-420,502-777,780-904,932-1033
+  s_b4d4a7c7a80ee3::t_f8b78d602672c6 421-501
+  s_b4d4a7c7a80ee3::t_cb18ad47dceeb8 905-931
+  s_b4d4a7c7a80ee3::t_8b033e68646c9d 778-779
+crates/onedev-web/src/main.rs
+  s_b4d4a7c7a80ee3::t_a866d443e17de2 1-62
+crates/onedev-api/src/utils/validators.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 10,16,21,26,31,41,49,58,62,64-67,70,72-76,79,84,93,97,103,106,110,114,119,121
+crates/onedev-db/src/models/user.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 52-54,65-67,195-198,338
+  s_fc4968d509c3df::t_4f6d2e54eb914a 5
+crates/onedev-db/src/models/gpg_key.rs
+  s_fc4968d509c3df::t_4f6d2e54eb914a 5
+  s_fc4968d509c3df::t_a8631bbf8a26d1 100
+crates/onedev-web/src/models/merge_requests.rs
+  s_b4d4a7c7a80ee3::t_8cad6e0c4dbfb3 1-5,8-102
+  s_b4d4a7c7a80ee3::t_49868303234d9e 6-7
+crates/onedev-core/src/models/oauth.rs
+  s_fc4968d509c3df::t_f93133bb85671d 163
+  s_fc4968d509c3df::t_a8631bbf8a26d1 6-8,37,52-54,112-113,161-162,164,171-173,193-212,215
+crates/onedev-build/src/utils.rs
+  s_e213d8b74427f6::t_48d6a8fef9d7f2 5-27
+crates/onedev-db/src/repositories/code_comment.rs
+  s_fc4968d509c3df::t_81d01bf55ab9e4 5-8,21-25,31-34,39-44,51-54,59-73,105-110,122-127,149-159,169
+crates/onedev-db/src/models/project.rs
+  s_fc4968d509c3df::t_4f6d2e54eb914a 5
+  s_fc4968d509c3df::t_a8631bbf8a26d1 20-25,34-39,60-62,73-75,288-289,332-336,538
+crates/onedev-auth/src/handlers/two_factor_handlers.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 3-5,7,11,71-73,78-82,87,94-96,102-106,109-116,123-127,133-137,141-144,147-148,151-153,159-163,169-173,177-180,183-184,187-190,207-211,214-217,224
+crates/onedev-web/src/handlers/auth.rs
+  s_b4d4a7c7a80ee3::t_5ee9df41345d01 5-6
+  s_b4d4a7c7a80ee3::t_7cc0a5eb590f03 1-4,7-27,30,37-52,59,62-133
+  s_b4d4a7c7a80ee3::t_40f088f6d216c6 28-29,31-36,53-58,60-61
+crates/onedev-db/src/models/access_token.rs
+  s_fc4968d509c3df::t_559e65115a772e 46
+  s_fc4968d509c3df::t_a8631bbf8a26d1 127
+  s_fc4968d509c3df::t_e622d367f527fd 5
+crates/onedev-db/src/repositories/group.rs
+  s_fc4968d509c3df::t_81d01bf55ab9e4 5-6,19-24,61-64,108-111,140-145,192-195,205
+crates/onedev-auth/src/handlers/mod.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 4,10
+crates/onedev-core/src/models/pack.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 6-8,28-30,81-83,276-284,297-299,301
+crates/onedev-api/src/services/user_service.rs
+  s_e213d8b74427f6::t_ab75a4ab23a860 1,3-8,10-14,18-77,82-88,94-106,108-148,154-268
+  s_fc4968d509c3df::t_a8631bbf8a26d1 89-93,149-153
+crates/onedev-build/tests/runner_test.rs
+  s_e213d8b74427f6::t_48d6a8fef9d7f2 5,9-18,20-21,23-24,26-29,54,103-114
+  s_e213d8b74427f6::t_ae36713b1b2b9b 115
+crates/onedev-db/src/lib.rs
+  s_fc4968d509c3df::t_bfc89e33b01c22 9-12,14
+  s_fc4968d509c3df::t_a8631bbf8a26d1 15,17,19,21,24,27,29-32,35
+  s_fc4968d509c3df::t_b6c4cb479981c6 13
+  s_fc4968d509c3df::t_2f1ae4e7742786 23,26
+crates/onedev-db/src/models/pipeline.rs
+  s_fc4968d509c3df::t_4f6d2e54eb914a 5
+  s_fc4968d509c3df::t_a8631bbf8a26d1 168
+crates/onedev-auth/src/services/two_factor_service.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 3-6,29-32,44-54,71-82,89-98,103-105,114-125,132-137,153-162,172-181,190-192,201-212,227
+crates/onedev-auth/src/models/two_factor.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 3-4,7-8,11,143,148,152,159,167,211-217,230-247,258-275,289-293,303-304,310-314,316,331-332,335-352,379
+crates/onedev-db/src/migrations.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 41-45,52-56
+crates/onedev-server/src/services/search_indexer.rs
+  s_b4d4a7c7a80ee3::t_d12325395dd4d2 448,461-464
+  s_b4d4a7c7a80ee3::t_ba699961af2e73 160-161,187-190,194-198
+  s_b4d4a7c7a80ee3::t_069e2a8a1425e0 206-207,231-234,237-241,249-250,270-273,276-280
+  s_b4d4a7c7a80ee3::t_b09fb45011b774 1-159,162-186,191-193,199-205,208-230,235-236,242-248,251-269,274-275,281-296,298-299,301-321,327-336,340-347,349-350,352-367,373-382,386-393,395-396,398-412,418-427,431-447,449-460,465-481
+  s_b4d4a7c7a80ee3::t_56dc7225294aef 297,300,322-326,337-339,348,351,368-372,383-385,394,397,413-417,428-430
+crates/onedev-web/src/models/git.rs
+  s_b4d4a7c7a80ee3::t_33dcbeb1c9d929 1-118
+crates/onedev-db/src/models/pull_request.rs
+  s_fc4968d509c3df::t_4f6d2e54eb914a 5
+  s_fc4968d509c3df::t_a8631bbf8a26d1 25-27,40-48,66-68,70-75,83-85,87-92,183-185,319
+crates/onedev-core/src/models/project.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 6-8,18-20,75-77,203-207,214-219,222
+crates/onedev-db/src/models/webhook.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 136
+  s_fc4968d509c3df::t_4f6d2e54eb914a 5
+crates/onedev-web/src/handlers/issues.rs
+  s_b4d4a7c7a80ee3::t_157dec469a443e 1-286
+crates/onedev-api/src/services/group_service.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 13
+crates/onedev-auth/src/handlers/auth_handlers.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 3-7,9,14,70,75-77,80-88,107-117,141-142,155,160,187,196-199,204,207,209-212,215,219,222-225,233
+crates/onedev-build/src/services/runner.rs
+  s_e213d8b74427f6::t_48d6a8fef9d7f2 51,53-56,71-78,82,86,91,140-145
+crates/onedev-db/src/repositories/dashboard.rs
+  s_fc4968d509c3df::t_81d01bf55ab9e4 5-9,22-27,34-37,42-47,87-92,104-109,145-150,152-155,175-179,185-188,193-198,224-229,241-246,264-269,271,278-281,291
+crates/onedev-core/src/events/mod.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 294-298,326-334,367-371,373-376,393
+crates/onedev-db/src/repositories/email.rs
+  s_fc4968d509c3df::t_81d01bf55ab9e4 5-8,21-25,31-34,39-43,53-57,98-105,122-127,139-144,167,174-177,187
+crates/onedev-db/src/repositories/access_token.rs
+  s_fc4968d509c3df::t_81d01bf55ab9e4 5-8,21-25,35-39,45-48,63-68,101-106,118-123,145-155,165
+  s_fc4968d509c3df::t_41e39cc977a9ae 127
+crates/onedev-git/src/services/repository.rs
+  s_e213d8b74427f6::t_48d6a8fef9d7f2 270-431
+crates/onedev-server/src/telemetry.rs
+  s_b4d4a7c7a80ee3::t_55fc522f6087ef 1-11,13-151
+  s_c4a35a3002ac14::t_498af32276275c 12
+crates/onedev-web/src/models/projects.rs
+  s_b4d4a7c7a80ee3::t_3b7c03327c1814 1-74
+crates/onedev-core/src/permissions/mod.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 37-38,55-58,613-618,654-657,696
+  s_fc4968d509c3df::t_8131f39bd060a2 118-124
+crates/onedev-api/src/models/mod.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 4,7-9,12,15-17
+crates/onedev-api/src/models/access_tokens.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 3-4,127
+crates/onedev-core/src/models/setting.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 28,130-132,208-219,282-284,351
+crates/onedev-api/src/services/project_service.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 6-11,13-19,23-133,138-141,143-399
+  s_fc4968d509c3df::t_c2160bc84dce0f 1,3-5,400-403
+crates/onedev-web/src/handlers/builds.rs
+  s_b4d4a7c7a80ee3::t_2563b3d59d70d4 1-272
+crates/onedev-auth/src/handlers/password_handlers.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 3-4,6,46-50,53-55,66,77-80,104,106,113,116,123,125,127
+crates/onedev-web/src/utils/mod.rs
+  s_b4d4a7c7a80ee3::t_836abd61cc3f6e 163,167
+  s_b4d4a7c7a80ee3::t_fbb182e3fcafa7 1-162,164-166,168-307
+crates/onedev-web/src/handlers/git.rs
+  s_b4d4a7c7a80ee3::t_617972773b59ab 1-269
+crates/onedev-web/src/templates/mod.rs
+  s_b4d4a7c7a80ee3::t_f3f86d68057c07 144,147
+  s_b4d4a7c7a80ee3::t_1f80b87e537115 1-85,87-143,145-146,148-209
+  s_b4d4a7c7a80ee3::t_6c4b7877b467f7 86
+crates/onedev-db/src/models/mod.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 3-6,8-11,13-20,25-28,30-33,35-38,40-47,52-55
+crates/onedev-db/src/repositories/webhook.rs
+  s_fc4968d509c3df::t_81d01bf55ab9e4 5-6,19-23,29-32,42-45,50-55,86-91,128-138,148
+crates/onedev-api/src/services/build_service.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 13
+docs/progress.md
+  s_69b0b731fb41cc::t_0e4c2d94d4e990 1,3-33,37-60,64-126,130-131
+crates/onedev-auth/src/models/mod.rs
+  s_3e0390471cb6b3::t_ea0e83519311ad 9,17
+  s_fc4968d509c3df::t_a8631bbf8a26d1 3,6,11,14
+crates/onedev-api/src/utils/middleware.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 3-4,6-7,24,37,39-41,106,109,112-115
+crates/onedev-api/src/services/lfs_service.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 13
+crates/onedev-db/src/models/workspace.rs
+  s_fc4968d509c3df::t_4f6d2e54eb914a 5
+  s_fc4968d509c3df::t_a8631bbf8a26d1 147
+crates/onedev-web/src/config.rs
+  s_b4d4a7c7a80ee3::t_d0dbe315098916 1-275
+crates/onedev-server/src/services/git_gc.rs
+  s_b4d4a7c7a80ee3::t_54685bd7a7811e 1-93,95-103,109-112,116-123,125,130-131,133-168,172-176,179-193,198-204,208-212,216-230,232-260
+  s_b4d4a7c7a80ee3::t_31144da74c8b96 94,104-108,113-115,124,126-129,132
+  s_b4d4a7c7a80ee3::t_f670db2292f413 169-171,177-178,194-197,205-207,213-215,231
+crates/onedev-web/src/handlers/merge_requests.rs
+  s_b4d4a7c7a80ee3::t_74fdb2e8da3b64 1-275
+crates/onedev-auth/src/middleware/mod.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 3-7,10,34,60,63-65,75-77,82,99,120,122-124,164-165,190-194,197
+crates/onedev-auth/src/services/session_service.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 3,5,41-43,70
+crates/onedev-api/src/openapi/mod.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 3-4,77-88,95-106,109-112
+crates/onedev-db/src/repositories/user.rs
+  s_fc4968d509c3df::t_91fb64afa9259e 9
+  s_fc4968d509c3df::t_81d01bf55ab9e4 5-6,102-105,149-152,169-172,240-245,259-262,304-307,317
+crates/onedev-db/src/models/membership.rs
+  s_fc4968d509c3df::t_4f6d2e54eb914a 5
+  s_fc4968d509c3df::t_a8631bbf8a26d1 157
+crates/onedev-api/src/models/users.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 3,202
+crates/onedev-auth/src/handlers/token_handlers.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 3-5,7,10-13,114-121,135,138-142,157-164,169,179-181,187-194,198-200,213-215,221-228,232-234,257-259,265-272,276-278,284-288,293
+crates/onedev-core/src/utils/validation.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 18-19
+crates/onedev-web/src/services/session.rs
+  s_b4d4a7c7a80ee3::t_e37196162d81cf 1-2,6,8,10-25,27-35,37-40,42-52,55,57-65,67,72-77,85-96,104-118,124-126
+  s_0de1f439e1761a::t_e8940b9010ea12 3,9
+  s_b4d4a7c7a80ee3::t_8da09ea7daf55e 26,36,56,66
+  s_0de1f439e1761a::t_bee0b3fd2f29de 100-103,119
+  s_b4d4a7c7a80ee3::t_59af307c32dd7f 7,54,68-71,78,97
+  s_0de1f439e1761a::t_a7207e3c87c419 4-5,41,53,79-84,98-99
+  s_0de1f439e1761a::t_2a6527a42a63f8 120-123
+crates/onedev-auth/src/models/password.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 4-7,11-12,39-41,44-46,52,54-56,76-77,93,101-102,154,158,180
+crates/onedev-db/src/models/email.rs
+  s_fc4968d509c3df::t_4f6d2e54eb914a 5
+  s_fc4968d509c3df::t_a8631bbf8a26d1 120
+crates/onedev-api/src/errors/mod.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 4,10,131-150,161-163,165-204,206-245,263
+crates/onedev-db/src/pool.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 83-86,90-97,178-179,185-188
+crates/onedev-server/src/middleware.rs
+  s_b4d4a7c7a80ee3::t_8e6cd63bba8e60 1-270
+crates/onedev-api/src/services/issue_service.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 13
+crates/onedev-build/src/services/parser.rs
+  s_e213d8b74427f6::t_48d6a8fef9d7f2 42-44,46,54,73,76-80,140-141,164,168-172,174-175,177-178,180-183,194,196
+crates/onedev-web/src/handlers/dashboard.rs
+  s_b4d4a7c7a80ee3::t_b2a115df6a71b0 1-108
+crates/onedev-core/src/models/code_comment.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 35-37,48-50,139
+crates/onedev-web/src/handlers/mod.rs
+  s_b4d4a7c7a80ee3::t_afc084a80f9e27 1-11
+crates/onedev-db/src/repositories/project.rs
+  s_fc4968d509c3df::t_81d01bf55ab9e4 5-8,21-26,37-41,68-71,124-127,145-148,197-202,210-214,316-321,391-394,404
+crates/onedev-core/src/lib.rs
+  s_fc4968d509c3df::t_395bc73b17a688 15,18
+  s_fc4968d509c3df::t_a8631bbf8a26d1 6-7,13-14,22-25
+crates/onedev-core/src/models/pull_request.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 6-8,20-22,74-76,247-249,296-299,307-310,320
+crates/onedev-core/src/models/user.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 6-17,30-32,63,235
+crates/onedev-core/src/models/ssh_key.rs
+  s_fc4968d509c3df::t_564d613ab9a667 63
+  s_fc4968d509c3df::t_a8631bbf8a26d1 6-8,74-78,83
+crates/onedev-db/src/repositories/build.rs
+  s_fc4968d509c3df::t_81d01bf55ab9e4 5-8,21-27,35-38,43-48,64-67,74,108-113,150-154,156-159,179-193,229-234,283-293,314-323,359-364,412-422,432
+crates/onedev-api/src/services/system_service.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 13
+crates/onedev-api/src/utils/extractors.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 3,21-22,51-53,58,79-81,83
+crates/onedev-auth/src/router.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 3-4,7,43-46,48-51,54-65,75-86,106-109,111-114,117
+crates/onedev-git/tests/repository_test.rs
+  s_e213d8b74427f6::t_48d6a8fef9d7f2 85-104
+  s_e213d8b74427f6::t_460ad0bbb5c029 84
+crates/onedev-core/src/permissions/privilege.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 159-162,210,212-213,217,239,250,276-279,353
+crates/onedev-api/src/handlers/project_handlers.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 3-6,8,11-15,19-20,22-26,31-33,35-40,45-46,48,53-55,57,62-63,65-66,71-74,76-81,86-88,90,95-96,98-102,107-108,110-114,119-120,122,127-129,131-136,141-142,144-146,151-153,155-169,174-175,177-180
+  s_fc4968d509c3df::t_2c1eb03e0c7a0c 1,181-182
+crates/onedev-db/src/repositories/watch.rs
+  s_fc4968d509c3df::t_81d01bf55ab9e4 5-9,28-31,36-41,48-51,56-62,74-80,94-100,126-131,145-150,162-166,168-171,191-195,201-204,209-215,228-235,249-254,266-277,288-300,302-305,315
+crates/onedev-auth/src/models/authorization.rs
+  s_3e0390471cb6b3::t_90eee0acf4fa59 1-122,124-164
+  s_b4d4a7c7a80ee3::t_41932a5e55e6d7 123
+crates/onedev-db/src/models/group.rs
+  s_fc4968d509c3df::t_4f6d2e54eb914a 5
+  s_fc4968d509c3df::t_a8631bbf8a26d1 269
+crates/onedev-api/src/handlers/issue_handlers.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 3-5,7,160
+crates/onedev-core/src/models/group.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 6-8,27,46-48,58-60,68-70,79-81,162-174,216-220,226
+crates/onedev-git/src/models.rs
+  s_e213d8b74427f6::t_48d6a8fef9d7f2 199-235
+crates/onedev-web/src/models/admin.rs
+  s_b4d4a7c7a80ee3::t_6adfadd9294f9c 1-131
+crates/onedev-db/src/repositories/membership.rs
+  s_fc4968d509c3df::t_81d01bf55ab9e4 5-8,21-25,31-34,39-43,49-52,57-62,73-78,104-109,121-126,145-155,165
+crates/onedev-db/src/models/dashboard.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 171
+  s_fc4968d509c3df::t_4f6d2e54eb914a 5
+crates/onedev-auth/src/repositories/session.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 115-124
+crates/onedev-api/src/lib.rs
+  s_fc4968d509c3df::t_4e5a6b08d9c5ff 3-24
+  s_fc4968d509c3df::t_a8631bbf8a26d1 25-26,28-29,33-34,36,40-43
+crates/onedev-web/src/models/dashboard.rs
+  s_b4d4a7c7a80ee3::t_34b90f82b68a33 1-61
+crates/onedev-cli/src/lib.rs
+  s_b4d4a7c7a80ee3::t_4aad98f3bc7e07 1-1128
+crates/onedev-core/src/models/issue.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 6-8,20-32,45-47,97-99,213-215,246-248,270-272,296-299,305
+crates/onedev-db/src/repositories/agent.rs
+  s_fc4968d509c3df::t_81d01bf55ab9e4 5-6,19-23,38-41,46-52,64-69,104-109,158-161,171
+crates/onedev-web/Cargo.toml
+  s_b4d4a7c7a80ee3::t_3c4eb2675d2aaf 30
+  s_b4d4a7c7a80ee3::t_a7fe905442e15e 21,23-24
+  s_b4d4a7c7a80ee3::t_ab74c6e6e2cb57 46
+  s_b4d4a7c7a80ee3::t_85d9a2da773d7d 20,22,45,47-48
+  s_b4d4a7c7a80ee3::t_eb628e32d0f587 49-50
+  s_0de1f439e1761a::t_34a89d61c76e7b 51
+crates/onedev-api/src/utils/mod.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 9
+crates/onedev-api/src/services/mod.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 7-8,10-11,13,19-20,22-25
+crates/onedev-db/src/error.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 46
+crates/onedev-server/src/services/build_scheduler.rs
+  s_b4d4a7c7a80ee3::t_729e9e7f31b37b 1-4,6,8-12,16-36,50-53,57-75,81-83,88-90,96-138,142,148-152,154-155,157-159,161,163-166,168-170,173-175,181-190,196-201,236,280,343-349,351-355,360-361,371-373,375-381,387-415,452-453
+  s_b4d4a7c7a80ee3::t_d4bf9a740a7ccb 79-80,87
+  s_b4d4a7c7a80ee3::t_07414abb2dc760 5,7,13-15,37-49,54-56,76-78,84-86,91-95,139-141,143-147,153,156,160,162,167,171-172,176-180,202-235,237-279,281-286,291-292,297-308,314-328,340-342,416-451
+  s_b4d4a7c7a80ee3::t_ead05ac0d7c5a2 191-195,287-290,293-296,309-313,329-339,350,356-359,362-370,374,382-386
+crates/onedev-db/src/models/code_comment.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 127
+  s_fc4968d509c3df::t_4f6d2e54eb914a 5
+crates/onedev-auth/src/errors/mod.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 4,105-107,109-148,150-189,200-202,204-208,243-245,268
+crates/onedev-auth/src/extractors/mod.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 3-7,10,57-59,79-81,130-133,135,138,186-190,192-195,206-210,220-222,225
+crates/onedev-server/src/metrics.rs
+  s_b4d4a7c7a80ee3::t_2c77f8b39bd17b 1-158,164-166,172-174,176-184,190-193,199-201,207-209,215-217,223-261
+  s_b4d4a7c7a80ee3::t_d8e994d590f686 159-163,167-171,175,185-189,194-198,202-206,210-214,218-222
+crates/onedev-core/src/models/build.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 6-8,25-27,51,92-94,105-107,122-124,148-150,312-314,332-334,364-366,375-377,422-433,443-445,481-483,494-496,513-515,591-597,601-608,622
+crates/onedev-db/src/models/pack.rs
+  s_fc4968d509c3df::t_4f6d2e54eb914a 5
+  s_fc4968d509c3df::t_a8631bbf8a26d1 147
+crates/onedev-db/src/models/setting.rs
+  s_fc4968d509c3df::t_4f6d2e54eb914a 5
+  s_fc4968d509c3df::t_a8631bbf8a26d1 151
+crates/onedev-db/src/repositories/workspace.rs
+  s_fc4968d509c3df::t_81d01bf55ab9e4 5-6,19-25,33-36,41-47,55-58,63-67,73-76,102-107,119-124,149-159,169
+crates/onedev-api/src/services/git_service.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 13
+crates/onedev-db/src/repositories/mod.rs
+  s_fc4968d509c3df::t_81d01bf55ab9e4 4,6-7,9-13,16-17,19-25,27-28,31,33-34,36-40,43-44,46-52,54-55,69
+crates/onedev-auth/src/services/authorization_service.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 3,5-6,9-12,14-18,22,95-96,101-104,137-140,163-167,172-176,179-182,194-196,199-202,210-217,222-229,234-241,246-253,258-265,312-319,327-332,337-341,350-354,367-368,406
+crates/onedev-auth/src/models/session.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 4,91
+crates/onedev-web/src/models/auth.rs
+  s_b4d4a7c7a80ee3::t_877b1b23ec5232 1-86
+crates/onedev-server/src/lifecycle.rs
+  s_b4d4a7c7a80ee3::t_c491bd0cf8cea7 1-184
+crates/onedev-server/src/services.rs
+  s_b4d4a7c7a80ee3::t_919fbe272c2014 1-13
+crates/onedev-db/src/repositories/pipeline.rs
+  s_fc4968d509c3df::t_81d01bf55ab9e4 5-9,22-26,32-35,40-44,82-87,99-104,140-145,147-150,170-174,180-183,193-196,201-206,219-226,244-249,261-266,290-295,297,304-307,317
+crates/onedev-cli/src/main.rs
+  s_b4d4a7c7a80ee3::t_58b05b466e3e59 1-17
+crates/onedev-db/src/models/agent.rs
+  s_fc4968d509c3df::t_a8631bbf8a26d1 165
+  s_fc4968d509c3df::t_4f6d2e54eb914a 5
+crates/onedev-build/src/models.rs
+  s_e213d8b74427f6::t_48d6a8fef9d7f2 1-2,5-6,14,18-19,21-31,34,36,40-42,44,46-50,52,54-66,68-123,126-140,143-145,147-150,152-180,183,185,187-208,211-215,217,219-221,223-225,227-273,275-288,295-299,301-309,319,322
+crates/onedev-db/src/repositories/authorization.rs
+  s_fc4968d509c3df::t_81d01bf55ab9e4 4,7-9,23-27,32-35,38-42,47-50,55-60,66-69,72-77,89-92,95-99,107-110,113-118,127-130,133-137,144-147,152-159,173-178,189-194,211-216,224-227,245-249,254-257,260-264,269-272,277-284,296-301,309-311,314-319,321-326,337-342,348-351
+Cargo.lock
+  s_0de1f439e1761a::t_058cd62a34f74c 1312-1329,1890-1898,4346-4351,4396-4401,5044,5113-5118,5213-5218,5561-5569,5841,6055-6057,6067,6072,6078-6080,6098-6099,6102-6103,6105,6109,6118-6119,6123,6127,6129,7237-7242,7273-7282,7652-7653,9054,9056,9376-9380
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "8b1d2dfdf59933a64a48532686d0c8f4efcd9372",
+  "prompts": {},
+  "sessions": {
+    "s_0de1f439e1761a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0f2f81bd-eb11-4834-95c4-07542b095264",
+        "model": "poolside/laguna-xs-2.1"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    },
+    "s_3e0390471cb6b3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "39668f90-bf8b-4331-bb1e-caad3e5a8779",
+        "model": "poolside/laguna-xs-2.1"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    },
+    "s_69b0b731fb41cc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1a3d675b-0ad0-4764-8b9e-e422cf985156",
+        "model": "poolside/laguna-xs-2.1"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    },
+    "s_b4d4a7c7a80ee3": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e15302bc6ffeeevu8JM3MfvFlY",
+        "model": "nvidia/nemotron-3-ultra-550b-a55b"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    },
+    "s_c4a35a3002ac14": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6d8bb081-4571-4340-9f55-22e3feca32f5",
+        "model": "poolside/laguna-xs-2.1"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    },
+    "s_e213d8b74427f6": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e143a2903ffeqMLWwIOGrADl23",
+        "model": "minimaxai/minimax-m3.1-flash"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    },
+    "s_fc4968d509c3df": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e152e6bc4ffejPRtPDKqejzaSv",
+        "model": "combo/best-free"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}
