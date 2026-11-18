@@ -1,12 +1,12 @@
 //! Admin Handlers
 
+use crate::WebState;
 use axum::{
-    extract::{Path, Query, State},
+    extract::{Query, State},
     response::{Html, IntoResponse},
 };
 use serde::{Deserialize, Serialize};
 use tera::Context;
-use crate::WebState;
 
 /// Admin dashboard
 pub async fn admin_dashboard(State(state): State<WebState>) -> impl IntoResponse {
@@ -72,7 +72,7 @@ pub struct ProjectListParams {
 }
 
 /// Get admin stats
-async fn get_admin_stats(state: &WebState) -> serde_json::Value {
+async fn get_admin_stats(_state: &WebState) -> serde_json::Value {
     serde_json::json!({
         "total_users": 150,
         "active_users": 120,
@@ -87,7 +87,7 @@ async fn get_admin_stats(state: &WebState) -> serde_json::Value {
 }
 
 /// Get system info
-async fn get_system_info(state: &WebState) -> serde_json::Value {
+async fn get_system_info(_state: &WebState) -> serde_json::Value {
     serde_json::json!({
         "version": "0.1.0",
         "rust_version": "1.89.0",
@@ -101,7 +101,7 @@ async fn get_system_info(state: &WebState) -> serde_json::Value {
 }
 
 /// Get recent users
-async fn get_recent_users(state: &WebState) -> Vec<serde_json::Value> {
+async fn get_recent_users(_state: &WebState) -> Vec<serde_json::Value> {
     vec![
         serde_json::json!({
             "id": 151,
@@ -127,7 +127,7 @@ async fn get_recent_users(state: &WebState) -> Vec<serde_json::Value> {
 }
 
 /// Get recent projects
-async fn get_recent_projects(state: &WebState) -> Vec<serde_json::Value> {
+async fn get_recent_projects(_state: &WebState) -> Vec<serde_json::Value> {
     vec![
         serde_json::json!({
             "id": 51,
@@ -149,7 +149,7 @@ async fn get_recent_projects(state: &WebState) -> Vec<serde_json::Value> {
 }
 
 /// Get users
-async fn get_users(state: &WebState, params: &UserListParams) -> Vec<serde_json::Value> {
+async fn get_users(_state: &WebState, _params: &UserListParams) -> Vec<serde_json::Value> {
     vec![
         serde_json::json!({
             "id": 1,
@@ -197,7 +197,7 @@ async fn get_users(state: &WebState, params: &UserListParams) -> Vec<serde_json:
 }
 
 /// Get all projects
-async fn get_all_projects(state: &WebState, params: &ProjectListParams) -> Vec<serde_json::Value> {
+async fn get_all_projects(_state: &WebState, _params: &ProjectListParams) -> Vec<serde_json::Value> {
     vec![
         serde_json::json!({
             "id": 1,
@@ -233,7 +233,7 @@ async fn get_all_projects(state: &WebState, params: &ProjectListParams) -> Vec<s
 }
 
 /// Get database info
-async fn get_database_info(state: &WebState) -> serde_json::Value {
+async fn get_database_info(_state: &WebState) -> serde_json::Value {
     serde_json::json!({
         "size": "2.5 GB",
         "tables": 45,
@@ -245,7 +245,7 @@ async fn get_database_info(state: &WebState) -> serde_json::Value {
 }
 
 /// Get storage info
-async fn get_storage_info(state: &WebState) -> serde_json::Value {
+async fn get_storage_info(_state: &WebState) -> serde_json::Value {
     serde_json::json!({
         "type": "local",
         "path": "/var/lib/onedev/storage",
@@ -259,7 +259,7 @@ async fn get_storage_info(state: &WebState) -> serde_json::Value {
 }
 
 /// Get build queue info
-async fn get_build_queue_info(state: &WebState) -> serde_json::Value {
+async fn get_build_queue_info(_state: &WebState) -> serde_json::Value {
     serde_json::json!({
         "running": 2,
         "pending": 3,

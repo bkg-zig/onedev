@@ -1,8 +1,8 @@
 //! Project Models
 
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use chrono::{DateTime, Utc};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Project {
@@ -71,4 +71,12 @@ pub struct ProjectSettings {
     pub only_allow_merge_if_all_discussions_are_resolved: bool,
     pub delete_source_branch_on_merge: bool,
     pub auto_cancel_pending_pipelines: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct ProjectListParams {
+    pub visibility: Option<ProjectVisibility>,
+    pub search: Option<String>,
+    pub page: Option<u32>,
+    pub per_page: Option<u32>,
 }

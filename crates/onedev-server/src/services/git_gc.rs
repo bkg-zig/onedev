@@ -2,15 +2,15 @@
 
 use anyhow::Result;
 use chrono::{DateTime, Utc};
-use gix_odb::memory::Proxy as OdbProxy;
 use gix_odb::Handle;
+use gix_odb::memory::Proxy as OdbProxy;
 use sqlx::{PgPool, Row};
 use std::path::PathBuf;
 use std::process::Command;
 use std::sync::Arc;
 use tokio::sync::broadcast;
 use tokio::task;
-use tracing::{info, warn, error, debug};
+use tracing::{debug, error, info, warn};
 use uuid::Uuid;
 
 /// Git GC configuration
@@ -62,9 +62,9 @@ impl GitGcService {
     pub async fn run(mut self) {
         info!("Git GC service started");
 
-        let mut interval = tokio::time::interval(
-            tokio::time::Duration::from_secs(self.config.gc_interval_hours * 3600)
-        );
+        let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(
+            self.config.gc_interval_hours * 3600,
+        ));
 
         // Run once at startup
         if let Err(e) = self.run_gc().await {
@@ -103,11 +103,12 @@ impl GitGcService {
             )
             ORDER BY gc_last_run ASC NULLS FIRST
             LIMIT $2
-            "#
+            "#,
         )
-            .bind(self.config.gc_interval_hours as i64)
-            .bind(self.config.max_repos_per_run as i64)
-            .fetch_all(self.db_pool.as_ref()).await?;
+        .bind(self.config.gc_interval_hours as i64)
+        .bind(self.config.max_repos_per_run as i64)
+        .fetch_all(self.db_pool.as_ref())
+        .await?;
 
         info!("Found {} repositories needing GC", repos.len());
 
@@ -128,7 +129,8 @@ impl GitGcService {
                     sqlx::query("UPDATE projects SET gc_last_run = $1 WHERE id = $2")
                         .bind(Utc::now())
                         .bind(project_id)
-                        .execute(self.db_pool.as_ref()).await?;
+                        .execute(self.db_pool.as_ref())
+                        .await?;
                 }
                 Err(e) => {
                     error!("GC failed for repository {}: {}", project_id, e);
@@ -154,13 +156,17 @@ impl GitGcService {
                 cmd.arg("--aggressive");
             }
             cmd.arg("--prune=now");
-            
+
             let output = cmd.output()?;
             if !output.status.success() {
-                return Err(anyhow::anyhow!("git gc failed: {}", String::from_utf8_lossy(&output.stderr)));
+                return Err(anyhow::anyhow!(
+                    "git gc failed: {}",
+                    String::from_utf8_lossy(&output.stderr)
+                ));
             }
             Ok(())
-        }).await??;
+        })
+        .await??;
 
         Ok(())
     }
@@ -169,7 +175,8 @@ impl GitGcService {
     pub async fn run_aggressive_gc(&self, project_id: Uuid) -> Result<()> {
         let repo = sqlx::query("SELECT path FROM projects WHERE id = $1")
             .bind(project_id)
-            .fetch_optional(self.db_pool.as_ref()).await?;
+            .fetch_optional(self.db_pool.as_ref())
+            .await?;
 
         let Some(repo) = repo else {
             return Err(anyhow::anyhow!("Project not found"));
@@ -191,19 +198,24 @@ impl GitGcService {
             cmd.arg("gc");
             cmd.arg("--aggressive");
             cmd.arg("--prune=now");
-            
+
             let output = cmd.output()?;
             if !output.status.success() {
-                return Err(anyhow::anyhow!("git gc failed: {}", String::from_utf8_lossy(&output.stderr)));
+                return Err(anyhow::anyhow!(
+                    "git gc failed: {}",
+                    String::from_utf8_lossy(&output.stderr)
+                ));
             }
             Ok(())
-        }).await??;
+        })
+        .await??;
 
         // Update last GC time
         sqlx::query("UPDATE projects SET gc_last_run = $1 WHERE id = $2")
             .bind(Utc::now())
             .bind(project_id)
-            .execute(&*self.db_pool).await?;
+            .execute(&*self.db_pool)
+            .await?;
 
         info!("Aggressive GC completed for project {}", project_id);
         Ok(())
@@ -213,7 +225,8 @@ impl GitGcService {
     pub async fn get_gc_stats(&self, project_id: Uuid) -> Result<GitGcStats> {
         let repo = sqlx::query("SELECT path, gc_last_run FROM projects WHERE id = $1")
             .bind(project_id)
-            .fetch_optional(&*self.db_pool).await?;
+            .fetch_optional(&*self.db_pool)
+            .await?;
 
         let Some(repo) = repo else {
             return Err(anyhow::anyhow!("Project not found"));
@@ -234,7 +247,8 @@ impl GitGcService {
                     pack_size_bytes: 0,
                     last_gc,
                 })
-            }).await??
+            })
+            .await??
         } else {
             GitGcStats::default()
         };
@@ -242,8 +256,6 @@ impl GitGcService {
         Ok(stats)
     }
 }
-
-
 
 /// Git GC statistics
 #[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]

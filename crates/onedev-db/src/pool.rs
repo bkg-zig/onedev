@@ -241,22 +241,29 @@ pub async fn create_pool(database_url: &str, max_connections: u32) -> DbResult<D
 /// Parse a PostgreSQL connection URL into a DbConfig
 fn parse_database_url(url: &str, max_connections: u32) -> DbResult<DbConfig> {
     // Simple parsing of postgres://user:pass@host:port/db
-    let url = url.strip_prefix("postgres://").or_else(|| url.strip_prefix("postgresql://"))
+    let url = url
+        .strip_prefix("postgres://")
+        .or_else(|| url.strip_prefix("postgresql://"))
         .ok_or_else(|| DbError::ParseError("Invalid database URL format".to_string()))?;
 
-    let (auth_part, rest) = url.split_once('@')
+    let (auth_part, rest) = url
+        .split_once('@')
         .ok_or_else(|| DbError::ParseError("Missing @ in database URL".to_string()))?;
 
-    let (username, password) = auth_part.split_once(':')
+    let (username, password) = auth_part
+        .split_once(':')
         .ok_or_else(|| DbError::ParseError("Missing : in auth part".to_string()))?;
 
-    let (host_port, database) = rest.split_once('/')
+    let (host_port, database) = rest
+        .split_once('/')
         .ok_or_else(|| DbError::ParseError("Missing / in database URL".to_string()))?;
 
-    let (host, port) = host_port.split_once(':')
+    let (host, port) = host_port
+        .split_once(':')
         .ok_or_else(|| DbError::ParseError("Missing : in host:port".to_string()))?;
 
-    let port: u16 = port.parse()
+    let port: u16 = port
+        .parse()
         .map_err(|_| DbError::ParseError("Invalid port number".to_string()))?;
 
     Ok(DbConfig {
@@ -307,7 +314,7 @@ pub async fn process_webhook_queue(pool: &DbPool) -> DbResult<()> {
         WHERE status = 'pending' AND attempts < 5
         ORDER BY created_at
         LIMIT 50
-        "#
+        "#,
     )
     .fetch_all(pool)
     .await
@@ -317,13 +324,15 @@ pub async fn process_webhook_queue(pool: &DbPool) -> DbResult<()> {
         // In a real implementation, this would make HTTP requests to the webhook URL
         // For now, just mark as completed
         // Note: delivery.id is a String from the query, bind it as such
-        let id: String = delivery.try_get("id").map_err(|e| DbError::Query(e.to_string()))?;
+        let id: String = delivery
+            .try_get("id")
+            .map_err(|e| DbError::Query(e.to_string()))?;
         sqlx::query(
             r#"
             UPDATE webhook_deliveries
             SET status = 'completed', completed_at = NOW(), attempts = attempts + 1
             WHERE id = $1
-            "#
+            "#,
         )
         .bind(&id)
         .execute(pool)

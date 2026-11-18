@@ -1,9 +1,11 @@
 //! OneDev Admin CLI (stack control, docker compose, dev tools)
 
-use clap::{Parser, Subcommand, Args};
+use clap::{Args, Parser, Subcommand};
+use clap_complete::Shell;
+use strum::Display;
 use std::path::PathBuf;
 
-#[derive(Parser)]
+#[derive(Parser, Debug)]
 #[command(name = "onedev")]
 #[command(about = "OneDev Admin CLI - Stack Control, Docker Compose, Dev Tools")]
 #[command(version, long_about = None)]
@@ -32,7 +34,7 @@ pub enum OutputFormat {
     Csv,
 }
 
-#[derive(Subcommand)]
+#[derive(Debug, Subcommand)]
 pub enum Commands {
     /// Stack management (docker compose)
     Stack(StackCommands),
@@ -68,16 +70,22 @@ pub enum Commands {
     Completion(CompletionArgs),
 }
 
-#[derive(Args)]
+#[derive(Debug, Args)]
 pub struct CompletionArgs {
     /// Shell to generate completions for
     #[arg(value_enum)]
-    pub shell: clap_complete::Shell,
+    pub shell: Shell,
 }
 
 /// Stack management commands
-#[derive(Subcommand)]
-pub enum StackCommands {
+#[derive(Debug, Args)]
+pub struct StackCommands {
+    #[command(subcommand)]
+    pub command: StackSubcommand,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum StackSubcommand {
     /// Start the stack
     Up {
         /// Detach mode
@@ -175,8 +183,14 @@ pub enum StackCommands {
 }
 
 /// Project management commands
-#[derive(Subcommand)]
-pub enum ProjectCommands {
+#[derive(Debug, Args)]
+pub struct ProjectCommands {
+    #[command(subcommand)]
+    pub command: ProjectSubcommand,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum ProjectSubcommand {
     /// List projects
     List {
         /// Filter by visibility
@@ -276,83 +290,26 @@ pub enum ProjectCommands {
         #[arg(value_name = "PROJECT")]
         project: String,
 
-        /// Unarchive instead
+        /// Unarchive instead of archive
         #[arg(long)]
         unarchive: bool,
-    },
-
-    /// Manage project members
-    Members {
-        #[command(subcommand)]
-        command: MemberCommands,
-    },
-
-    /// Manage project settings
-    Settings {
-        /// Project ID or path
-        #[arg(value_name = "PROJECT")]
-        project: String,
-
-        #[command(subcommand)]
-        command: SettingsCommands,
-    },
-}
-
-#[derive(Subcommand)]
-pub enum MemberCommands {
-    List {
-        #[arg(value_name = "PROJECT")]
-        project: String,
-    },
-    Add {
-        #[arg(value_name = "PROJECT")]
-        project: String,
-        #[arg(value_name = "USER")]
-        user: String,
-        #[arg(value_name = "ROLE", value_enum)]
-        role: ProjectRole,
-    },
-    Remove {
-        #[arg(value_name = "PROJECT")]
-        project: String,
-        #[arg(value_name = "USER")]
-        user: String,
-    },
-    Update {
-        #[arg(value_name = "PROJECT")]
-        project: String,
-        #[arg(value_name = "USER")]
-        user: String,
-        #[arg(value_name = "ROLE", value_enum)]
-        role: ProjectRole,
-    },
-}
-
-#[derive(Subcommand)]
-pub enum SettingsCommands {
-    Show,
-    Update {
-        #[arg(long)]
-        merge_requests_enabled: Option<bool>,
-        #[arg(long)]
-        issues_enabled: Option<bool>,
-        #[arg(long)]
-        wiki_enabled: Option<bool>,
-        #[arg(long)]
-        builds_enabled: Option<bool>,
-        #[arg(long)]
-        default_branch: Option<String>,
     },
 }
 
 /// User management commands
-#[derive(Subcommand)]
-pub enum UserCommands {
+#[derive(Debug, Args)]
+pub struct UserCommands {
+    #[command(subcommand)]
+    pub command: UserSubcommand,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum UserSubcommand {
     /// List users
     List {
-        /// Filter by state
+        /// Filter by status
         #[arg(long, value_enum)]
-        state: Option<UserState>,
+        status: Option<UserStatusFilter>,
 
         /// Search query
         #[arg(short, long)]
@@ -380,7 +337,7 @@ pub enum UserCommands {
         #[arg(short, long)]
         name: Option<String>,
 
-        /// Password (if not provided, will prompt)
+        /// Password
         #[arg(long)]
         password: Option<String>,
 
@@ -407,13 +364,9 @@ pub enum UserCommands {
         #[arg(long)]
         password: Option<String>,
 
-        /// Admin status
+        /// Toggle admin status
         #[arg(long)]
         admin: Option<bool>,
-
-        /// Lock/unlock user
-        #[arg(long)]
-        lock: Option<bool>,
     },
 
     /// Delete user
@@ -427,71 +380,41 @@ pub enum UserCommands {
         force: bool,
     },
 
-    /// Manage SSH keys
-    SshKey {
-        #[command(subcommand)]
-        command: SshKeyCommands,
+    /// Impersonate user
+    Impersonate {
+        /// User ID or username
+        #[arg(value_name = "USER")]
+        user: String,
     },
+
+    /// Manage SSH keys
+    SshKey(SshKeyCommands),
 
     /// Manage GPG keys
-    GpgKey {
-        #[command(subcommand)]
-        command: GpgKeyCommands,
-    },
+    GpgKey(GpgKeyCommands),
 
-    /// Manage access tokens
-    Token {
-        #[command(subcommand)]
-        command: TokenCommands,
-    },
-
-    /// Manage 2FA
-    TwoFactor {
-        #[command(subcommand)]
-        command: TwoFactorCommands,
-    },
-}
-
-#[derive(Subcommand)]
-pub enum SshKeyCommands {
-    List { #[arg(value_name = "USER")] user: String },
-    Add { #[arg(value_name = "USER")] user: String, #[arg(value_name = "KEY")] key: String, #[arg(long)] title: Option<String> },
-    Remove { #[arg(value_name = "USER")] user: String, #[arg(value_name = "KEY_ID")] key_id: String },
-}
-
-#[derive(Subcommand)]
-pub enum GpgKeyCommands {
-    List { #[arg(value_name = "USER")] user: String },
-    Add { #[arg(value_name = "USER")] user: String, #[arg(value_name = "KEY")] key: String },
-    Remove { #[arg(value_name = "USER")] user: String, #[arg(value_name = "KEY_ID")] key_id: String },
-}
-
-#[derive(Subcommand)]
-pub enum TokenCommands {
-    List { #[arg(value_name = "USER")] user: String },
-    Create { #[arg(value_name = "USER")] user: String, #[arg(long)] name: String, #[arg(long)] scopes: Vec<String>, #[arg(long)] expires_days: Option<u32> },
-    Revoke { #[arg(value_name = "USER")] user: String, #[arg(value_name = "TOKEN_ID")] token_id: String },
-}
-
-#[derive(Subcommand)]
-pub enum TwoFactorCommands {
-    Enable { #[arg(value_name = "USER")] user: String },
-    Disable { #[arg(value_name = "USER")] user: String },
-    Status { #[arg(value_name = "USER")] user: String },
+    /// Manage personal access tokens
+    Token(TokenCommands),
 }
 
 /// Build management commands
-#[derive(Subcommand)]
-pub enum BuildCommands {
+#[derive(Debug, Args)]
+pub struct BuildCommands {
+    #[command(subcommand)]
+    pub command: BuildSubcommand,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum BuildSubcommand {
     /// List builds
     List {
-        /// Project ID or path
-        #[arg(value_name = "PROJECT")]
-        project: String,
+        /// Filter by project
+        #[arg(long)]
+        project: Option<String>,
 
         /// Filter by status
         #[arg(long, value_enum)]
-        status: Option<BuildStatus>,
+        status: Option<BuildStatusFilter>,
 
         /// Filter by branch
         #[arg(long)]
@@ -500,13 +423,9 @@ pub enum BuildCommands {
 
     /// Show build details
     Show {
-        /// Project ID or path
-        #[arg(value_name = "PROJECT")]
-        project: String,
-
-        /// Build number
-        #[arg(value_name = "BUILD")]
-        build: u32,
+        /// Build ID
+        #[arg(value_name = "BUILD_ID")]
+        id: String,
     },
 
     /// Trigger a new build
@@ -516,206 +435,215 @@ pub enum BuildCommands {
         project: String,
 
         /// Pipeline name
-        #[arg(long, default_value = "ci")]
+        #[arg(value_name = "PIPELINE")]
         pipeline: String,
 
-        /// Branch to build
-        #[arg(long, default_value = "main")]
-        branch: String,
+        /// Branch or tag
+        #[arg(value_name = "REF")]
+        ref_name: String,
 
-        /// Variables
-        #[arg(long)]
-        var: Vec<String>,
+        /// Build variables (KEY=VALUE)
+        #[arg(short, long, value_name = "KEY=VALUE")]
+        variables: Vec<String>,
     },
 
     /// Cancel a running build
     Cancel {
-        /// Project ID or path
-        #[arg(value_name = "PROJECT")]
-        project: String,
-
-        /// Build number
-        #[arg(value_name = "BUILD")]
-        build: u32,
+        /// Build ID
+        #[arg(value_name = "BUILD_ID")]
+        id: String,
     },
 
     /// Retry a failed build
     Retry {
-        /// Project ID or path
-        #[arg(value_name = "PROJECT")]
-        project: String,
-
-        /// Build number
-        #[arg(value_name = "BUILD")]
-        build: u32,
+        /// Build ID
+        #[arg(value_name = "BUILD_ID")]
+        id: String,
     },
 
     /// View build logs
     Logs {
-        /// Project ID or path
-        #[arg(value_name = "PROJECT")]
-        project: String,
-
-        /// Build number
-        #[arg(value_name = "BUILD")]
-        build: u32,
-
-        /// Job name (optional)
-        #[arg(long)]
-        job: Option<String>,
+        /// Build ID
+        #[arg(value_name = "BUILD_ID")]
+        id: String,
 
         /// Follow logs
         #[arg(short, long)]
         follow: bool,
+
+        /// Number of lines to show
+        #[arg(short, long, default_value = "100")]
+        tail: usize,
     },
 
-    /// Manage build artifacts
+    /// List artifacts
     Artifacts {
-        #[command(subcommand)]
-        command: ArtifactCommands,
+        /// Build ID
+        #[arg(value_name = "BUILD_ID")]
+        id: String,
     },
-}
-
-#[derive(Subcommand)]
-pub enum ArtifactCommands {
-    List { #[arg(value_name = "PROJECT")] project: String, #[arg(value_name = "BUILD")] build: u32 },
-    Download { #[arg(value_name = "PROJECT")] project: String, #[arg(value_name = "BUILD")] build: u32, #[arg(value_name = "ARTIFACT")] artifact: String, #[arg(long)] output: Option<PathBuf> },
-    Delete { #[arg(value_name = "PROJECT")] project: String, #[arg(value_name = "BUILD")] build: u32, #[arg(value_name = "ARTIFACT")] artifact: String },
 }
 
 /// Git operations commands
-#[derive(Subcommand)]
-pub enum GitCommands {
-    /// Create a new repository
-    Init {
+#[derive(Debug, Args)]
+pub struct GitCommands {
+    #[command(subcommand)]
+    pub command: GitSubcommand,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum GitSubcommand {
+    /// List branches
+    Branch {
         /// Project ID or path
         #[arg(value_name = "PROJECT")]
         project: String,
 
-        /// Initial branch
-        #[arg(long, default_value = "main")]
-        branch: String,
+        /// Show all branches (including remote)
+        #[arg(short, long)]
+        all: bool,
     },
 
-    /// Clone a repository
-    Clone {
-        /// Repository URL
-        #[arg(value_name = "URL")]
-        url: String,
-
-        /// Target directory
-        #[arg(value_name = "DIR")]
-        dir: Option<PathBuf>,
-    },
-
-    /// Garbage collect
-    Gc {
-        /// Project ID or path
-        #[arg(value_name = "PROJECT")]
-        project: String,
-
-        /// Aggressive GC
-        #[arg(long)]
-        aggressive: bool,
-    },
-
-    /// Verify repository integrity
-    Fsck {
+    /// List tags
+    Tag {
         /// Project ID or path
         #[arg(value_name = "PROJECT")]
         project: String,
     },
 
-    /// List refs
-    Refs {
+    /// Show commit details
+    Commit {
         /// Project ID or path
         #[arg(value_name = "PROJECT")]
         project: String,
 
-        /// Filter pattern
-        #[arg(long)]
-        pattern: Option<String>,
+        /// Commit SHA
+        #[arg(value_name = "SHA")]
+        sha: String,
+    },
+
+    /// List files in tree
+    Ls {
+        /// Project ID or path
+        #[arg(value_name = "PROJECT")]
+        project: String,
+
+        /// Git ref (branch, tag, commit)
+        #[arg(value_name = "REF")]
+        ref_name: String,
+
+        /// Path within repository
+        #[arg(value_name = "PATH")]
+        path: Option<String>,
+    },
+
+    /// Show file content
+    Cat {
+        /// Project ID or path
+        #[arg(value_name = "PROJECT")]
+        project: String,
+
+        /// Git ref (branch, tag, commit)
+        #[arg(value_name = "REF")]
+        ref_name: String,
+
+        /// File path
+        #[arg(value_name = "PATH")]
+        path: String,
+    },
+
+    /// Show commit history
+    Log {
+        /// Project ID or path
+        #[arg(value_name = "PROJECT")]
+        project: String,
+
+        /// Git ref (branch, tag, commit)
+        #[arg(value_name = "REF")]
+        ref_name: Option<String>,
+
+        /// Number of commits to show
+        #[arg(short, long, default_value = "20")]
+        limit: usize,
+
+        /// File path to filter
+        #[arg(value_name = "PATH")]
+        path: Option<String>,
+    },
+
+    /// Show diff
+    Diff {
+        /// Project ID or path
+        #[arg(value_name = "PROJECT")]
+        project: String,
+
+        /// Base ref
+        #[arg(value_name = "BASE")]
+        base: String,
+
+        /// Head ref
+        #[arg(value_name = "HEAD")]
+        head: String,
+
+        /// File path to filter
+        #[arg(value_name = "PATH")]
+        path: Option<String>,
     },
 
     /// Manage hooks
-    Hooks {
-        #[command(subcommand)]
-        command: HookCommands,
-    },
-
-    /// Manage LFS
-    Lfs {
-        #[command(subcommand)]
-        command: LfsCommands,
-    },
+    Hook(GitHookCommands),
 }
 
-#[derive(Subcommand)]
-pub enum HookCommands {
-    List { #[arg(value_name = "PROJECT")] project: String },
-    Add { #[arg(value_name = "PROJECT")] project: String, #[arg(value_name = "NAME")] name: String, #[arg(value_name = "SCRIPT")] script: String },
-    Remove { #[arg(value_name = "PROJECT")] project: String, #[arg(value_name = "NAME")] name: String },
-    Enable { #[arg(value_name = "PROJECT")] project: String, #[arg(value_name = "NAME")] name: String },
-    Disable { #[arg(value_name = "PROJECT")] project: String, #[arg(value_name = "NAME")] name: String },
+/// Database operations commands
+#[derive(Debug, Args)]
+pub struct DbCommands {
+    #[command(subcommand)]
+    pub command: DbSubcommand,
 }
 
-#[derive(Subcommand)]
-pub enum LfsCommands {
-    List { #[arg(value_name = "PROJECT")] project: String },
-    Lock { #[arg(value_name = "PROJECT")] project: String, #[arg(value_name = "PATH")] path: String },
-    Unlock { #[arg(value_name = "PROJECT")] project: String, #[arg(value_name = "PATH")] path: String, #[arg(long)] force: bool },
-    Prune { #[arg(value_name = "PROJECT")] project: String, #[arg(long)] older_than: Option<String> },
-}
-
-/// Database commands
-#[derive(Subcommand)]
-pub enum DbCommands {
+#[derive(Debug, Subcommand)]
+pub enum DbSubcommand {
     /// Run migrations
     Migrate {
-        /// Target version (default: latest)
-        #[arg(long)]
-        version: Option<u32>,
-
-        /// Dry run
-        #[arg(long)]
-        dry_run: bool,
+        /// Target migration version (default: latest)
+        #[arg(value_name = "VERSION")]
+        version: Option<String>,
     },
 
-    /// Create backup
+    /// Create migration
+    CreateMigration {
+        /// Migration name
+        #[arg(value_name = "NAME")]
+        name: String,
+    },
+
+    /// Show migration status
+    Status,
+
+    /// Rollback migration
+    Rollback {
+        /// Number of steps to rollback
+        #[arg(value_name = "STEPS", default_value = "1")]
+        steps: u32,
+    },
+
+    /// Backup database
     Backup {
-        /// Output file
-        #[arg(short, long)]
-        output: Option<PathBuf>,
-
-        /// Compress
-        #[arg(long)]
-        compress: bool,
+        /// Output file path
+        #[arg(value_name = "PATH", default_value = "onedev_backup.sql")]
+        path: PathBuf,
     },
 
-    /// Restore from backup
+    /// Restore database
     Restore {
-        /// Backup file
-        #[arg(value_name = "FILE")]
-        file: PathBuf,
+        /// Input file path
+        #[arg(value_name = "PATH")]
+        path: PathBuf,
 
-        /// Drop existing data
+        /// Drop existing tables first
         #[arg(long)]
         drop: bool,
     },
-
-    /// Run SQL query
-    Query {
-        /// SQL query
-        #[arg(value_name = "SQL")]
-        sql: String,
-
-        /// Output format
-        #[arg(short, long, default_value = "table")]
-        format: OutputFormat,
-    },
-
-    /// Show database stats
-    Stats,
 
     /// Vacuum database
     Vacuum {
@@ -724,68 +652,81 @@ pub enum DbCommands {
         full: bool,
     },
 
-    /// Check database integrity
-    Check,
+    /// Show database statistics
+    Stats,
 }
 
-/// Configuration commands
-#[derive(Subcommand)]
-pub enum ConfigCommands {
-    /// Show current config
+/// Configuration management commands
+#[derive(Debug, Args)]
+pub struct ConfigCommands {
+    #[command(subcommand)]
+    pub command: ConfigSubcommand,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum ConfigSubcommand {
+    /// Show current configuration
     Show {
-        /// Show sensitive values
+        /// Show all (including sensitive)
         #[arg(long)]
-        show_secrets: bool,
+        all: bool,
     },
 
-    /// Set config value
+    /// Get a configuration value
+    Get {
+        /// Configuration key
+        #[arg(value_name = "KEY")]
+        key: String,
+    },
+
+    /// Set a configuration value
     Set {
-        /// Key (dot notation)
+        /// Configuration key
         #[arg(value_name = "KEY")]
         key: String,
 
-        /// Value
+        /// Configuration value
         #[arg(value_name = "VALUE")]
         value: String,
     },
 
-    /// Get config value
-    Get {
-        /// Key (dot notation)
-        #[arg(value_name = "KEY")]
-        key: String,
+    /// Reset configuration to defaults
+    Reset {
+        /// Confirm reset
+        #[arg(long)]
+        confirm: bool,
     },
 
-    /// Edit config in $EDITOR
-    Edit,
-
-    /// Validate config
+    /// Validate configuration
     Validate,
-
-    /// Generate example config
-    GenerateExample,
 }
 
-/// Backup commands
-#[derive(Subcommand)]
-pub enum BackupCommands {
-    /// Create full backup
+/// Backup and restore commands
+#[derive(Debug, Args)]
+pub struct BackupCommands {
+    #[command(subcommand)]
+    pub command: BackupSubcommand,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum BackupSubcommand {
+    /// Create a full backup
     Create {
         /// Output directory
-        #[arg(short, long)]
-        output: Option<PathBuf>,
+        #[arg(value_name = "DIR", default_value = "./backups")]
+        dir: PathBuf,
 
         /// Include repositories
         #[arg(long)]
-        repos: bool,
+        include_repos: bool,
 
         /// Include artifacts
         #[arg(long)]
-        artifacts: bool,
+        include_artifacts: bool,
 
-        /// Include LFS
+        /// Include LFS objects
         #[arg(long)]
-        lfs: bool,
+        include_lfs: bool,
     },
 
     /// Restore from backup
@@ -796,25 +737,25 @@ pub enum BackupCommands {
 
         /// Restore repositories
         #[arg(long)]
-        repos: bool,
+        include_repos: bool,
 
         /// Restore artifacts
         #[arg(long)]
-        artifacts: bool,
+        include_artifacts: bool,
 
-        /// Restore LFS
+        /// Restore LFS objects
         #[arg(long)]
-        lfs: bool,
+        include_lfs: bool,
     },
 
     /// List backups
     List {
         /// Backup directory
-        #[arg(value_name = "DIR")]
+        #[arg(value_name = "DIR", default_value = "./backups")]
         dir: PathBuf,
     },
 
-    /// Verify backup
+    /// Verify backup integrity
     Verify {
         /// Backup directory
         #[arg(value_name = "DIR")]
@@ -822,89 +763,85 @@ pub enum BackupCommands {
     },
 }
 
-/// Admin commands
-#[derive(Subcommand)]
-pub enum AdminCommands {
-    /// System health check
-    Health,
+/// System administration commands
+#[derive(Debug, Args)]
+pub struct AdminCommands {
+    #[command(subcommand)]
+    pub command: AdminSubcommand,
+}
 
-    /// System info
+#[derive(Debug, Subcommand)]
+pub enum AdminSubcommand {
+    /// Show system information
     Info,
 
-    /// View audit logs
-    AuditLog {
-        /// Number of entries
-        #[arg(short, long, default_value = "100")]
-        limit: usize,
+    /// Show system health
+    Health,
 
-        /// Filter by user
-        #[arg(long)]
-        user: Option<String>,
-
-        /// Filter by action
-        #[arg(long)]
-        action: Option<String>,
-    },
-
-    /// Manage system settings
-    Settings {
-        #[command(subcommand)]
-        command: SystemSettingsCommands,
-    },
-
-    /// Manage feature flags
-    FeatureFlags {
-        #[command(subcommand)]
-        command: FeatureFlagCommands,
-    },
-
-    /// View metrics
+    /// Show system metrics
     Metrics {
-        /// Metric name
-        #[arg(value_name = "METRIC")]
-        metric: Option<String>,
+
+        /// Output format
+        #[arg(short, long, value_enum, default_value = "table")]
+        format: OutputFormat,
     },
 
-    /// Trigger cleanup
-    Cleanup {
-        /// Run all cleanup tasks
-        #[arg(long)]
-        all: bool,
-    },
+    /// Manage users
+    User(UserAdminCommands),
 
-    /// Reindex search
+    /// Manage projects
+    Project(ProjectAdminCommands),
+
+    /// Manage groups
+    Group(GroupAdminCommands),
+
+    /// Rebuild search index
     Reindex {
-        /// Full reindex
+
+        /// Project ID (default: all)
+        #[arg(value_name = "PROJECT_ID")]
+        project: Option<String>,
+    },
+
+    /// Cleanup old data
+    Cleanup {
+
+        /// Days to keep (default: 30)
+        #[arg(long, default_value = "30")]
+        days: u32,
+
+        /// Dry run
         #[arg(long)]
-        full: bool,
+        dry_run: bool,
+    },
+
+    /// Maintenance mode
+    Maintenance {
+
+        /// Enable or disable
+        #[arg(value_enum)]
+        action: MaintenanceAction,
     },
 }
 
-#[derive(Subcommand)]
-pub enum SystemSettingsCommands {
-    Show,
-    Set { #[arg(value_name = "KEY")] key: String, #[arg(value_name = "VALUE")] value: String },
+/// Development tools commands
+#[derive(Debug, Args)]
+pub struct DevCommands {
+    #[command(subcommand)]
+    pub command: DevSubcommand,
 }
 
-#[derive(Subcommand)]
-pub enum FeatureFlagCommands {
-    List,
-    Enable { #[arg(value_name = "FLAG")] flag: String },
-    Disable { #[arg(value_name = "FLAG")] flag: String },
-}
+#[derive(Debug, Subcommand)]
+pub enum DevSubcommand {
+    /// Generate code
+    Generate {
+        /// Generator to use
+        #[arg(value_enum)]
+        generator: GeneratorType,
 
-/// Development commands
-#[derive(Subcommand)]
-pub enum DevCommands {
-    /// Start development server
-    Serve {
-        /// Port
-        #[arg(short, long, default_value = "46315")]
-        port: u16,
-
-        /// Auto-reload
-        #[arg(long)]
-        reload: bool,
+        /// Output directory
+        #[arg(short, long, default_value = ".")]
+        output: PathBuf,
     },
 
     /// Run tests
@@ -913,97 +850,476 @@ pub enum DevCommands {
         #[arg(value_name = "FILTER")]
         filter: Option<String>,
 
-        /// Run integration tests
+        /// Run with coverage
         #[arg(long)]
-        integration: bool,
+        coverage: bool,
     },
 
-    /// Generate code
-    Generate {
-        #[command(subcommand)]
-        command: GenerateCommands,
+    /// Lint code
+    Lint {
+
+        /// Fix automatically
+        #[arg(long)]
+        fix: bool,
     },
 
-    /// Database shell
-    DbShell,
+    /// Format code
+    Format {
 
-    /// REPL
-    Repl,
+        /// Check only (don't write)
+        #[arg(long)]
+        check: bool,
+    },
 
-    /// Benchmark
-    Bench {
-        /// Benchmark name
+    /// Start development server
+    Serve {
+
+        /// Port to listen on
+        #[arg(short, long, default_value = "46315")]
+        port: u16,
+
+        /// Open browser
+        #[arg(long)]
+        open: bool,
+    },
+}
+
+/// User admin commands
+#[derive(Debug, Args)]
+pub struct UserAdminCommands {
+    #[command(subcommand)]
+    pub command: UserAdminSubcommand,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum UserAdminSubcommand {
+    /// List all users
+    List {
+        /// Include inactive
+        #[arg(long)]
+        inactive: bool,
+    },
+
+    /// Create admin user
+    CreateAdmin {
+        /// Username
+        #[arg(value_name = "USERNAME")]
+        username: String,
+
+        /// Email
+        #[arg(value_name = "EMAIL")]
+        email: String,
+
+        /// Password
+        #[arg(value_name = "PASSWORD")]
+        password: String,
+    },
+
+    /// Reset user password
+    ResetPassword {
+        /// User ID or username
+        #[arg(value_name = "USER")]
+        user: String,
+
+        /// New password
+        #[arg(value_name = "PASSWORD")]
+        password: String,
+    },
+
+    /// Toggle user active status
+    ToggleActive {
+        /// User ID or username
+        #[arg(value_name = "USER")]
+        user: String,
+    },
+
+    /// Manage user roles
+    Role {
+        /// User ID or username
+        #[arg(value_name = "USER")]
+        user: String,
+
+        /// Role to add/remove
+        #[arg(value_name = "ROLE")]
+        role: String,
+
+        /// Add or remove
+        #[arg(value_enum)]
+        action: RoleAction,
+    },
+}
+
+/// Project admin commands
+#[derive(Debug, Args)]
+pub struct ProjectAdminCommands {
+    #[command(subcommand)]
+    pub command: ProjectAdminSubcommand,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum ProjectAdminSubcommand {
+    /// List all projects
+    List {
+        /// Include archived
+        #[arg(long)]
+        archived: bool,
+    },
+
+    /// Delete project (force)
+    Delete {
+        /// Project ID or path
+        #[arg(value_name = "PROJECT")]
+        project: String,
+    },
+
+    /// Transfer ownership
+    Transfer {
+        /// Project ID or path
+        #[arg(value_name = "PROJECT")]
+        project: String,
+
+        /// New owner
+        #[arg(value_name = "OWNER")]
+        owner: String,
+    },
+
+    /// Archive/unarchive
+    Archive {
+        /// Project ID or path
+        #[arg(value_name = "PROJECT")]
+        project: String,
+
+        /// Unarchive instead of archive
+        #[arg(long)]
+        unarchive: bool,
+    },
+}
+
+/// Group admin commands
+#[derive(Debug, Args)]
+pub struct GroupAdminCommands {
+    #[command(subcommand)]
+    pub command: GroupAdminSubcommand,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum GroupAdminSubcommand {
+    /// List all groups
+    List,
+
+    /// Create group
+    Create {
+        /// Group name
+        #[arg(value_name = "NAME")]
+        name: String,
+
+        /// Parent group
+        #[arg(long)]
+        parent: Option<String>,
+    },
+
+    /// Delete group
+    Delete {
+        /// Group ID or name
+        #[arg(value_name = "GROUP")]
+        group: String,
+    },
+
+    /// Manage members
+    Member {
+        /// Group ID or name
+        #[arg(value_name = "GROUP")]
+        group: String,
+
+        /// User to add/remove
+        #[arg(value_name = "USER")]
+        user: String,
+
+        /// Add or remove
+        #[arg(value_enum)]
+        action: MemberAction,
+    },
+}
+
+/// Git hook commands
+#[derive(Debug, Args)]
+pub struct GitHookCommands {
+    #[command(subcommand)]
+    pub command: GitHookSubcommand,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum GitHookSubcommand {
+    /// List hooks
+    List {
+        /// Project ID or path
+        #[arg(value_name = "PROJECT")]
+        project: String,
+    },
+
+    /// Add hook
+    Add {
+        /// Project ID or path
+        #[arg(value_name = "PROJECT")]
+        project: String,
+
+        /// Hook name
+        #[arg(value_name = "NAME")]
+        name: String,
+
+        /// Hook script
+        #[arg(value_name = "SCRIPT")]
+        script: String,
+    },
+
+    /// Remove hook
+    Remove {
+        /// Project ID or path
+        #[arg(value_name = "PROJECT")]
+        project: String,
+
+        /// Hook name
         #[arg(value_name = "NAME")]
         name: String,
     },
+
+    /// Enable/disable hook
+    Toggle {
+        /// Project ID or path
+        #[arg(value_name = "PROJECT")]
+        project: String,
+
+        /// Hook name
+        #[arg(value_name = "NAME")]
+        name: String,
+
+        /// Enable or disable
+        #[arg(value_enum)]
+        action: ToggleAction,
+    },
 }
 
-#[derive(Subcommand)]
-pub enum GenerateCommands {
-    /// Generate model
-    Model { #[arg(value_name = "NAME")] name: String, #[arg(value_name = "FIELDS")] fields: Vec<String> },
-    /// Generate handler
-    Handler { #[arg(value_name = "NAME")] name: String },
-    /// Generate service
-    Service { #[arg(value_name = "NAME")] name: String },
-    /// Generate migration
-    Migration { #[arg(value_name = "NAME")] name: String },
+/// SSH key commands
+#[derive(Debug, Args)]
+pub struct SshKeyCommands {
+    #[command(subcommand)]
+    pub command: SshKeySubcommand,
 }
 
-/// Visibility filter
+#[derive(Debug, Subcommand)]
+pub enum SshKeySubcommand {
+    /// List SSH keys
+    List {
+        /// User ID or username
+        #[arg(value_name = "USER")]
+        user: String,
+    },
+
+    /// Add SSH key
+    Add {
+        /// User ID or username
+        #[arg(value_name = "USER")]
+        user: String,
+
+        /// Key title
+        #[arg(value_name = "TITLE")]
+        title: String,
+
+        /// Public key file or key content
+        #[arg(value_name = "KEY")]
+        key: String,
+    },
+
+    /// Remove SSH key
+    Remove {
+        /// User ID or username
+        #[arg(value_name = "USER")]
+        user: String,
+
+        /// Key ID
+        #[arg(value_name = "KEY_ID")]
+        key_id: String,
+    },
+}
+
+/// GPG key commands
+#[derive(Debug, Args)]
+pub struct GpgKeyCommands {
+    #[command(subcommand)]
+    pub command: GpgKeySubcommand,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum GpgKeySubcommand {
+    /// List GPG keys
+    List {
+        /// User ID or username
+        #[arg(value_name = "USER")]
+        user: String,
+    },
+
+    /// Add GPG key
+    Add {
+        /// User ID or username
+        #[arg(value_name = "USER")]
+        user: String,
+
+        /// Key ID
+        #[arg(value_name = "KEY_ID")]
+        key_id: String,
+    },
+
+    /// Remove GPG key
+    Remove {
+        /// User ID or username
+        #[arg(value_name = "USER")]
+        user: String,
+
+        /// Key ID
+        #[arg(value_name = "KEY_ID")]
+        key_id: String,
+    },
+}
+
+/// Token commands
+#[derive(Debug, Args)]
+pub struct TokenCommands {
+    #[command(subcommand)]
+    pub command: TokenSubcommand,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum TokenSubcommand {
+    /// List tokens
+    List {
+        /// User ID or username
+        #[arg(value_name = "USER")]
+        user: String,
+    },
+
+    /// Create token
+    Create {
+        /// User ID or username
+        #[arg(value_name = "USER")]
+        user: String,
+
+        /// Token name
+        #[arg(value_name = "NAME")]
+        name: String,
+
+        /// Scopes
+        #[arg(value_name = "SCOPE")]
+        scopes: Vec<String>,
+
+        /// Expiry in days
+        #[arg(long, default_value = "30")]
+        expiry: u32,
+    },
+
+    /// Revoke token
+    Revoke {
+        /// User ID or username
+        #[arg(value_name = "USER")]
+        user: String,
+
+        /// Token ID
+        #[arg(value_name = "TOKEN_ID")]
+        token_id: String,
+    },
+}
+
+/// Supporting types
 #[derive(Debug, Clone, clap::ValueEnum)]
 pub enum VisibilityFilter {
-    Public,
     Private,
     Internal,
+    Public,
 }
 
-/// Visibility
 #[derive(Debug, Clone, clap::ValueEnum)]
 pub enum Visibility {
-    Public,
     Private,
     Internal,
+    Public,
 }
 
-/// User state
 #[derive(Debug, Clone, clap::ValueEnum)]
-pub enum UserState {
+pub enum UserStatusFilter {
     Active,
-    Locked,
-    Pending,
-    Banned,
+    Inactive,
+    Blocked,
 }
 
-/// Project role
 #[derive(Debug, Clone, clap::ValueEnum)]
-pub enum ProjectRole {
-    Guest,
-    Reporter,
-    Developer,
-    Maintainer,
-    Owner,
-}
-
-/// Build status
-#[derive(Debug, Clone, clap::ValueEnum)]
-pub enum BuildStatus {
+pub enum BuildStatusFilter {
     Pending,
     Running,
     Success,
     Failed,
     Cancelled,
-    Skipped,
 }
 
-/// Run the CLI
+#[derive(Debug, Clone, clap::ValueEnum)]
+pub enum MaintenanceAction {
+    Enable,
+    Disable,
+}
+
+#[derive(Debug, Clone, clap::ValueEnum, Display)]
+pub enum RoleAction {
+    Add,
+    Remove,
+}
+
+#[derive(Debug, Clone, clap::ValueEnum, Display)]
+pub enum MemberAction {
+    Add,
+    Remove,
+}
+
+#[derive(Debug, Clone, clap::ValueEnum, Display)]
+pub enum ToggleAction {
+    Enable,
+    Disable,
+}
+
+#[derive(Debug, Clone, clap::ValueEnum)]
+pub enum GeneratorType {
+    Project,
+    Controller,
+    Service,
+    Model,
+    Migration,
+}
+
+#[derive(Debug, Clone)]
+pub struct CliConfig {
+    pub database_url: Option<String>,
+    pub log_level: Option<String>,
+}
+
+impl Default for CliConfig {
+    fn default() -> Self {
+        Self {
+            database_url: Some("postgres://onedev:onedev@localhost:5432/onedev".to_string()),
+            log_level: Some("info".to_string()),
+        }
+    }
+}
+
+/// Load configuration
+async fn load_config(path: Option<&std::path::Path>) -> anyhow::Result<CliConfig> {
+    Ok(CliConfig::default())
+}
+
+/// Run CLI
 pub async fn run_cli(cli: Cli) -> anyhow::Result<()> {
     // Initialize config
     let config = load_config(cli.config.as_deref()).await?;
 
     // Set up logging
     if cli.verbose {
-        std::env::set_var("RUST_LOG", "debug");
+        unsafe { std::env::set_var("RUST_LOG", "debug"); }
     }
 
     match cli.command {
@@ -1021,108 +1337,391 @@ pub async fn run_cli(cli: Cli) -> anyhow::Result<()> {
     }
 }
 
-async fn load_config(path: Option<&std::path::Path>) -> anyhow::Result<CliConfig> {
-    // Load config from file or environment
-    Ok(CliConfig::default())
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct CliConfig {
-    pub api_url: String,
-    pub api_token: Option<String>,
-    pub compose_file: PathBuf,
-    pub data_dir: PathBuf,
-}
-
-async fn handle_stack(cmd: StackCommands, config: &CliConfig) -> anyhow::Result<()> {
-    match cmd {
-        StackCommands::Up { detach, build, services } => {
-            println!("Starting stack...");
-            // Implementation would use docker-compose
-            Ok(())
+/// Handler functions
+async fn handle_stack(cmd: StackCommands, _config: &CliConfig) -> anyhow::Result<()> {
+    match cmd.command {
+        StackSubcommand::Up { detach, build, services } => {
+            println!("Starting stack (detach={}, build={}, services={:?})", detach, build, services);
         }
-        StackCommands::Down { volumes, rmi, services } => {
-            println!("Stopping stack...");
-            Ok(())
+        StackSubcommand::Down { volumes, rmi, services } => {
+            println!("Stopping stack (volumes={}, rmi={}, services={:?})", volumes, rmi, services);
         }
-        StackCommands::Restart { services } => {
-            println!("Restarting stack...");
-            Ok(())
+        StackSubcommand::Restart { services } => {
+            println!("Restarting services: {:?}", services);
         }
-        StackCommands::Status { all } => {
-            println!("Stack status:");
-            Ok(())
+        StackSubcommand::Status { all } => {
+            println!("Stack status (all={})", all);
         }
-        StackCommands::Logs { follow, tail, services } => {
-            println!("Showing logs...");
-            Ok(())
+        StackSubcommand::Logs { follow, tail, services } => {
+            println!("Viewing logs (follow={}, tail={}, services={:?})", follow, tail, services);
         }
-        StackCommands::Exec { service, command } => {
+        StackSubcommand::Exec { service, command } => {
             println!("Executing in {}: {:?}", service, command);
-            Ok(())
         }
-        StackCommands::Ps { all } => {
-            println!("Processes:");
-            Ok(())
+        StackSubcommand::Ps { all } => {
+            println!("Processes (all={})", all);
         }
-        StackCommands::Pull { services } => {
-            println!("Pulling images...");
-            Ok(())
+        StackSubcommand::Pull { services } => {
+            println!("Pulling images for: {:?}", services);
         }
-        StackCommands::Build { services, no_cache } => {
-            println!("Building images...");
-            Ok(())
+        StackSubcommand::Build { services, no_cache } => {
+            println!("Building images (services={:?}, no_cache={})", services, no_cache);
         }
     }
-}
-
-async fn handle_project(cmd: ProjectCommands, config: &CliConfig) -> anyhow::Result<()> {
-    println!("Project command: {:?}", cmd);
     Ok(())
 }
 
-async fn handle_user(cmd: UserCommands, config: &CliConfig) -> anyhow::Result<()> {
-    println!("User command: {:?}", cmd);
+async fn handle_project(cmd: ProjectCommands, _config: &CliConfig) -> anyhow::Result<()> {
+    match cmd.command {
+        ProjectSubcommand::List { visibility, search } => {
+            println!("Listing projects (visibility={:?}, search={:?})", visibility, search);
+        }
+        ProjectSubcommand::Show { project } => {
+            println!("Showing project: {}", project);
+        }
+        ProjectSubcommand::Create { name, description, visibility, readme, template } => {
+            println!("Creating project: {} (visibility={:?}, readme={}, template={:?})", name, visibility, readme, template);
+        }
+        ProjectSubcommand::Update { project, name, description, visibility } => {
+            println!("Updating project: {} (name={:?}, visibility={:?})", project, name, visibility);
+        }
+        ProjectSubcommand::Delete { project, force } => {
+            println!("Deleting project: {} (force={})", project, force);
+        }
+        ProjectSubcommand::Fork { project, namespace } => {
+            println!("Forking project: {} (namespace={:?})", project, namespace);
+        }
+        ProjectSubcommand::Transfer { project, target } => {
+            println!("Transferring project: {} to {}", project, target);
+        }
+        ProjectSubcommand::Archive { project, unarchive } => {
+            println!("{} project: {}", if unarchive { "Unarchiving" } else { "Archiving" }, project);
+        }
+    }
     Ok(())
 }
 
-async fn handle_build(cmd: BuildCommands, config: &CliConfig) -> anyhow::Result<()> {
-    println!("Build command: {:?}", cmd);
+async fn handle_user(cmd: UserCommands, _config: &CliConfig) -> anyhow::Result<()> {
+    match cmd.command {
+        UserSubcommand::List { status, search } => {
+            println!("Listing users (status={:?}, search={:?})", status, search);
+        }
+        UserSubcommand::Show { user } => {
+            println!("Showing user: {}", user);
+        }
+        UserSubcommand::Create { username, email, name, password, admin } => {
+            println!("Creating user: {} (email={}, admin={})", username, email, admin);
+        }
+        UserSubcommand::Update { user, email, name, password, admin } => {
+            println!("Updating user: {} (email={:?}, admin={:?})", user, email, admin);
+        }
+        UserSubcommand::Delete { user, force } => {
+            println!("Deleting user: {} (force={})", user, force);
+        }
+        UserSubcommand::Impersonate { user } => {
+            println!("Impersonating user: {}", user);
+        }
+        UserSubcommand::SshKey(cmd) => handle_ssh_key(cmd).await?,
+        UserSubcommand::GpgKey(cmd) => handle_gpg_key(cmd).await?,
+        UserSubcommand::Token(cmd) => handle_token(cmd).await?,
+    }
     Ok(())
 }
 
-async fn handle_git(cmd: GitCommands, config: &CliConfig) -> anyhow::Result<()> {
-    println!("Git command: {:?}", cmd);
+async fn handle_ssh_key(cmd: SshKeyCommands) -> anyhow::Result<()> {
+    match cmd.command {
+        SshKeySubcommand::List { user } => {
+            println!("Listing SSH keys for user: {}", user);
+        }
+        SshKeySubcommand::Add { user, title, key } => {
+            println!("Adding SSH key for user: {} (title={})", user, title);
+        }
+        SshKeySubcommand::Remove { user, key_id } => {
+            println!("Removing SSH key {} for user: {}", key_id, user);
+        }
+    }
     Ok(())
 }
 
-async fn handle_db(cmd: DbCommands, config: &CliConfig) -> anyhow::Result<()> {
-    println!("Database command: {:?}", cmd);
+async fn handle_gpg_key(cmd: GpgKeyCommands) -> anyhow::Result<()> {
+    match cmd.command {
+        GpgKeySubcommand::List { user } => {
+            println!("Listing GPG keys for user: {}", user);
+        }
+        GpgKeySubcommand::Add { user, key_id } => {
+            println!("Adding GPG key for user: {} (key_id={})", user, key_id);
+        }
+        GpgKeySubcommand::Remove { user, key_id } => {
+            println!("Removing GPG key {} for user: {}", key_id, user);
+        }
+    }
     Ok(())
 }
 
-async fn handle_config(cmd: ConfigCommands, config: &CliConfig) -> anyhow::Result<()> {
-    println!("Config command: {:?}", cmd);
+async fn handle_token(cmd: TokenCommands) -> anyhow::Result<()> {
+    match cmd.command {
+        TokenSubcommand::List { user } => {
+            println!("Listing tokens for user: {}", user);
+        }
+        TokenSubcommand::Create { user, name, scopes, expiry } => {
+            println!("Creating token for user: {} (name={}, scopes={:?}, expiry={})", user, name, scopes, expiry);
+        }
+        TokenSubcommand::Revoke { user, token_id } => {
+            println!("Revoking token {} for user: {}", token_id, user);
+        }
+    }
     Ok(())
 }
 
-async fn handle_backup(cmd: BackupCommands, config: &CliConfig) -> anyhow::Result<()> {
-    println!("Backup command: {:?}", cmd);
+async fn handle_build(cmd: BuildCommands, _config: &CliConfig) -> anyhow::Result<()> {
+    match cmd.command {
+        BuildSubcommand::List { project, status, branch } => {
+            println!("Listing builds (project={:?}, status={:?}, branch={:?})", project, status, branch);
+        }
+        BuildSubcommand::Show { id } => {
+            println!("Showing build: {}", id);
+        }
+        BuildSubcommand::Trigger { project, pipeline, ref_name, variables } => {
+            println!("Triggering build: project={}, pipeline={}, ref={}, variables={:?}", project, pipeline, ref_name, variables);
+        }
+        BuildSubcommand::Cancel { id } => {
+            println!("Cancelling build: {}", id);
+        }
+        BuildSubcommand::Retry { id } => {
+            println!("Retrying build: {}", id);
+        }
+        BuildSubcommand::Logs { id, follow, tail } => {
+            println!("Viewing logs for build: {} (follow={}, tail={})", id, follow, tail);
+        }
+        BuildSubcommand::Artifacts { id } => {
+            println!("Listing artifacts for build: {}", id);
+        }
+    }
     Ok(())
 }
 
-async fn handle_admin(cmd: AdminCommands, config: &CliConfig) -> anyhow::Result<()> {
-    println!("Admin command: {:?}", cmd);
+async fn handle_git(cmd: GitCommands, _config: &CliConfig) -> anyhow::Result<()> {
+    match cmd.command {
+        GitSubcommand::Branch { project, all } => {
+            println!("Listing branches for project: {} (all={})", project, all);
+        }
+        GitSubcommand::Tag { project } => {
+            println!("Listing tags for project: {}", project);
+        }
+        GitSubcommand::Commit { project, sha } => {
+            println!("Showing commit {} for project: {}", sha, project);
+        }
+        GitSubcommand::Ls { project, ref_name, path } => {
+            println!("Listing files for project: {} at {} (path={:?})", project, ref_name, path);
+        }
+        GitSubcommand::Cat { project, ref_name, path } => {
+            println!("Showing file {} for project: {} at {}", path, project, ref_name);
+        }
+        GitSubcommand::Log { project, ref_name, limit, path } => {
+            println!("Showing log for project: {} (ref={:?}, limit={}, path={:?})", project, ref_name, limit, path);
+        }
+        GitSubcommand::Diff { project, base, head, path } => {
+            println!("Showing diff for project: {} ({}..{}) (path={:?})", project, base, head, path);
+        }
+        GitSubcommand::Hook(cmd) => handle_git_hook(cmd).await?,
+    }
     Ok(())
 }
 
-async fn handle_dev(cmd: DevCommands, config: &CliConfig) -> anyhow::Result<()> {
-    println!("Dev command: {:?}", cmd);
+async fn handle_git_hook(cmd: GitHookCommands) -> anyhow::Result<()> {
+    match cmd.command {
+        GitHookSubcommand::List { project } => {
+            println!("Listing hooks for project: {}", project);
+        }
+        GitHookSubcommand::Add { project, name, script } => {
+            println!("Adding hook {} for project: {}", name, project);
+        }
+        GitHookSubcommand::Remove { project, name } => {
+            println!("Removing hook {} for project: {}", name, project);
+        }
+        GitHookSubcommand::Toggle { project, name, action } => {
+            println!("{} hook {} for project: {}", action, name, project);
+        }
+    }
+    Ok(())
+}
+
+async fn handle_db(cmd: DbCommands, _config: &CliConfig) -> anyhow::Result<()> {
+    match cmd.command {
+        DbSubcommand::Migrate { version } => {
+            println!("Running migrations (version={:?})", version);
+        }
+        DbSubcommand::CreateMigration { name } => {
+            println!("Creating migration: {}", name);
+        }
+        DbSubcommand::Status => {
+            println!("Migration status");
+        }
+        DbSubcommand::Rollback { steps } => {
+            println!("Rolling back {} steps", steps);
+        }
+        DbSubcommand::Backup { path } => {
+            println!("Backing up database to: {:?}", path);
+        }
+        DbSubcommand::Restore { path, drop } => {
+            println!("Restoring database from: {:?} (drop={})", path, drop);
+        }
+        DbSubcommand::Vacuum { full } => {
+            println!("Vacuuming database (full={})", full);
+        }
+        DbSubcommand::Stats => {
+            println!("Database statistics");
+        }
+    }
+    Ok(())
+}
+
+async fn handle_config(cmd: ConfigCommands, _config: &CliConfig) -> anyhow::Result<()> {
+    match cmd.command {
+        ConfigSubcommand::Show { all } => {
+            println!("Showing configuration (all={})", all);
+        }
+        ConfigSubcommand::Get { key } => {
+            println!("Getting config: {}", key);
+        }
+        ConfigSubcommand::Set { key, value } => {
+            println!("Setting config: {} = {}", key, value);
+        }
+        ConfigSubcommand::Reset { confirm } => {
+            println!("Resetting config (confirm={})", confirm);
+        }
+        ConfigSubcommand::Validate => {
+            println!("Validating config");
+        }
+    }
+    Ok(())
+}
+
+async fn handle_backup(cmd: BackupCommands, _config: &CliConfig) -> anyhow::Result<()> {
+    match cmd.command {
+        BackupSubcommand::Create { dir, include_repos, include_artifacts, include_lfs } => {
+            println!("Creating backup in {:?} (repos={}, artifacts={}, lfs={})", dir, include_repos, include_artifacts, include_lfs);
+        }
+        BackupSubcommand::Restore { dir, include_repos, include_artifacts, include_lfs } => {
+            println!("Restoring backup from {:?} (repos={}, artifacts={}, lfs={})", dir, include_repos, include_artifacts, include_lfs);
+        }
+        BackupSubcommand::List { dir } => {
+            println!("Listing backups in {:?}", dir);
+        }
+        BackupSubcommand::Verify { dir } => {
+            println!("Verifying backup in {:?}", dir);
+        }
+    }
+    Ok(())
+}
+
+async fn handle_admin(cmd: AdminCommands, _config: &CliConfig) -> anyhow::Result<()> {
+    match cmd.command {
+        AdminSubcommand::Info => {
+            println!("System information");
+        }
+        AdminSubcommand::Health => {
+            println!("System health");
+        }
+        AdminSubcommand::Metrics { format } => {
+            println!("System metrics (format={:?})", format);
+        }
+        AdminSubcommand::User(cmd) => handle_user_admin(cmd).await?,
+        AdminSubcommand::Project(cmd) => handle_project_admin(cmd).await?,
+        AdminSubcommand::Group(cmd) => handle_group_admin(cmd).await?,
+        AdminSubcommand::Reindex { project } => {
+            println!("Rebuilding search index (project={:?})", project);
+        }
+        AdminSubcommand::Cleanup { days, dry_run } => {
+            println!("Cleaning up old data (days={}, dry_run={})", days, dry_run);
+        }
+        AdminSubcommand::Maintenance { action } => {
+            println!("Maintenance mode: {:?}", action);
+        }
+    }
+    Ok(())
+}
+
+async fn handle_user_admin(cmd: UserAdminCommands) -> anyhow::Result<()> {
+    match cmd.command {
+        UserAdminSubcommand::List { inactive } => {
+            println!("Listing users (inactive={})", inactive);
+        }
+        UserAdminSubcommand::CreateAdmin { username, email, password } => {
+            println!("Creating admin user: {} ({})", username, email);
+        }
+        UserAdminSubcommand::ResetPassword { user, password } => {
+            println!("Resetting password for user: {}", user);
+        }
+        UserAdminSubcommand::ToggleActive { user } => {
+            println!("Toggling active status for user: {}", user);
+        }
+        UserAdminSubcommand::Role { user, role, action } => {
+            println!("{} role {} for user: {}", action, role, user);
+        }
+    }
+    Ok(())
+}
+
+async fn handle_project_admin(cmd: ProjectAdminCommands) -> anyhow::Result<()> {
+    match cmd.command {
+        ProjectAdminSubcommand::List { archived } => {
+            println!("Listing projects (archived={})", archived);
+        }
+        ProjectAdminSubcommand::Delete { project } => {
+            println!("Force deleting project: {}", project);
+        }
+        ProjectAdminSubcommand::Transfer { project, owner } => {
+            println!("Transferring project {} to owner: {}", project, owner);
+        }
+        ProjectAdminSubcommand::Archive { project, unarchive } => {
+            println!("{} project: {}", if unarchive { "Unarchiving" } else { "Archiving" }, project);
+        }
+    }
+    Ok(())
+}
+
+async fn handle_group_admin(cmd: GroupAdminCommands) -> anyhow::Result<()> {
+    match cmd.command {
+        GroupAdminSubcommand::List => {
+            println!("Listing groups");
+        }
+        GroupAdminSubcommand::Create { name, parent } => {
+            println!("Creating group: {} (parent={:?})", name, parent);
+        }
+        GroupAdminSubcommand::Delete { group } => {
+            println!("Deleting group: {}", group);
+        }
+        GroupAdminSubcommand::Member { group, user, action } => {
+            println!("{} user {} to/from group: {}", action, user, group);
+        }
+    }
+    Ok(())
+}
+
+async fn handle_dev(cmd: DevCommands, _config: &CliConfig) -> anyhow::Result<()> {
+    match cmd.command {
+        DevSubcommand::Generate { generator, output } => {
+            println!("Generating {:?} in {:?}", generator, output);
+        }
+        DevSubcommand::Test { filter, coverage } => {
+            println!("Running tests (filter={:?}, coverage={})", filter, coverage);
+        }
+        DevSubcommand::Lint { fix } => {
+            println!("Linting (fix={})", fix);
+        }
+        DevSubcommand::Format { check } => {
+            println!("Formatting (check={})", check);
+        }
+        DevSubcommand::Serve { port, open } => {
+            println!("Starting dev server on port {} (open={})", port, open);
+        }
+    }
     Ok(())
 }
 
 fn handle_completion(args: CompletionArgs) -> anyhow::Result<()> {
-    let mut cmd = Cli::command();
+    let mut cmd = <Cli as clap::CommandFactory>::command();
     clap_complete::generate(args.shell, &mut cmd, "onedev", &mut std::io::stdout());
     Ok(())
 }

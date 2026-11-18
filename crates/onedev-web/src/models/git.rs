@@ -1,8 +1,7 @@
 //! Git Models
 
-use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Branch {
@@ -116,3 +115,7 @@ pub enum ChangeStatus {
     Copied,
     TypeChanged,
 }
+
+// Type aliases for compatibility
+pub type CommitInfo = CommitDetail;
+pub type FileInfo = FileChange;

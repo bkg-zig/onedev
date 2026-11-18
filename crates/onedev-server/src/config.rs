@@ -1,6 +1,9 @@
 //! Configuration for OneDev Server
 
-use figment::{Figment, providers::{Env, Format, Toml, Json, Yaml}};
+use figment::{
+    Figment,
+    providers::{Env, Format, Json, Toml, Yaml},
+};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
@@ -758,8 +761,8 @@ pub struct FeatureFlags {
 impl AppConfig {
     /// Load configuration from files and environment
     pub fn load() -> Result<Self, figment::Error> {
-        let config_dir = std::env::var("ONEDEV_CONFIG_DIR")
-            .unwrap_or_else(|_| "/etc/onedev".to_string());
+        let config_dir =
+            std::env::var("ONEDEV_CONFIG_DIR").unwrap_or_else(|_| "/etc/onedev".to_string());
 
         Figment::new()
             .merge(Toml::file(format!("{}/config.toml", config_dir)).nested())

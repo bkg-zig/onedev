@@ -6,7 +6,7 @@ use axum::{
     middleware::Next,
     response::Response,
 };
-use governor::{Quota, RateLimiter, state::InMemoryState, clock::DefaultClock};
+use governor::{Quota, RateLimiter, clock::DefaultClock, state::InMemoryState};
 use std::num::NonZeroU32;
 use std::sync::Arc;
 use std::time::Duration;
@@ -17,12 +17,18 @@ use uuid::Uuid;
 use crate::config::AppConfig;
 
 /// Rate limiter state - using NotKeyed for global rate limiting
-pub type RateLimiterState = Arc<Mutex<RateLimiter<governor::state::NotKeyed, InMemoryState, DefaultClock>>>;
+pub type RateLimiterState =
+    Arc<Mutex<RateLimiter<governor::state::NotKeyed, InMemoryState, DefaultClock>>>;
 
 /// Create rate limiter from config
 pub fn create_rate_limiter(config: &AppConfig) -> RateLimiterState {
-    let quota = Quota::per_minute(NonZeroU32::new(config.security.rate_limit.requests_per_minute).unwrap_or(NonZeroU32::new(100).unwrap()))
-        .allow_burst(NonZeroU32::new(config.security.rate_limit.burst).unwrap_or(NonZeroU32::new(10).unwrap()));
+    let quota = Quota::per_minute(
+        NonZeroU32::new(config.security.rate_limit.requests_per_minute)
+            .unwrap_or(NonZeroU32::new(100).unwrap()),
+    )
+    .allow_burst(
+        NonZeroU32::new(config.security.rate_limit.burst).unwrap_or(NonZeroU32::new(10).unwrap()),
+    );
 
     let limiter = RateLimiter::direct(quota);
     Arc::new(Mutex::new(limiter))
@@ -81,11 +87,9 @@ fn min(a: usize, b: usize) -> usize {
 }
 
 /// Request ID middleware
-pub async fn request_id_middleware(
-    mut req: Request,
-    next: Next,
-) -> Response {
-    let request_id = req.headers()
+pub async fn request_id_middleware(mut req: Request, next: Next) -> Response {
+    let request_id = req
+        .headers()
         .get("x-request-id")
         .and_then(|h| h.to_str().ok())
         .map(|s| s.to_string())
@@ -95,10 +99,9 @@ pub async fn request_id_middleware(
     req.extensions_mut().insert(RequestId(request_id.clone()));
 
     let mut response = next.run(req).await;
-    response.headers_mut().insert(
-        "x-request-id",
-        HeaderValue::from_str(&request_id).unwrap(),
-    );
+    response
+        .headers_mut()
+        .insert("x-request-id", HeaderValue::from_str(&request_id).unwrap());
 
     response
 }
@@ -108,10 +111,7 @@ pub async fn request_id_middleware(
 pub struct RequestId(pub String);
 
 /// Tracing middleware
-pub async fn tracing_middleware(
-    req: Request,
-    next: Next,
-) -> Response {
+pub async fn tracing_middleware(req: Request, next: Next) -> Response {
     let method = req.method().clone();
     let path = req.uri().path().to_string();
     let request_id = req.extensions().get::<RequestId>().map(|r| r.0.clone());
@@ -138,10 +138,7 @@ pub async fn tracing_middleware(
 }
 
 /// Security headers middleware
-pub async fn security_headers_middleware(
-    req: Request,
-    next: Next,
-) -> Response {
+pub async fn security_headers_middleware(req: Request, next: Next) -> Response {
     let mut response = next.run(req).await;
 
     let headers = response.headers_mut();
@@ -161,10 +158,7 @@ pub async fn security_headers_middleware(
     );
 
     // X-Frame-Options
-    headers.insert(
-        "x-frame-options",
-        HeaderValue::from_static("DENY"),
-    );
+    headers.insert("x-frame-options", HeaderValue::from_static("DENY"));
 
     // X-Content-Type-Options
     headers.insert(
@@ -194,17 +188,11 @@ pub async fn security_headers_middleware(
 }
 
 /// CORS middleware (simplified, use tower-http in production)
-pub async fn cors_middleware(
-    req: Request,
-    next: Next,
-) -> Response {
+pub async fn cors_middleware(req: Request, next: Next) -> Response {
     let mut response = next.run(req).await;
 
     let headers = response.headers_mut();
-    headers.insert(
-        "access-control-allow-origin",
-        HeaderValue::from_static("*"),
-    );
+    headers.insert("access-control-allow-origin", HeaderValue::from_static("*"));
     headers.insert(
         "access-control-allow-methods",
         HeaderValue::from_static("GET, POST, PUT, PATCH, DELETE, OPTIONS"),
@@ -213,19 +201,13 @@ pub async fn cors_middleware(
         "access-control-allow-headers",
         HeaderValue::from_static("Authorization, Content-Type, X-Requested-With"),
     );
-    headers.insert(
-        "access-control-max-age",
-        HeaderValue::from_static("86400"),
-    );
+    headers.insert("access-control-max-age", HeaderValue::from_static("86400"));
 
     response
 }
 
 /// Compression middleware (handled by tower-http in router)
-pub async fn compression_middleware(
-    req: Request,
-    next: Next,
-) -> Response {
+pub async fn compression_middleware(req: Request, next: Next) -> Response {
     next.run(req).await
 }
 
@@ -251,10 +233,7 @@ pub async fn request_size_limit_middleware(
 }
 
 /// Timeout middleware
-pub async fn timeout_middleware(
-    req: Request,
-    next: Next,
-) -> Result<Response, StatusCode> {
+pub async fn timeout_middleware(req: Request, next: Next) -> Result<Response, StatusCode> {
     let timeout = Duration::from_secs(60);
 
     match tokio::time::timeout(timeout, next.run(req)).await {

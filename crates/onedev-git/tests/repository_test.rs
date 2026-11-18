@@ -97,9 +97,11 @@ fn blame_submodules_and_last_commits() {
         .last_commits_of_children("acme/app", "main", "")
         .unwrap();
     assert_eq!(children.len(), 2);
-    assert!(children
-        .iter()
-        .all(|child| child.commit.message.trim() == "initial commit"));
+    assert!(
+        children
+            .iter()
+            .all(|child| child.commit.message.trim() == "initial commit")
+    );
 }
 
 #[test]
@@ -108,9 +110,7 @@ fn smart_http_advertises_refs_and_serves_upload_pack() {
     let service = seeded_service(root.path());
     let http = SmartHttpService::new(service.config().clone());
 
-    let advertisement = http
-        .info_refs("acme/app", GitService::UploadPack)
-        .unwrap();
+    let advertisement = http.info_refs("acme/app", GitService::UploadPack).unwrap();
     assert_eq!(
         advertisement.content_type,
         "application/x-git-upload-pack-advertisement"

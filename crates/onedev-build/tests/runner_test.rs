@@ -43,7 +43,9 @@ fn example_job_runs_green_and_collects_artifacts() {
     let report = run_buildspec(
         root.path(),
         &artifacts,
-        &TriggerEvent::Push { branch: "main".into() },
+        &TriggerEvent::Push {
+            branch: "main".into(),
+        },
         Some(tx),
     )
     .unwrap();
@@ -69,7 +71,9 @@ fn non_matching_trigger_selects_no_jobs() {
     let report = run_buildspec(
         root.path(),
         &artifacts,
-        &TriggerEvent::Push { branch: "dev".into() },
+        &TriggerEvent::Push {
+            branch: "dev".into(),
+        },
         None,
     )
     .unwrap();
@@ -89,7 +93,9 @@ fn failing_job_skips_dependents() {
     let report = run_buildspec(
         root.path(),
         &root.path().join("artifacts"),
-        &TriggerEvent::Push { branch: "main".into() },
+        &TriggerEvent::Push {
+            branch: "main".into(),
+        },
         None,
     )
     .unwrap();
@@ -106,10 +112,9 @@ fn parses_the_vanilla_repository_buildspec() {
     // The real spec shipped with OneDev itself must parse.
     let manifest = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
     let vanilla = manifest.join("../../vendor/vanilla-onedev/.onedev-buildspec.yml");
-    let spec = onedev_build::services::parser::parse_buildspec(
-        &std::fs::read_to_string(vanilla).unwrap(),
-    )
-    .unwrap();
+    let spec =
+        onedev_build::services::parser::parse_buildspec(&std::fs::read_to_string(vanilla).unwrap())
+            .unwrap();
     assert!(!spec.jobs.is_empty());
     assert!(spec.jobs.iter().any(|job| job.name == "Release"));
 }

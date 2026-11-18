@@ -1,13 +1,13 @@
 //! Issue Handlers
 
+use crate::WebState;
 use axum::{
+    Form,
     extract::{Path, Query, State},
     response::{Html, IntoResponse, Redirect},
-    Form,
 };
 use serde::{Deserialize, Serialize};
 use tera::Context;
-use crate::WebState;
 
 /// List issues
 pub async fn list_issues(
@@ -55,7 +55,9 @@ pub async fn create_issue(
         context.insert("title", "New Issue");
         context.insert("error", "Issue title is required");
         context.insert("form", &form);
-        return render_template(&state, "issues/new.html", context).await.into_response();
+        return render_template(&state, "issues/new.html", context)
+            .await
+            .into_response();
     }
 
     // Create issue (placeholder)
@@ -96,12 +98,16 @@ pub async fn edit_issue_page(
 
 /// Update issue
 pub async fn update_issue(
-    State(state): State<WebState>,
+    _state: State<WebState>,
     Path((project_id, id)): Path<(String, String)>,
-    Form(form): Form<UpdateIssueForm>,
+    _form: Form<UpdateIssueForm>,
 ) -> impl IntoResponse {
     // Update issue (placeholder)
-    Redirect::to(&format!("/projects/{}/issues/{}?saved=true", project_id, id)).into_response()
+    Redirect::to(&format!(
+        "/projects/{}/issues/{}?saved=true",
+        project_id, id
+    ))
+    .into_response()
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -139,9 +145,9 @@ pub struct UpdateIssueForm {
 
 /// Get issues list
 async fn get_issues(
-    state: &WebState,
-    project_id: &str,
-    params: &IssueListParams,
+    _state: &WebState,
+    _project_id: &str,
+    _params: &IssueListParams,
 ) -> Vec<serde_json::Value> {
     vec![
         serde_json::json!({
@@ -184,7 +190,7 @@ async fn get_issues(
 }
 
 /// Get single issue
-async fn get_issue(state: &WebState, project_id: &str, id: &str) -> serde_json::Value {
+async fn get_issue(_state: &WebState, _project_id: &str, id: &str) -> serde_json::Value {
     serde_json::json!({
         "id": id,
         "number": 42,
@@ -205,7 +211,7 @@ async fn get_issue(state: &WebState, project_id: &str, id: &str) -> serde_json::
 }
 
 /// Get issue comments
-async fn get_comments(state: &WebState, project_id: &str, id: &str) -> Vec<serde_json::Value> {
+async fn get_comments(_state: &WebState, _project_id: &str, _id: &str) -> Vec<serde_json::Value> {
     vec![
         serde_json::json!({
             "id": 1,
@@ -227,7 +233,7 @@ async fn get_comments(state: &WebState, project_id: &str, id: &str) -> Vec<serde
 }
 
 /// Get project
-async fn get_project(state: &WebState, id: &str) -> serde_json::Value {
+async fn get_project(_state: &WebState, id: &str) -> serde_json::Value {
     serde_json::json!({
         "id": id,
         "name": "onedev/core",
@@ -237,7 +243,7 @@ async fn get_project(state: &WebState, id: &str) -> serde_json::Value {
 }
 
 /// Get labels
-async fn get_labels(state: &WebState, project_id: &str) -> Vec<serde_json::Value> {
+async fn get_labels(_state: &WebState, _project_id: &str) -> Vec<serde_json::Value> {
     vec![
         serde_json::json!({ "id": 1, "name": "bug", "color": "#ff0000", "description": "Something isn't working" }),
         serde_json::json!({ "id": 2, "name": "feature", "color": "#00ff00", "description": "New feature or request" }),
@@ -247,7 +253,7 @@ async fn get_labels(state: &WebState, project_id: &str) -> Vec<serde_json::Value
 }
 
 /// Get milestones
-async fn get_milestones(state: &WebState, project_id: &str) -> Vec<serde_json::Value> {
+async fn get_milestones(_state: &WebState, _project_id: &str) -> Vec<serde_json::Value> {
     vec![
         serde_json::json!({ "id": 1, "title": "v1.0.0", "description": "First stable release", "due_date": "2024-02-01", "state": "active" }),
         serde_json::json!({ "id": 2, "title": "v1.1.0", "description": "Minor improvements", "due_date": "2024-03-01", "state": "active" }),
@@ -255,7 +261,7 @@ async fn get_milestones(state: &WebState, project_id: &str) -> Vec<serde_json::V
 }
 
 /// Get assignees
-async fn get_assignees(state: &WebState, project_id: &str) -> Vec<serde_json::Value> {
+async fn get_assignees(_state: &WebState, _project_id: &str) -> Vec<serde_json::Value> {
     vec![
         serde_json::json!({ "id": 1, "username": "admin", "full_name": "Admin User", "avatar_url": null }),
         serde_json::json!({ "id": 2, "username": "john", "full_name": "John Doe", "avatar_url": null }),
@@ -264,7 +270,7 @@ async fn get_assignees(state: &WebState, project_id: &str) -> Vec<serde_json::Va
 }
 
 /// Get current user (placeholder)
-async fn get_current_user(state: &WebState) -> serde_json::Value {
+async fn get_current_user(_state: &WebState) -> serde_json::Value {
     serde_json::json!({
         "id": "1",
         "username": "admin",

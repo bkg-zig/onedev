@@ -9,10 +9,12 @@ use std::sync::{Arc, RwLock};
 
 use crate::errors::{GitError, GitResult};
 use crate::models::{
-    GitActor, HookDecision, PostReceiveListener, ProtectionRule, ProtectionRules, PushContext,
+    GitActor, HookDecision, PostReceiveListener, ProtectionRules, PushContext,
     PushEvent, RefUpdate,
 };
-use crate::utils::{decode_pkt_lines, glob_matches, repository_path, run_git, validate_ref_name, PktLine};
+use crate::utils::{
+    PktLine, decode_pkt_lines, glob_matches, repository_path, run_git, validate_ref_name,
+};
 use chrono::Utc;
 
 const ZERO_OID_40: &str = "0000000000000000000000000000000000000000";
@@ -83,7 +85,10 @@ impl HookEngine {
     }
 
     pub fn rules(&self) -> ProtectionRules {
-        self.rules.read().map(|guard| guard.clone()).unwrap_or_default()
+        self.rules
+            .read()
+            .map(|guard| guard.clone())
+            .unwrap_or_default()
     }
 
     /// Validate all ref updates of a push before the pack is written.
@@ -133,27 +138,40 @@ impl HookEngine {
             if !glob_matches(&rule.pattern, branch) {
                 continue;
             }
-            if rule.bypass_users.iter().any(|user| user == &context.actor.name) {
+            if rule
+                .bypass_users
+                .iter()
+                .any(|user| user == &context.actor.name)
+            {
                 continue;
             }
 
             let deny = |reason: String| Ok(HookDecision::Deny(format!("{}: {}", branch, reason)));
 
             if new.is_none() && rule.prevent_deletion {
-                return deny(format!("deletion is not allowed (protected by '{}')", rule.pattern));
+                return deny(format!(
+                    "deletion is not allowed (protected by '{}')",
+                    rule.pattern
+                ));
             }
             if old.is_none() && rule.prevent_creation {
-                return deny(format!("creation is not allowed (protected by '{}')", rule.pattern));
+                return deny(format!(
+                    "creation is not allowed (protected by '{}')",
+                    rule.pattern
+                ));
             }
-            if let (Some(old), Some(new)) = (old, new) {
-                if rule.prevent_force_push && !self.is_ancestor(context, old, new)? {
-                    return deny("non-fast-forward push is not allowed".to_owned());
-                }
+            if let (Some(old), Some(new)) = (old, new)
+                && rule.prevent_force_push
+                && !self.is_ancestor(context, old, new)?
+            {
+                return deny("non-fast-forward push is not allowed".to_owned());
             }
             if let Some(commit) = new {
                 if rule.require_pull_request {
                     let needed = rule.required_approvals.max(1);
-                    let approvals = self.policy.approvals(&context.project_path, branch, commit)?;
+                    let approvals = self
+                        .policy
+                        .approvals(&context.project_path, branch, commit)?;
                     if approvals < needed {
                         return deny(format!(
                             "requires a pull request with at least {needed} approval(s), found {approvals}"
@@ -166,7 +184,9 @@ impl HookEngine {
                     return deny("a successful build is required".to_owned());
                 }
                 if rule.require_signed_commits
-                    && !self.policy.signature_verified(&context.project_path, commit)?
+                    && !self
+                        .policy
+                        .signature_verified(&context.project_path, commit)?
                 {
                     return deny("a verified signature is required".to_owned());
                 }
@@ -201,22 +221,24 @@ pub fn parse_push_updates(body: &[u8]) -> GitResult<Vec<RefUpdate>> {
         let text = text.trim_end_matches('\0');
 
         // Protocol v2: "command refs/heads/main:<old> <new>"
-        if let Some(rest) = text.strip_prefix("command ") {
-            if let Some((target, new)) = rest.split_once(' ') {
-                if let Some((ref_name, old)) = target.rsplit_once(':') {
-                    updates.push(RefUpdate {
-                        ref_name: ref_name.to_owned(),
-                        old_id: normalize_oid(old),
-                        new_id: normalize_oid(new.trim()),
-                    });
-                }
-            }
+        if let Some(rest) = text.strip_prefix("command ")
+            && let Some((target, new)) = rest.split_once(' ')
+            && let Some((ref_name, old)) = target.rsplit_once(':')
+        {
+            updates.push(RefUpdate {
+                ref_name: ref_name.to_owned(),
+                old_id: normalize_oid(old),
+                new_id: normalize_oid(new.trim()),
+            });
             continue;
         }
 
         // Protocol v0: "<old> <new> <ref>" (capabilities follow a NUL byte).
         let parts: Vec<&str> = text.split(' ').collect();
-        if parts.len() == 3 && parts[0].len() >= 40 && parts[0].bytes().all(|b| b.is_ascii_hexdigit()) {
+        if parts.len() == 3
+            && parts[0].len() >= 40
+            && parts[0].bytes().all(|b| b.is_ascii_hexdigit())
+        {
             updates.push(RefUpdate {
                 ref_name: parts[2].to_owned(),
                 old_id: normalize_oid(parts[0]),
@@ -250,11 +272,7 @@ pub fn parse_push_options(body: &[u8]) -> GitResult<Vec<String>> {
 }
 
 /// Convenience: build a push context for an actor and a raw receive-pack body.
-pub fn push_context(
-    project_path: &str,
-    actor: GitActor,
-    body: &[u8],
-) -> GitResult<PushContext> {
+pub fn push_context(project_path: &str, actor: GitActor, body: &[u8]) -> GitResult<PushContext> {
     Ok(PushContext {
         project_path: project_path.to_owned(),
         actor,
@@ -284,7 +302,9 @@ mod tests {
     #[test]
     fn parses_v2_push_commands_and_options() {
         let body = [
-            encode_pkt_line(format!("command refs/heads/main:{ZERO_OID_40} {}", "a".repeat(40)).as_bytes()),
+            encode_pkt_line(
+                format!("command refs/heads/main:{ZERO_OID_40} {}", "a".repeat(40)).as_bytes(),
+            ),
             encode_pkt_line(b"push-option ci.skip"),
             encode_pkt_line(b"0000"),
         ]
@@ -309,7 +329,10 @@ mod tests {
         engine.set_rules(rules);
         let context = PushContext {
             project_path: "acme/app".to_owned(),
-            actor: GitActor { id: "1".to_owned(), name: "alice".to_owned() },
+            actor: GitActor {
+                id: "1".to_owned(),
+                name: "alice".to_owned(),
+            },
             updates: vec![RefUpdate {
                 ref_name: "refs/heads/main".to_owned(),
                 old_id: Some("a".repeat(40)),
@@ -317,7 +340,10 @@ mod tests {
             }],
             push_options: Vec::new(),
         };
-        assert!(matches!(engine.pre_receive(&context), Err(GitError::HookRejected(_))));
+        assert!(matches!(
+            engine.pre_receive(&context),
+            Err(GitError::HookRejected(_))
+        ));
     }
 
     #[test]
@@ -334,7 +360,10 @@ mod tests {
         });
         let context = PushContext {
             project_path: "acme/app".to_owned(),
-            actor: GitActor { id: "2".to_owned(), name: "bot".to_owned() },
+            actor: GitActor {
+                id: "2".to_owned(),
+                name: "bot".to_owned(),
+            },
             updates: vec![RefUpdate {
                 ref_name: "refs/heads/main".to_owned(),
                 old_id: Some("a".repeat(40)),

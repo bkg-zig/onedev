@@ -1,7 +1,7 @@
 //! Logging Setup (OpenTelemetry temporarily disabled)
 
 use anyhow::Result;
-use tracing_subscriber::{fmt, EnvFilter, Layer, prelude::*};
+use tracing_subscriber::{EnvFilter, Layer, fmt, prelude::*};
 
 /// Initialize logging with structured format
 pub fn init_logging(config: &crate::config::AppConfig) -> Result<()> {
@@ -23,7 +23,7 @@ pub fn init_logging(config: &crate::config::AppConfig) -> Result<()> {
     tracing::subscriber::set_global_default(
         tracing_subscriber::registry()
             .with(env_filter)
-            .with(subscriber)
+            .with(subscriber),
     )?;
 
     Ok(())

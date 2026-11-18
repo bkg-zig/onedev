@@ -8,11 +8,11 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
+use super::principal::{AccessTokenPrincipal, UserPrincipal};
 use super::subject::Subject;
-use super::principal::{UserPrincipal, AccessTokenPrincipal};
+use chrono::{DateTime, Utc};
 use onedev_core::models::role::Role;
 use onedev_core::permissions::{Privilege, ProjectPrivilege};
-use chrono::{DateTime, Utc};
 
 /// Cached authorization information (port of Java AuthorizationInfo)
 #[derive(Debug, Clone)]
@@ -43,7 +43,10 @@ impl AuthorizationInfo {
 
     /// Check if cache is expired (configurable TTL)
     pub fn is_expired(&self, ttl_seconds: i64) -> bool {
-        Utc::now().signed_duration_since(self.last_updated).num_seconds() > ttl_seconds
+        Utc::now()
+            .signed_duration_since(self.last_updated)
+            .num_seconds()
+            > ttl_seconds
             || self.expired
     }
 
@@ -57,7 +60,10 @@ impl AuthorizationInfo {
 
     /// Update cache with roles for a project
     pub fn update_project_roles(&mut self, project_id: i64, roles: Vec<Role>) {
-        let entry = self.project_roles.entry(project_id).or_insert_with(Vec::new);
+        let entry = self
+            .project_roles
+            .entry(project_id)
+            .or_default();
         *entry = roles;
         self.last_updated = Utc::now();
     }
@@ -80,9 +86,7 @@ impl AuthorizationInfo {
     pub fn get_project_privileges(&self, project_id: i64) -> Vec<Privilege> {
         self.project_roles
             .get(&project_id)
-            .map(|roles| {
-                roles.iter().flat_map(|role| role.permissions()).collect()
-            })
+            .map(|roles| roles.iter().flat_map(|role| role.permissions()).collect())
             .unwrap_or_default()
     }
 }
@@ -115,7 +119,9 @@ pub async fn with_subject<F, R>(subject: Subject, f: F) -> R
 where
     F: std::future::Future<Output = R>,
 {
-    AUTH_INFO.scope(RwLock::new(Some(AuthorizationInfo::new(subject))), f).await
+    AUTH_INFO
+        .scope(RwLock::new(Some(AuthorizationInfo::new(subject))), f)
+        .await
 }
 
 /// Clear the authorization cache for the current task

@@ -106,7 +106,11 @@ impl LfsService {
     where
         F: Fn(&str, &str, LfsOperation) -> String,
     {
-        if !request.transfers.as_ref().map_or(true, |t| t.iter().any(|t| t == "basic")) {
+        if !request
+            .transfers
+            .as_ref()
+            .is_none_or(|t| t.iter().any(|t| t == "basic"))
+        {
             return Err(GitError::Lfs("unsupported transfer adapter".to_owned()));
         }
 
@@ -161,7 +165,10 @@ impl LfsService {
             });
         }
 
-        Ok(LfsBatchResponse { transfer: "basic", objects })
+        Ok(LfsBatchResponse {
+            transfer: "basic",
+            objects,
+        })
     }
 
     fn locks_path(&self, project_path: &str) -> GitResult<PathBuf> {
@@ -256,7 +263,11 @@ mod tests {
         let content = b"large file content";
         let oid = sha256_hex(content);
 
-        assert!(service.store("acme/app", "b".repeat(64).as_str(), content).is_err());
+        assert!(
+            service
+                .store("acme/app", "b".repeat(64).as_str(), content)
+                .is_err()
+        );
         service.store("acme/app", &oid, content).unwrap();
         assert_eq!(service.load("acme/app", &oid).unwrap(), content);
         assert!(service.has_object("acme/app", &oid));
@@ -269,37 +280,66 @@ mod tests {
         let oid = sha256_hex(b"payload");
         let request = LfsBatchRequest {
             operation: LfsOperation::Upload,
-            objects: vec![LfsObject { oid: oid.clone(), size: 7 }],
+            objects: vec![LfsObject {
+                oid: oid.clone(),
+                size: 7,
+            }],
             transfers: None,
         };
         let response = service
-            .batch("acme/app", &request, |_, oid, op| format!("/lfs/{oid}/{op}"))
+            .batch("acme/app", &request, |_, oid, op| {
+                format!("/lfs/{oid}/{op}")
+            })
             .unwrap();
-        assert!(response.objects[0].actions.as_ref().unwrap().upload.is_some());
+        assert!(
+            response.objects[0]
+                .actions
+                .as_ref()
+                .unwrap()
+                .upload
+                .is_some()
+        );
 
         let request = LfsBatchRequest {
             operation: LfsOperation::Download,
             ..request
         };
         let response = service
-            .batch("acme/app", &request, |_, oid, op| format!("/lfs/{oid}/{op}"))
+            .batch("acme/app", &request, |_, oid, op| {
+                format!("/lfs/{oid}/{op}")
+            })
             .unwrap();
         assert_eq!(response.objects[0].error.as_ref().unwrap().code, 404);
 
         service.store("acme/app", &oid, b"payload").unwrap();
         let response = service
-            .batch("acme/app", &request, |_, oid, op| format!("/lfs/{oid}/{op}"))
+            .batch("acme/app", &request, |_, oid, op| {
+                format!("/lfs/{oid}/{op}")
+            })
             .unwrap();
-        assert!(response.objects[0].actions.as_ref().unwrap().download.is_some());
+        assert!(
+            response.objects[0]
+                .actions
+                .as_ref()
+                .unwrap()
+                .download
+                .is_some()
+        );
     }
 
     #[test]
     fn lock_lifecycle() {
         let root = tempfile::tempdir().unwrap();
         let service = service(&root.path().to_path_buf());
-        let lock = service.create_lock("acme/app", "assets/big.bin", "alice").unwrap();
+        let lock = service
+            .create_lock("acme/app", "assets/big.bin", "alice")
+            .unwrap();
         assert_eq!(service.locks("acme/app", None).unwrap().len(), 1);
-        assert!(service.create_lock("acme/app", "assets/big.bin", "bob").is_err());
+        assert!(
+            service
+                .create_lock("acme/app", "assets/big.bin", "bob")
+                .is_err()
+        );
         assert!(service.unlock("acme/app", &lock.id, "bob").is_err());
         service.unlock("acme/app", &lock.id, "alice").unwrap();
         assert!(service.locks("acme/app", None).unwrap().is_empty());
@@ -307,7 +347,8 @@ mod tests {
 
     #[test]
     fn pointer_uses_lfs_spec() {
-        let pointer: LfsPointer = parse_lfs_pointer(format_lfs_pointer("a".repeat(64).as_str(), 1).as_bytes()).unwrap();
+        let pointer: LfsPointer =
+            parse_lfs_pointer(format_lfs_pointer("a".repeat(64).as_str(), 1).as_bytes()).unwrap();
         assert_eq!(pointer.oid, "a".repeat(64));
     }
 }

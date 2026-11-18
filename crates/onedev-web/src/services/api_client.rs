@@ -1,10 +1,9 @@
 //! API Client for Web UI
 
+use crate::WebConfig;
 use anyhow::Result;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
-use crate::WebConfig;
 
 /// API client for communicating with OneDev API
 #[derive(Clone)]

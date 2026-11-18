@@ -220,14 +220,14 @@ pub async fn create_app_state(
     auth_config: onedev_auth::AuthConfig,
 ) -> anyhow::Result<AppState> {
     use crate::services::{
-        AuthService, AuthorizationService, BuildService, GitService, GroupService,
-        IssueService, LfsService, MergeRequestService, ProjectService, SystemService, UserService,
+        AuthService, AuthorizationService, BuildService, GitService, GroupService, IssueService,
+        LfsService, MergeRequestService, ProjectService, SystemService, UserService,
     };
     use onedev_db::DbPool;
 
     // Create auth services
     let auth_service = AuthService::new(auth_config, db_pool.clone())?;
-    
+
     let authorization_service = AuthorizationService::new(db_pool.clone());
 
     // Create API services (they create their own repositories internally)

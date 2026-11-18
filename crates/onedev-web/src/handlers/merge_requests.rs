@@ -1,13 +1,13 @@
 //! Merge Request Handlers
 
+use crate::WebState;
 use axum::{
+    Form,
     extract::{Path, Query, State},
     response::{Html, IntoResponse, Redirect},
-    Form,
 };
 use serde::{Deserialize, Serialize};
 use tera::Context;
-use crate::WebState;
 
 /// List merge requests
 pub async fn list_mrs(
@@ -19,7 +19,10 @@ pub async fn list_mrs(
     context.insert("title", "Merge Requests");
     context.insert("project_id", &project_id);
     context.insert("project", &get_project(&state, &project_id).await);
-    context.insert("merge_requests", &get_merge_requests(&state, &project_id, &params).await);
+    context.insert(
+        "merge_requests",
+        &get_merge_requests(&state, &project_id, &params).await,
+    );
     context.insert("params", &params);
     context.insert("user", &get_current_user(&state).await);
     render_template(&state, "merge_requests/list.html", context).await
@@ -51,7 +54,9 @@ pub async fn create_mr(
         context.insert("title", "New Merge Request");
         context.insert("error", "Title is required");
         context.insert("form", &form);
-        return render_template(&state, "merge_requests/new.html", context).await.into_response();
+        return render_template(&state, "merge_requests/new.html", context)
+            .await
+            .into_response();
     }
 
     // Create MR (placeholder)
@@ -100,36 +105,34 @@ pub struct CreateMrForm {
 
 /// Get merge requests list
 async fn get_merge_requests(
-    state: &WebState,
-    project_id: &str,
-    params: &MrListParams,
+    _state: &WebState,
+    _project_id: &str,
+    _params: &MrListParams,
 ) -> Vec<serde_json::Value> {
-    vec![
-        serde_json::json!({
-            "id": 1,
-            "number": 5,
-            "title": "Add dark mode support",
-            "description": "Implement dark/light theme toggle for the UI",
-            "state": "open",
-            "author": { "username": "jane", "full_name": "Jane Smith", "avatar_url": null },
-            "assignee": { "username": "john", "full_name": "John Doe", "avatar_url": null },
-            "reviewers": [
-                { "username": "admin", "full_name": "Admin User", "avatar_url": null }
-            ],
-            "source_branch": "feature/dark-mode",
-            "target_branch": "main",
-            "draft": false,
-            "merge_status": "can_be_merged",
-            "created_at": "2024-01-12T14:00:00Z",
-            "updated_at": "2024-01-15T10:30:00Z",
-            "commits_count": 3,
-            "changes_count": 12
-        }),
-    ]
+    vec![serde_json::json!({
+        "id": 1,
+        "number": 5,
+        "title": "Add dark mode support",
+        "description": "Implement dark/light theme toggle for the UI",
+        "state": "open",
+        "author": { "username": "jane", "full_name": "Jane Smith", "avatar_url": null },
+        "assignee": { "username": "john", "full_name": "John Doe", "avatar_url": null },
+        "reviewers": [
+            { "username": "admin", "full_name": "Admin User", "avatar_url": null }
+        ],
+        "source_branch": "feature/dark-mode",
+        "target_branch": "main",
+        "draft": false,
+        "merge_status": "can_be_merged",
+        "created_at": "2024-01-12T14:00:00Z",
+        "updated_at": "2024-01-15T10:30:00Z",
+        "commits_count": 3,
+        "changes_count": 12
+    })]
 }
 
 /// Get single merge request
-async fn get_merge_request(state: &WebState, project_id: &str, id: &str) -> serde_json::Value {
+async fn get_merge_request(_state: &WebState, _project_id: &str, id: &str) -> serde_json::Value {
     serde_json::json!({
         "id": id,
         "number": 5,
@@ -154,7 +157,7 @@ async fn get_merge_request(state: &WebState, project_id: &str, id: &str) -> serd
 }
 
 /// Get MR commits
-async fn get_mr_commits(state: &WebState, project_id: &str, id: &str) -> Vec<serde_json::Value> {
+async fn get_mr_commits(_state: &WebState, _project_id: &str, _id: &str) -> Vec<serde_json::Value> {
     vec![
         serde_json::json!({
             "sha": "abc123def456",
@@ -184,7 +187,7 @@ async fn get_mr_commits(state: &WebState, project_id: &str, id: &str) -> Vec<ser
 }
 
 /// Get MR changes
-async fn get_mr_changes(state: &WebState, project_id: &str, id: &str) -> Vec<serde_json::Value> {
+async fn get_mr_changes(_state: &WebState, _project_id: &str, _id: &str) -> Vec<serde_json::Value> {
     vec![
         serde_json::json!({
             "old_path": "src/components/ThemeToggle.tsx",
@@ -211,7 +214,7 @@ async fn get_mr_changes(state: &WebState, project_id: &str, id: &str) -> Vec<ser
 }
 
 /// Get MR comments
-async fn get_mr_comments(state: &WebState, project_id: &str, id: &str) -> Vec<serde_json::Value> {
+async fn get_mr_comments(_state: &WebState, _project_id: &str, _id: &str) -> Vec<serde_json::Value> {
     vec![
         serde_json::json!({
             "id": 1,
@@ -233,7 +236,7 @@ async fn get_mr_comments(state: &WebState, project_id: &str, id: &str) -> Vec<se
 }
 
 /// Get branches
-async fn get_branches(state: &WebState, project_id: &str) -> Vec<serde_json::Value> {
+async fn get_branches(_state: &WebState, _project_id: &str) -> Vec<serde_json::Value> {
     vec![
         serde_json::json!({ "name": "main", "protected": true, "commit": { "sha": "abc123", "message": "Release v1.0.0" } }),
         serde_json::json!({ "name": "develop", "protected": false, "commit": { "sha": "def456", "message": "Merge feature/dark-mode" } }),
@@ -243,7 +246,7 @@ async fn get_branches(state: &WebState, project_id: &str) -> Vec<serde_json::Val
 }
 
 /// Get project
-async fn get_project(state: &WebState, id: &str) -> serde_json::Value {
+async fn get_project(_state: &WebState, id: &str) -> serde_json::Value {
     serde_json::json!({
         "id": id,
         "name": "onedev/core",
@@ -253,7 +256,7 @@ async fn get_project(state: &WebState, id: &str) -> serde_json::Value {
 }
 
 /// Get current user (placeholder)
-async fn get_current_user(state: &WebState) -> serde_json::Value {
+async fn get_current_user(_state: &WebState) -> serde_json::Value {
     serde_json::json!({
         "id": "1",
         "username": "admin",

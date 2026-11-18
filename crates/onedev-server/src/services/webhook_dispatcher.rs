@@ -9,7 +9,7 @@ use sqlx::{PgPool, Row};
 use std::sync::Arc;
 use tokio::sync::broadcast;
 use tokio::time::{Duration, Instant};
-use tracing::{info, warn, error, debug};
+use tracing::{debug, error, info, warn};
 use uuid::Uuid;
 
 /// Webhook dispatcher configuration
@@ -109,9 +109,8 @@ impl WebhookDispatcher {
     pub async fn run(mut self) {
         info!("Webhook dispatcher started");
 
-        let mut interval = tokio::time::interval(
-            Duration::from_secs(self.config.poll_interval_secs)
-        );
+        let mut interval =
+            tokio::time::interval(Duration::from_secs(self.config.poll_interval_secs));
 
         // Process pending at startup
         if let Err(e) = self.process_pending().await {
@@ -170,11 +169,14 @@ impl WebhookDispatcher {
             let attempt: i32 = delivery.try_get("attempt").unwrap_or(0) + 1;
 
             // Update attempt count
-            sqlx::query("UPDATE webhook_deliveries SET attempt = $1, last_attempt_at = $2 WHERE id = $3")
-                .bind(attempt)
-                .bind(Utc::now())
-                .bind(delivery_id)
-                .execute(self.db_pool.as_ref()).await?;
+            sqlx::query(
+                "UPDATE webhook_deliveries SET attempt = $1, last_attempt_at = $2 WHERE id = $3",
+            )
+            .bind(attempt)
+            .bind(Utc::now())
+            .bind(delivery_id)
+            .execute(self.db_pool.as_ref())
+            .await?;
 
             // Create webhook payload
             let webhook_payload = WebhookPayload {
@@ -205,21 +207,28 @@ impl WebhookDispatcher {
                         .execute(self.db_pool.as_ref()).await?;
                 }
                 Err(e) => {
-                    warn!("Webhook {} delivery failed (attempt {}): {}", delivery_id, attempt, e);
+                    warn!(
+                        "Webhook {} delivery failed (attempt {}): {}",
+                        delivery_id, attempt, e
+                    );
 
                     if attempt >= self.config.max_retries as i32 {
                         // Abandon
-                        error!("Webhook {} abandoned after {} attempts", delivery_id, attempt);
+                        error!(
+                            "Webhook {} abandoned after {} attempts",
+                            delivery_id, attempt
+                        );
                         sqlx::query(
                             r#"
                             UPDATE webhook_deliveries
                             SET status = 'Abandoned', error = $1
                             WHERE id = $2
-                            "#
+                            "#,
                         )
-                            .bind(e.to_string())
-                            .bind(delivery_id)
-                            .execute(self.db_pool.as_ref()).await?;
+                        .bind(e.to_string())
+                        .bind(delivery_id)
+                        .execute(self.db_pool.as_ref())
+                        .await?;
                     } else {
                         // Schedule retry
                         let delay = self.calculate_backoff(attempt as u32);
@@ -230,12 +239,13 @@ impl WebhookDispatcher {
                             UPDATE webhook_deliveries
                             SET status = 'Pending', next_retry_at = $1, error = $2
                             WHERE id = $3
-                            "#
+                            "#,
                         )
-                            .bind(next_retry)
-                            .bind(e.to_string())
-                            .bind(delivery_id)
-                            .execute(self.db_pool.as_ref()).await?;
+                        .bind(next_retry)
+                        .bind(e.to_string())
+                        .bind(delivery_id)
+                        .execute(self.db_pool.as_ref())
+                        .await?;
                     }
                 }
             }
@@ -253,18 +263,20 @@ impl WebhookDispatcher {
             AND next_retry_at <= NOW()
             AND attempt < $1
             LIMIT $2
-            "#
+            "#,
         )
-            .bind(self.config.max_retries as i32)
-            .bind(self.config.batch_size as i64)
-            .fetch_all(self.db_pool.as_ref()).await?;
+        .bind(self.config.max_retries as i32)
+        .bind(self.config.batch_size as i64)
+        .fetch_all(self.db_pool.as_ref())
+        .await?;
 
         for delivery in deliveries {
             let id: Uuid = delivery.try_get("id")?;
             // Just update status to Pending, process_pending will pick it up
             sqlx::query("UPDATE webhook_deliveries SET status = 'Pending' WHERE id = $1")
                 .bind(id)
-                .execute(self.db_pool.as_ref()).await?;
+                .execute(self.db_pool.as_ref())
+                .await?;
         }
 
         Ok(())
@@ -282,9 +294,11 @@ impl WebhookDispatcher {
         // Get webhook secret for signature
         let secret = sqlx::query("SELECT secret FROM webhooks WHERE id = $1")
             .bind(webhook_id)
-            .fetch_optional(self.db_pool.as_ref()).await?;
+            .fetch_optional(self.db_pool.as_ref())
+            .await?;
 
-        let mut request = self.http_client
+        let mut request = self
+            .http_client
             .post(url)
             .header("Content-Type", "application/json")
             .header("User-Agent", "OneDev-Webhook/1.0")
@@ -368,8 +382,10 @@ impl WebhookDispatcher {
             FROM webhook_deliveries
             WHERE created_at > NOW() - INTERVAL '24 hours'
             GROUP BY status
-            "#
-        ).fetch_all(self.db_pool.as_ref()).await?;
+            "#,
+        )
+        .fetch_all(self.db_pool.as_ref())
+        .await?;
 
         let mut by_status = std::collections::HashMap::new();
         for row in stats {
@@ -384,8 +400,10 @@ impl WebhookDispatcher {
             FROM webhook_deliveries
             WHERE status = 'Delivered'
             AND created_at > NOW() - INTERVAL '24 hours'
-            "#
-        ).fetch_one(self.db_pool.as_ref()).await?;
+            "#,
+        )
+        .fetch_one(self.db_pool.as_ref())
+        .await?;
 
         let avg_secs: Option<f64> = avg_latency.try_get("avg_secs").ok();
 

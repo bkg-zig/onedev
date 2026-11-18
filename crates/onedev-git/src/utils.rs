@@ -15,7 +15,10 @@ const LFS_POINTER_VERSION: &str = "version https://git-lfs.github.com/spec/v1";
 /// digits, `.`, `_` and `-` are accepted. `.` and `..` are rejected so that a
 /// project can never escape the configured repository root.
 pub fn normalize_project_path(project_path: &str) -> GitResult<String> {
-    let trimmed = project_path.trim().trim_end_matches('/').trim_end_matches(".git");
+    let trimmed = project_path
+        .trim()
+        .trim_end_matches('/')
+        .trim_end_matches(".git");
     if trimmed.is_empty() {
         return Err(GitError::InvalidProjectPath("path is empty".to_owned()));
     }
@@ -26,10 +29,9 @@ pub fn normalize_project_path(project_path: &str) -> GitResult<String> {
             || segment == "."
             || segment == ".."
             || segment.len() > 128
-            || !segment
-                .chars()
-                .enumerate()
-                .all(|(i, c)| c.is_ascii_alphanumeric() || c == '-' || c == '_' || (c == '.' && i > 0))
+            || !segment.chars().enumerate().all(|(i, c)| {
+                c.is_ascii_alphanumeric() || c == '-' || c == '_' || (c == '.' && i > 0)
+            })
         {
             return Err(GitError::InvalidProjectPath(trimmed.to_owned()));
         }
@@ -48,10 +50,7 @@ pub fn repository_path(root: &Path, project_path: &str) -> GitResult<PathBuf> {
 /// Reject path traversal in paths taken from a revision or an LFS request.
 pub fn is_safe_relative_path(path: &str) -> bool {
     let path = Path::new(path);
-    !path.is_absolute()
-        && path
-            .components()
-            .all(|c| matches!(c, Component::Normal(_)))
+    !path.is_absolute() && path.components().all(|c| matches!(c, Component::Normal(_)))
 }
 
 /// Validate a full ref name (`refs/heads/...`, `refs/tags/...`).
@@ -66,7 +65,9 @@ pub fn validate_ref_name(name: &str) -> GitResult<()> {
         || name.contains("//")
         || name.contains("@{")
         || name.contains('\\')
-        || name.chars().any(|c| c.is_ascii_control() || "~^:?*[".contains(c));
+        || name
+            .chars()
+            .any(|c| c.is_ascii_control() || "~^:?*[".contains(c));
 
     if invalid {
         return Err(GitError::InvalidRef(name.to_owned()));
@@ -121,7 +122,10 @@ pub fn parse_lfs_pointer(content: &[u8]) -> Option<LfsPointer> {
     let mut size = None;
     for line in lines {
         if let Some(value) = line.strip_prefix("oid sha256:") {
-            if !value.is_empty() && value.len() == 64 && value.bytes().all(|b| b.is_ascii_hexdigit()) {
+            if !value.is_empty()
+                && value.len() == 64
+                && value.bytes().all(|b| b.is_ascii_hexdigit())
+            {
                 oid = Some(value.to_owned());
             } else {
                 return None;
@@ -211,7 +215,10 @@ pub fn encode_pkt_line(data: &[u8]) -> Vec<u8> {
 
 /// Serialize an LFS object for the batch API.
 pub fn lfs_object(oid: &str, size: u64) -> LfsObject {
-    LfsObject { oid: oid.to_owned(), size }
+    LfsObject {
+        oid: oid.to_owned(),
+        size,
+    }
 }
 
 /// Run a Git command against a repository, returning stdout.
@@ -231,13 +238,17 @@ pub(crate) fn run_git(
         .arg("--git-dir")
         .arg(repo)
         .args(args)
-        .stdin(if stdin.is_some() { Stdio::piped() } else { Stdio::null() })
+        .stdin(if stdin.is_some() {
+            Stdio::piped()
+        } else {
+            Stdio::null()
+        })
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
 
-    let mut child = command.spawn().map_err(|err| {
-        GitError::msg(format!("failed to spawn {}: {err}", git_binary.display()))
-    })?;
+    let mut child = command
+        .spawn()
+        .map_err(|err| GitError::msg(format!("failed to spawn {}: {err}", git_binary.display())))?;
     // Write stdin on a separate thread so a large pack cannot deadlock
     // against the stdout pipe.
     let writer = stdin.map(|input| {

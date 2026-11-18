@@ -6,7 +6,7 @@ use sqlx::{PgPool, Row};
 use std::sync::Arc;
 use tokio::sync::broadcast;
 use tokio::task;
-use tracing::{info, warn, error, debug};
+use tracing::{debug, error, info, warn};
 use uuid::Uuid;
 
 /// Search indexer configuration
@@ -60,12 +60,12 @@ impl SearchIndexer {
     pub async fn run(mut self) {
         info!("Search indexer started");
 
-        let mut interval = tokio::time::interval(
-            tokio::time::Duration::from_secs(self.config.index_interval_secs)
-        );
-        let mut reindex_interval = tokio::time::interval(
-            tokio::time::Duration::from_secs(self.config.full_reindex_interval_hours * 3600)
-        );
+        let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(
+            self.config.index_interval_secs,
+        ));
+        let mut reindex_interval = tokio::time::interval(tokio::time::Duration::from_secs(
+            self.config.full_reindex_interval_hours * 3600,
+        ));
 
         // Run incremental indexing at startup
         if let Err(e) = self.incremental_index().await {
@@ -119,7 +119,10 @@ impl SearchIndexer {
         }
 
         if total_indexed > 0 {
-            info!("Incremental indexing completed: {} entities indexed", total_indexed);
+            info!(
+                "Incremental indexing completed: {} entities indexed",
+                total_indexed
+            );
         }
 
         Ok(())
@@ -191,11 +194,15 @@ impl SearchIndexer {
 
         // Update search_indexed_at
         if !indexed.is_empty() {
-            let ids: Vec<Uuid> = indexed.iter().filter_map(|r| r.try_get("entity_id").ok()).collect();
+            let ids: Vec<Uuid> = indexed
+                .iter()
+                .filter_map(|r| r.try_get("entity_id").ok())
+                .collect();
             sqlx::query("UPDATE issues SET search_indexed_at = $1 WHERE id = ANY($2)")
                 .bind(Utc::now())
                 .bind(&ids)
-                .execute(self.db_pool.as_ref()).await?;
+                .execute(self.db_pool.as_ref())
+                .await?;
         }
 
         Ok(indexed.len())
@@ -234,11 +241,15 @@ impl SearchIndexer {
             .fetch_all(self.db_pool.as_ref()).await?;
 
         if !indexed.is_empty() {
-            let ids: Vec<Uuid> = indexed.iter().filter_map(|r| r.try_get("entity_id").ok()).collect();
+            let ids: Vec<Uuid> = indexed
+                .iter()
+                .filter_map(|r| r.try_get("entity_id").ok())
+                .collect();
             sqlx::query("UPDATE projects SET search_indexed_at = $1 WHERE id = ANY($2)")
                 .bind(Utc::now())
                 .bind(&ids)
-                .execute(self.db_pool.as_ref()).await?;
+                .execute(self.db_pool.as_ref())
+                .await?;
         }
 
         Ok(indexed.len())
@@ -273,11 +284,15 @@ impl SearchIndexer {
             .fetch_all(self.db_pool.as_ref()).await?;
 
         if !indexed.is_empty() {
-            let ids: Vec<Uuid> = indexed.iter().filter_map(|r| r.try_get("entity_id").ok()).collect();
+            let ids: Vec<Uuid> = indexed
+                .iter()
+                .filter_map(|r| r.try_get("entity_id").ok())
+                .collect();
             sqlx::query("UPDATE wiki_pages SET search_indexed_at = $1 WHERE id = ANY($2)")
                 .bind(Utc::now())
                 .bind(&ids)
-                .execute(self.db_pool.as_ref()).await?;
+                .execute(self.db_pool.as_ref())
+                .await?;
         }
 
         Ok(indexed.len())
@@ -336,7 +351,8 @@ impl SearchIndexer {
 
         sqlx::query("UPDATE issues SET search_indexed_at = $1 WHERE deleted_at IS NULL")
             .bind(Utc::now())
-            .execute(self.db_pool.as_ref()).await?;
+            .execute(self.db_pool.as_ref())
+            .await?;
 
         Ok(total)
     }
@@ -382,7 +398,8 @@ impl SearchIndexer {
 
         sqlx::query("UPDATE projects SET search_indexed_at = $1 WHERE deleted_at IS NULL")
             .bind(Utc::now())
-            .execute(self.db_pool.as_ref()).await?;
+            .execute(self.db_pool.as_ref())
+            .await?;
 
         Ok(total)
     }
@@ -427,7 +444,8 @@ impl SearchIndexer {
 
         sqlx::query("UPDATE wiki_pages SET search_indexed_at = $1 WHERE deleted_at IS NULL")
             .bind(Utc::now())
-            .execute(self.db_pool.as_ref()).await?;
+            .execute(self.db_pool.as_ref())
+            .await?;
 
         Ok(total)
     }
@@ -453,8 +471,10 @@ impl SearchIndexer {
                 MAX(indexed_at) as last_indexed
             FROM search_index
             GROUP BY entity_type
-            "#
-        ).fetch_all(self.db_pool.as_ref()).await?;
+            "#,
+        )
+        .fetch_all(self.db_pool.as_ref())
+        .await?;
 
         let mut by_type = std::collections::HashMap::new();
         for row in stats {

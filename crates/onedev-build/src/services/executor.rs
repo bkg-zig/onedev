@@ -37,7 +37,12 @@ pub struct HostExecutor;
 impl HostExecutor {
     /// Execute `job`; returns step results in order. Honors each step's
     /// `condition` and the job `timeout` (seconds).
-    pub fn execute(&self, job: &JobSpec, spec_variables: &std::collections::HashMap<String, String>, ctx: &JobContext<'_>) -> BuildResult<Vec<StepResult>> {
+    pub fn execute(
+        &self,
+        job: &JobSpec,
+        spec_variables: &std::collections::HashMap<String, String>,
+        ctx: &JobContext<'_>,
+    ) -> BuildResult<Vec<StepResult>> {
         let mut results = Vec::new();
         let mut failed = false;
 
@@ -59,7 +64,13 @@ impl HostExecutor {
 
             match step.step_type.as_str() {
                 "CheckoutStep" => {
-                    emit(&ctx.log, &job.name, &name, false, "checkout (working directory already prepared)".to_owned());
+                    emit(
+                        &ctx.log,
+                        &job.name,
+                        &name,
+                        false,
+                        "checkout (working directory already prepared)".to_owned(),
+                    );
                     results.push(StepResult {
                         name,
                         status: BuildStatus::Success,

@@ -3,18 +3,18 @@
 use anyhow::Result;
 use chrono::{DateTime, Utc};
 use flume;
-use sqlx::Row;
 use sqlx::PgPool;
+use sqlx::Row;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::Semaphore;
-use tracing::{info, warn, error, debug};
+use tracing::{debug, error, info, warn};
 use uuid::Uuid;
 
 // Import types from onedev-build
-use onedev_build::models::{BuildStatus, BuildSpec, BuildReport, JobResult, LogLine, TriggerEvent};
+use onedev_build::models::{BuildReport, BuildSpec, BuildStatus, JobResult, LogLine, TriggerEvent};
+use onedev_build::models::{ExecuteCondition, StepResult};
 use onedev_build::services::{BuildRunner, HostExecutor};
-use onedev_build::models::{StepResult, ExecuteCondition};
 
 /// Build scheduler configuration
 #[derive(Debug, Clone)]
@@ -99,11 +99,14 @@ impl BuildScheduler {
 
     /// Run the scheduler
     pub async fn run(mut self) {
-        info!("Build scheduler started with max_concurrent_builds={}", self.config.max_concurrent_builds);
-
-        let mut interval = tokio::time::interval(
-            tokio::time::Duration::from_secs(self.config.queue_poll_interval_secs)
+        info!(
+            "Build scheduler started with max_concurrent_builds={}",
+            self.config.max_concurrent_builds
         );
+
+        let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(
+            self.config.queue_poll_interval_secs,
+        ));
 
         loop {
             tokio::select! {
@@ -152,10 +155,14 @@ impl BuildScheduler {
             }
         };
 
-        info!("Starting build {} for project {}", queued_build.build_id, queued_build.project_id);
+        info!(
+            "Starting build {} for project {}",
+            queued_build.build_id, queued_build.project_id
+        );
 
         // Update build status to running
-        self.update_build_status(queued_build.build_id, BuildStatus::Running).await?;
+        self.update_build_status(queued_build.build_id, BuildStatus::Running)
+            .await?;
 
         // Track running build
         let running = RunningBuild {
@@ -176,11 +183,7 @@ impl BuildScheduler {
         tokio::spawn(async move {
             let _permit = permit; // Release when done
             let db_pool_for_build = db_pool.clone();
-            let result = Self::execute_build(
-                runner,
-                db_pool_for_build,
-                &queued_build,
-            ).await;
+            let result = Self::execute_build(runner, db_pool_for_build, &queued_build).await;
 
             // Update final status
             let final_status = match result {
@@ -191,11 +194,14 @@ impl BuildScheduler {
                 }
             };
 
-            if let Err(e) = sqlx::query("UPDATE builds SET status = $1, finished_at = $2 WHERE id = $3")
-                .bind(final_status.to_string())
-                .bind(Utc::now())
-                .bind(build_id)
-                .execute(&*db_pool).await {
+            if let Err(e) =
+                sqlx::query("UPDATE builds SET status = $1, finished_at = $2 WHERE id = $3")
+                    .bind(final_status.to_string())
+                    .bind(Utc::now())
+                    .bind(build_id)
+                    .execute(&*db_pool)
+                    .await
+            {
                 error!("Failed to update build status: {}", e);
             }
 
@@ -214,14 +220,18 @@ impl BuildScheduler {
         queued_build: &QueuedBuild,
     ) -> Result<BuildReport> {
         // Load build spec from database
-        let spec = Self::load_build_spec(&db_pool, queued_build.project_id, &queued_build.pipeline).await?;
+        let spec = Self::load_build_spec(&db_pool, queued_build.project_id, &queued_build.pipeline)
+            .await?;
 
         // Create work directory
         let work_dir = PathBuf::from(format!("/var/lib/onedev/builds/{}", queued_build.build_id));
         tokio::fs::create_dir_all(&work_dir).await?;
 
         // Create artifact directory
-        let artifact_dir = PathBuf::from(format!("/var/lib/onedev/artifacts/{}", queued_build.build_id));
+        let artifact_dir = PathBuf::from(format!(
+            "/var/lib/onedev/artifacts/{}",
+            queued_build.build_id
+        ));
         tokio::fs::create_dir_all(&artifact_dir).await?;
 
         // Create log channel
@@ -232,7 +242,8 @@ impl BuildScheduler {
         let build_id_log = queued_build.build_id;
         tokio::spawn(async move {
             while let Ok(log_line) = log_receiver.recv_async().await {
-                if let Err(e) = Self::append_build_log(&db_pool_log, build_id_log, &log_line).await {
+                if let Err(e) = Self::append_build_log(&db_pool_log, build_id_log, &log_line).await
+                {
                     error!("Failed to write build log: {}", e);
                 }
             }
@@ -245,9 +256,18 @@ impl BuildScheduler {
 
         // Prepare variables
         let mut variables = queued_build.variables.clone();
-        variables.insert("ONEDEV_BUILD_NUMBER".to_string(), queued_build.build_id.to_string());
-        variables.insert("ONEDEV_PROJECT_ID".to_string(), queued_build.project_id.to_string());
-        variables.insert("ONEDEV_COMMIT_SHA".to_string(), queued_build.commit_sha.clone());
+        variables.insert(
+            "ONEDEV_BUILD_NUMBER".to_string(),
+            queued_build.build_id.to_string(),
+        );
+        variables.insert(
+            "ONEDEV_PROJECT_ID".to_string(),
+            queued_build.project_id.to_string(),
+        );
+        variables.insert(
+            "ONEDEV_COMMIT_SHA".to_string(),
+            queued_build.commit_sha.clone(),
+        );
         variables.insert("ONEDEV_BRANCH".to_string(), queued_build.branch.clone());
 
         // Run build in blocking task
@@ -267,7 +287,8 @@ impl BuildScheduler {
                 &trigger_event_clone,
                 Some(log_sender_clone),
             )
-        }).await??;
+        })
+        .await??;
 
         // Save artifacts metadata
         Self::save_artifacts(&db_pool, queued_build.build_id, &report, &artifact_dir).await?;
@@ -284,10 +305,12 @@ impl BuildScheduler {
         project_id: Uuid,
         pipeline: &str,
     ) -> Result<BuildSpec> {
-        let spec_row = sqlx::query("SELECT spec FROM build_specs WHERE project_id = $1 AND name = $2")
-            .bind(project_id)
-            .bind(pipeline)
-            .fetch_optional(db_pool).await?;
+        let spec_row =
+            sqlx::query("SELECT spec FROM build_specs WHERE project_id = $1 AND name = $2")
+                .bind(project_id)
+                .bind(pipeline)
+                .fetch_optional(db_pool)
+                .await?;
 
         let spec = spec_row
             .map(|row| {
@@ -306,11 +329,18 @@ impl BuildScheduler {
         build_id: Uuid,
         log_line: &onedev_build::models::LogLine,
     ) -> Result<()> {
-        let log_entry = format!("[{}] [{}] [{}]: {}\n", log_line.job, log_line.step, if log_line.stderr { "stderr" } else { "stdout" }, log_line.line);
+        let log_entry = format!(
+            "[{}] [{}] [{}]: {}\n",
+            log_line.job,
+            log_line.step,
+            if log_line.stderr { "stderr" } else { "stdout" },
+            log_line.line
+        );
         sqlx::query("UPDATE builds SET log = COALESCE(log, '') || $1 WHERE id = $2")
             .bind(log_entry)
             .bind(build_id)
-            .execute(db_pool).await?;
+            .execute(db_pool)
+            .await?;
         Ok(())
     }
 
@@ -345,7 +375,8 @@ impl BuildScheduler {
 
     /// Check for stuck builds
     async fn check_stuck_builds(&self) -> Result<()> {
-        let threshold = Utc::now() - chrono::Duration::minutes(self.config.stuck_build_threshold_minutes);
+        let threshold =
+            Utc::now() - chrono::Duration::minutes(self.config.stuck_build_threshold_minutes);
 
         let stuck_builds = sqlx::query(
             r#"
@@ -353,21 +384,25 @@ impl BuildScheduler {
             FROM builds
             WHERE status = 'Running'
             AND started_at < $1
-            "#
+            "#,
         )
-            .bind(threshold)
-            .fetch_all(self.db_pool.as_ref()).await?;
+        .bind(threshold)
+        .fetch_all(self.db_pool.as_ref())
+        .await?;
 
         for build in stuck_builds {
             let build_id: Uuid = build.get("id");
             let project_id: Uuid = build.get("project_id");
             warn!("Build {} appears stuck, marking as failed", build_id);
-            sqlx::query("UPDATE builds SET status = $1, finished_at = $2, error = $3 WHERE id = $4")
-                .bind(BuildStatus::Failed.to_string())
-                .bind(Utc::now())
-                .bind("Build timed out / stuck")
-                .bind(build_id)
-                .execute(self.db_pool.as_ref()).await?;
+            sqlx::query(
+                "UPDATE builds SET status = $1, finished_at = $2, error = $3 WHERE id = $4",
+            )
+            .bind(BuildStatus::Failed.to_string())
+            .bind(Utc::now())
+            .bind("Build timed out / stuck")
+            .bind(build_id)
+            .execute(self.db_pool.as_ref())
+            .await?;
 
             // Remove from running builds
             let mut running = self.running_builds.write().await;
@@ -389,7 +424,10 @@ impl BuildScheduler {
 
     /// Graceful shutdown
     async fn shutdown(&self) {
-        info!("Waiting for {} running builds to complete...", self.running_builds.read().await.len());
+        info!(
+            "Waiting for {} running builds to complete...",
+            self.running_builds.read().await.len()
+        );
 
         // Wait for running builds with timeout
         let timeout = tokio::time::Duration::from_secs(300); // 5 minutes

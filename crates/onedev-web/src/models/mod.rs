@@ -1,21 +1,22 @@
 //! Web UI Models
 
+pub mod admin;
 pub mod auth;
+pub mod builds;
 pub mod dashboard;
 pub mod git;
 pub mod issues;
 pub mod merge_requests;
-pub mod projects;
-pub mod builds;
 pub mod profile;
-pub mod admin;
+pub mod projects;
 
-pub use auth::*;
-pub use dashboard::*;
-pub use git::*;
-pub use issues::*;
-pub use merge_requests::*;
-pub use projects::*;
-pub use builds::*;
-pub use profile::*;
+// Re-export specific types to avoid ambiguous glob re-exports
 pub use admin::*;
+pub use auth::User;
+pub use builds::{Build, BuildStatus, Pipeline};
+pub use dashboard::{DashboardStats, ActivityItem, UserProject};
+pub use git::{Branch, CommitRef, TreeEntry, Tag, Commit};
+pub use issues::{Issue, IssueComment, Label, Milestone};
+pub use merge_requests::{MergeRequest};
+pub use profile::{UserProfile, SshKey, GpgKey, AccessToken, Session, UpdateSettingsForm};
+pub use projects::{Project, ProjectMember};

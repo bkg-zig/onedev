@@ -16,22 +16,22 @@ pub use services::*;
 pub use state::*;
 pub use telemetry::*;
 
+pub use anyhow::Result;
+pub use chrono::{DateTime, Utc};
+pub use serde::{Deserialize, Serialize};
+pub use thiserror::Error;
 /// Re-export commonly used types
 pub use uuid::Uuid;
-pub use chrono::{DateTime, Utc};
-pub use serde::{Serialize, Deserialize};
-pub use anyhow::Result;
-pub use thiserror::Error;
 
+use crate::config::AppConfig;
 use axum::{Router, routing::get};
 use jsonwebtoken::Algorithm;
+use onedev_api::{AppState as ApiState, create_router as create_api_router};
+use onedev_db::{create_pool, run_migrations};
 use secrecy::SecretString;
 use sqlx::PgPool;
 use std::convert::Infallible;
 use std::sync::Arc;
-use crate::config::AppConfig;
-use onedev_db::{create_pool, run_migrations};
-use onedev_api::{AppState as ApiState, create_router as create_api_router};
 
 // Application state is defined in state module
 pub use state::AppState;
@@ -113,7 +113,10 @@ impl GitGcService {
         }
     }
 
-    pub async fn get_gc_stats(&self, project_id: uuid::Uuid) -> anyhow::Result<crate::services::git_gc::GitGcStats> {
+    pub async fn get_gc_stats(
+        &self,
+        project_id: uuid::Uuid,
+    ) -> anyhow::Result<crate::services::git_gc::GitGcStats> {
         if let Some(s) = self.inner.lock().await.as_ref() {
             s.get_gc_stats(project_id).await
         } else {
@@ -142,7 +145,9 @@ impl SearchIndexer {
         }
     }
 
-    pub async fn get_stats(&self) -> anyhow::Result<crate::services::search_indexer::SearchIndexStats> {
+    pub async fn get_stats(
+        &self,
+    ) -> anyhow::Result<crate::services::search_indexer::SearchIndexStats> {
         if let Some(s) = self.inner.lock().await.as_ref() {
             s.get_stats().await
         } else {
@@ -177,7 +182,9 @@ impl WebhookDispatcher {
         }
     }
 
-    pub async fn get_stats(&self) -> anyhow::Result<crate::services::webhook_dispatcher::WebhookStats> {
+    pub async fn get_stats(
+        &self,
+    ) -> anyhow::Result<crate::services::webhook_dispatcher::WebhookStats> {
         if let Some(d) = self.inner.lock().await.as_ref() {
             d.get_stats().await
         } else {
@@ -208,13 +215,19 @@ impl Default for MetricsCollector {
 /// Create the main application router
 pub fn create_app_router(state: AppState) -> Router {
     // Health check endpoint
-    async fn health_handler() -> &'static str { "OK" }
+    async fn health_handler() -> &'static str {
+        "OK"
+    }
 
     // Metrics placeholder
-    async fn metrics_handler() -> &'static str { "OK" }
+    async fn metrics_handler() -> &'static str {
+        "OK"
+    }
 
     // Hello handler for root
-    async fn hello_handler() -> &'static str { "OneDev Server - Hello Universe!" }
+    async fn hello_handler() -> &'static str {
+        "OneDev Server - Hello Universe!"
+    }
 
     // Create API router
     let api_router = create_api_router(state.api_state.clone());
@@ -239,7 +252,8 @@ pub async fn create_app_state(config: &AppConfig) -> Result<AppState> {
     crate::init_logging(config)?;
 
     // Create database pool
-    let db_pool = Arc::new(create_pool(&config.database.url, config.database.max_connections).await?);
+    let db_pool =
+        Arc::new(create_pool(&config.database.url, config.database.max_connections).await?);
 
     // Run migrations
     run_migrations(&db_pool).await?;
@@ -250,7 +264,7 @@ pub async fn create_app_state(config: &AppConfig) -> Result<AppState> {
     // Create AuthConfig for onedev-auth
     let private_key = config.auth.private_key.clone().unwrap_or_default();
     let public_key = config.auth.public_key.clone().unwrap_or_default();
-    
+
     let auth_config = onedev_auth::AuthConfig {
         jwt_config: onedev_auth::models::token::TokenConfig {
             issuer: "onedev".to_string(),
@@ -284,7 +298,8 @@ pub async fn create_app_state(config: &AppConfig) -> Result<AppState> {
         Arc::new(config.clone()),
         api_state.clone(),
         lifecycle.clone(),
-    ).await?;
+    )
+    .await?;
 
     // Mark startup complete
     lifecycle.mark_startup_complete();

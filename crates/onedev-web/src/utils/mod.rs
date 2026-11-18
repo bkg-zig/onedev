@@ -1,14 +1,5 @@
 //! Utility Functions for Web UI
 
-use axum::{
-    extract::FromRequestParts,
-    http::{request::Parts, StatusCode},
-    RequestPartsExt,
-};
-use axum_extra::extract::cookie::{CookieJar, Key};
-use std::sync::Arc;
-use uuid::Uuid;
-
 /// Flash message for user notifications
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct FlashMessage {
@@ -26,28 +17,41 @@ pub enum FlashLevel {
 
 impl FlashMessage {
     pub fn success(message: impl Into<String>) -> Self {
-        Self { level: FlashLevel::Success, message: message.into() }
+        Self {
+            level: FlashLevel::Success,
+            message: message.into(),
+        }
     }
 
     pub fn error(message: impl Into<String>) -> Self {
-        Self { level: FlashLevel::Error, message: message.into() }
+        Self {
+            level: FlashLevel::Error,
+            message: message.into(),
+        }
     }
 
     pub fn warning(message: impl Into<String>) -> Self {
-        Self { level: FlashLevel::Warning, message: message.into() }
+        Self {
+            level: FlashLevel::Warning,
+            message: message.into(),
+        }
     }
 
     pub fn info(message: impl Into<String>) -> Self {
-        Self { level: FlashLevel::Info, message: message.into() }
+        Self {
+            level: FlashLevel::Info,
+            message: message.into(),
+        }
     }
 }
 
 /// Flash messages extractor
+#[derive(Default)]
 pub struct FlashMessages(pub Vec<FlashMessage>);
 
 impl FlashMessages {
     pub fn new() -> Self {
-        Self(Vec::new())
+        Self::default()
     }
 
     pub fn push(&mut self, msg: FlashMessage) {
@@ -117,7 +121,11 @@ impl Pagination {
             has_prev: page > 1,
             has_next: page < total_pages,
             prev_page: if page > 1 { Some(page - 1) } else { None },
-            next_page: if page < total_pages { Some(page + 1) } else { None },
+            next_page: if page < total_pages {
+                Some(page + 1)
+            } else {
+                None
+            },
             pages,
         }
     }
@@ -135,7 +143,10 @@ impl ValidationErrors {
     }
 
     pub fn add(&mut self, field: &str, message: &str) {
-        self.errors.entry(field.to_string()).or_default().push(message.to_string());
+        self.errors
+            .entry(field.to_string())
+            .or_default()
+            .push(message.to_string());
     }
 
     pub fn get(&self, field: &str) -> Option<&Vec<String>> {
@@ -161,11 +172,15 @@ pub struct Breadcrumb {
 
 pub fn breadcrumbs(items: Vec<(&str, Option<&str>)>) -> Vec<Breadcrumb> {
     let len = items.len();
-    items.into_iter().enumerate().map(|(i, (label, url))| Breadcrumb {
-        label: label.to_string(),
-        url: url.map(|s| s.to_string()),
-        active: i == len - 1,
-    }).collect()
+    items
+        .into_iter()
+        .enumerate()
+        .map(|(i, (label, url))| Breadcrumb {
+            label: label.to_string(),
+            url: url.map(|s| s.to_string()),
+            active: i == len - 1,
+        })
+        .collect()
 }
 
 /// Format bytes as human readable
@@ -236,7 +251,8 @@ pub fn slugify(s: &str) -> String {
 pub fn is_valid_identifier(s: &str) -> bool {
     !s.is_empty()
         && s.len() <= 255
-        && s.chars().all(|c| c.is_alphanumeric() || c == '-' || c == '_' || c == '.')
+        && s.chars()
+            .all(|c| c.is_alphanumeric() || c == '-' || c == '_' || c == '.')
         && !s.starts_with('-')
         && !s.ends_with('-')
         && !s.contains("--")

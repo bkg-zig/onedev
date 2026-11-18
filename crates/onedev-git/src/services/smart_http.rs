@@ -9,7 +9,7 @@
 
 use crate::errors::{GitError, GitResult};
 use crate::models::{GitActor, GitConfig, GitHttpResponse, GitService, PushContext};
-use crate::services::hooks::{push_context, HookEngine};
+use crate::services::hooks::{HookEngine, push_context};
 use crate::services::repository::RepositoryService;
 use crate::utils::{encode_pkt_line, run_git};
 
@@ -27,7 +27,10 @@ pub struct SmartHttpService {
 impl SmartHttpService {
     pub fn new(config: GitConfig) -> Self {
         let repositories = RepositoryService::new(config.clone());
-        SmartHttpService { config, repositories }
+        SmartHttpService {
+            config,
+            repositories,
+        }
     }
 
     pub fn repositories(&self) -> &RepositoryService {
@@ -51,7 +54,10 @@ impl SmartHttpService {
         } else {
             for (index, reference) in refs.iter().enumerate() {
                 let line = if index == 0 {
-                    format!("{} {}\0{capabilities}\n", reference.object_id, reference.name)
+                    format!(
+                        "{} {}\0{capabilities}\n",
+                        reference.object_id, reference.name
+                    )
                 } else {
                     format!("{} {}\n", reference.object_id, reference.name)
                 };

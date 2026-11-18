@@ -35,7 +35,11 @@ pub struct CleanupService {
 
 impl CleanupService {
     /// Create a new cleanup service
-    pub fn new(_db_pool: std::sync::Arc<sqlx::PgPool>, config: CleanupConfig, _shutdown_rx: tokio::sync::broadcast::Receiver<()>) -> Self {
+    pub fn new(
+        _db_pool: std::sync::Arc<sqlx::PgPool>,
+        config: CleanupConfig,
+        _shutdown_rx: tokio::sync::broadcast::Receiver<()>,
+    ) -> Self {
         Self { config }
     }
 
@@ -43,9 +47,9 @@ impl CleanupService {
     pub async fn run(mut self) {
         tracing::info!("Cleanup service started (stub)");
 
-        let mut interval = tokio::time::interval(
-            tokio::time::Duration::from_secs(self.config.run_interval_hours * 3600)
-        );
+        let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(
+            self.config.run_interval_hours * 3600,
+        ));
 
         loop {
             interval.tick().await;

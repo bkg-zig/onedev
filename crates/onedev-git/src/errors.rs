@@ -1,6 +1,6 @@
 //! Error and result types for the Git layer.
 
-use std::path::PathBuf;
+use std::path::Path;
 use thiserror::Error;
 
 /// Everything that can go wrong in the Git layer.
@@ -69,7 +69,7 @@ impl GitError {
     }
 
     /// Path that caused the error, when applicable.
-    pub fn path(path: &PathBuf, message: impl Into<String>) -> Self {
+    pub fn path(path: &Path, message: impl Into<String>) -> Self {
         GitError::Other(anyhow::anyhow!("{}: {}", path.display(), message.into()))
     }
 }

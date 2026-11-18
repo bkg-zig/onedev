@@ -34,3 +34,4 @@ flume.workspace = true
 async-channel.workspace = true
 bollard = { version = "0.17", features = ["default"] }
 compose = "0.1"
+strum = { version = "0.26", features = ["derive"] }

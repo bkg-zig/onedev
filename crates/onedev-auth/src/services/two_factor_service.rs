@@ -1,8 +1,6 @@
 //! Two-Factor Service - Wrapper for 2FA operations with database
 
-use crate::models::two_factor::{
-    TotpAlgorithm, TotpConfig, TwoFactorModel, TwoFactorSetup,
-};
+use crate::models::two_factor::{TotpAlgorithm, TotpConfig, TwoFactorModel, TwoFactorSetup};
 use onedev_core::models::user::User;
 use onedev_db::models::user::DbUpdateUser;
 use onedev_db::repositories::{Repository, UserRepository};

@@ -1,10 +1,10 @@
 //! Merge Request Models
 
+use crate::models::git::CommitRef;
+use crate::models::projects::UserRef;
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use chrono::{DateTime, Utc};
-use crate::models::projects::UserRef;
-use crate::models::git::CommitRef;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MergeRequest {
@@ -99,4 +99,21 @@ pub struct CreateMrForm {
     pub assignee_id: Option<Uuid>,
     pub reviewer_ids: Vec<Uuid>,
     pub draft: bool,
+}
+
+// Type aliases for compatibility
+pub type MergeRequestComment = MrComment;
+pub type MergeRequestChange = MrChange;
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct MrListParams {
+    pub state: Option<MrState>,
+    pub author_id: Option<Uuid>,
+    pub assignee_id: Option<Uuid>,
+    pub reviewer_id: Option<Uuid>,
+    pub source_branch: Option<String>,
+    pub target_branch: Option<String>,
+    pub search: Option<String>,
+    pub page: Option<u32>,
+    pub per_page: Option<u32>,
 }

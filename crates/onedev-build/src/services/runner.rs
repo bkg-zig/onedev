@@ -21,7 +21,9 @@ impl Default for BuildRunner {
 
 impl BuildRunner {
     pub fn new() -> Self {
-        BuildRunner { executor: HostExecutor }
+        BuildRunner {
+            executor: HostExecutor,
+        }
     }
 
     /// Run the jobs selected by `event`. Jobs whose dependencies failed
@@ -39,21 +41,21 @@ impl BuildRunner {
         let selected_set: std::collections::HashSet<&str> =
             selected.iter().map(String::as_str).collect();
         let order = execution_order(spec)?;
-        let by_name: HashMap<&str, &crate::models::JobSpec> =
-            spec.jobs.iter().map(|job| (job.name.as_str(), job)).collect();
+        let by_name: HashMap<&str, &crate::models::JobSpec> = spec
+            .jobs
+            .iter()
+            .map(|job| (job.name.as_str(), job))
+            .collect();
 
         let mut results: Vec<JobResult> = Vec::new();
         let mut statuses: HashMap<String, BuildStatus> = HashMap::new();
 
         for name in &order {
             let job = by_name[name.as_str()];
-            let dependencies_ok = job
-                .job_dependencies
-                .iter()
-                .all(|dependency| {
-                    !dependency.require_successful
-                        || statuses.get(&dependency.job_name) == Some(&BuildStatus::Success)
-                });
+            let dependencies_ok = job.job_dependencies.iter().all(|dependency| {
+                !dependency.require_successful
+                    || statuses.get(&dependency.job_name) == Some(&BuildStatus::Success)
+            });
 
             if !selected_set.contains(name.as_str()) || !dependencies_ok {
                 let result = JobResult {
@@ -84,7 +86,10 @@ impl BuildRunner {
                 step_results = self.executor.execute(
                     job,
                     &no_variables,
-                    &JobContext { work_dir, log: log.clone() },
+                    &JobContext {
+                        work_dir,
+                        log: log.clone(),
+                    },
                 )?;
                 status = if step_results
                     .iter()
@@ -126,7 +131,10 @@ impl BuildRunner {
             BuildStatus::Failed
         };
 
-        Ok(BuildReport { status: overall, jobs: results })
+        Ok(BuildReport {
+            status: overall,
+            jobs: results,
+        })
     }
 }
 
@@ -140,7 +148,12 @@ fn collect_artifacts(
     let patterns: Vec<String> = job
         .artifact_patterns()
         .iter()
-        .flat_map(|patterns| patterns.split_whitespace().map(str::to_owned).collect::<Vec<_>>())
+        .flat_map(|patterns| {
+            patterns
+                .split_whitespace()
+                .map(str::to_owned)
+                .collect::<Vec<_>>()
+        })
         .collect();
     for pattern in &patterns {
         let full = work_dir.join(pattern);

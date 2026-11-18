@@ -1,12 +1,12 @@
 //! Git Repository Handlers
 
+use crate::WebState;
 use axum::{
     extract::{Path, Query, State},
-    response::{Html, IntoResponse, Redirect},
+    response::{Html, IntoResponse},
 };
 use serde::{Deserialize, Serialize};
 use tera::Context;
-use crate::WebState;
 
 /// Git overview
 pub async fn git_overview(
@@ -19,7 +19,10 @@ pub async fn git_overview(
     context.insert("project", &get_project(&state, &project_id).await);
     context.insert("branches", &get_branches(&state, &project_id).await);
     context.insert("tags", &get_tags(&state, &project_id).await);
-    context.insert("commits", &get_recent_commits(&state, &project_id, "main", 10).await);
+    context.insert(
+        "commits",
+        &get_recent_commits(&state, &project_id, "main", 10).await,
+    );
     context.insert("user", &get_current_user(&state).await);
     render_template(&state, "git/overview.html", context).await
 }
@@ -37,7 +40,10 @@ pub async fn git_tree(
     context.insert("project", &get_project(&state, &project_id).await);
     context.insert("ref_name", &ref_name);
     context.insert("path", &path);
-    context.insert("entries", &get_tree_entries(&state, &project_id, &ref_name, &path).await);
+    context.insert(
+        "entries",
+        &get_tree_entries(&state, &project_id, &ref_name, &path).await,
+    );
     context.insert("branches", &get_branches(&state, &project_id).await);
     context.insert("tags", &get_tags(&state, &project_id).await);
     context.insert("user", &get_current_user(&state).await);
@@ -55,7 +61,10 @@ pub async fn git_blob(
     context.insert("project", &get_project(&state, &project_id).await);
     context.insert("ref_name", &ref_name);
     context.insert("path", &path);
-    context.insert("blob", &get_blob(&state, &project_id, &ref_name, &path).await);
+    context.insert(
+        "blob",
+        &get_blob(&state, &project_id, &ref_name, &path).await,
+    );
     context.insert("branches", &get_branches(&state, &project_id).await);
     context.insert("tags", &get_tags(&state, &project_id).await);
     context.insert("user", &get_current_user(&state).await);
@@ -76,7 +85,10 @@ pub async fn git_commits(
     context.insert("project", &get_project(&state, &project_id).await);
     context.insert("ref_name", &ref_name);
     context.insert("path", &path);
-    context.insert("commits", &get_recent_commits(&state, &project_id, &ref_name, 50).await);
+    context.insert(
+        "commits",
+        &get_recent_commits(&state, &project_id, &ref_name, 50).await,
+    );
     context.insert("branches", &get_branches(&state, &project_id).await);
     context.insert("tags", &get_tags(&state, &project_id).await);
     context.insert("user", &get_current_user(&state).await);
@@ -111,7 +123,7 @@ pub struct GitCommitsParams {
 }
 
 /// Get project
-async fn get_project(state: &WebState, id: &str) -> serde_json::Value {
+async fn get_project(_state: &WebState, id: &str) -> serde_json::Value {
     serde_json::json!({
         "id": id,
         "name": "onedev/core",
@@ -122,7 +134,7 @@ async fn get_project(state: &WebState, id: &str) -> serde_json::Value {
 }
 
 /// Get branches
-async fn get_branches(state: &WebState, project_id: &str) -> Vec<serde_json::Value> {
+async fn get_branches(_state: &WebState, _project_id: &str) -> Vec<serde_json::Value> {
     vec![
         serde_json::json!({ "name": "main", "protected": true, "commit": { "sha": "abc123def456", "message": "Release v1.0.0" } }),
         serde_json::json!({ "name": "develop", "protected": false, "commit": { "sha": "def456ghi789", "message": "Merge feature/dark-mode" } }),
@@ -132,7 +144,7 @@ async fn get_branches(state: &WebState, project_id: &str) -> Vec<serde_json::Val
 }
 
 /// Get tags
-async fn get_tags(state: &WebState, project_id: &str) -> Vec<serde_json::Value> {
+async fn get_tags(_state: &WebState, _project_id: &str) -> Vec<serde_json::Value> {
     vec![
         serde_json::json!({ "name": "v1.0.0", "commit": { "sha": "abc123def456", "message": "Release v1.0.0" }, "tagger": { "name": "Admin User", "date": "2024-01-15T10:00:00Z" } }),
         serde_json::json!({ "name": "v0.9.0", "commit": { "sha": "mno345pqr678", "message": "Beta release" }, "tagger": { "name": "Admin User", "date": "2024-01-01T10:00:00Z" } }),
@@ -141,10 +153,10 @@ async fn get_tags(state: &WebState, project_id: &str) -> Vec<serde_json::Value> 
 
 /// Get recent commits
 async fn get_recent_commits(
-    state: &WebState,
-    project_id: &str,
-    ref_name: &str,
-    limit: usize,
+    _state: &WebState,
+    _project_id: &str,
+    _ref_name: &str,
+    _limit: usize,
 ) -> Vec<serde_json::Value> {
     vec![
         serde_json::json!({
@@ -182,9 +194,9 @@ async fn get_recent_commits(
 
 /// Get tree entries
 async fn get_tree_entries(
-    state: &WebState,
-    project_id: &str,
-    ref_name: &str,
+    _state: &WebState,
+    _project_id: &str,
+    _ref_name: &str,
     path: &str,
 ) -> Vec<serde_json::Value> {
     if path.is_empty() {
@@ -210,9 +222,9 @@ async fn get_tree_entries(
 
 /// Get blob content
 async fn get_blob(
-    state: &WebState,
-    project_id: &str,
-    ref_name: &str,
+    _state: &WebState,
+    _project_id: &str,
+    _ref_name: &str,
     path: &str,
 ) -> serde_json::Value {
     // In real implementation, fetch from git
@@ -227,7 +239,7 @@ async fn get_blob(
 }
 
 /// Get commit detail
-async fn get_commit(state: &WebState, project_id: &str, sha: &str) -> serde_json::Value {
+async fn get_commit(_state: &WebState, _project_id: &str, sha: &str) -> serde_json::Value {
     serde_json::json!({
         "sha": sha,
         "short_sha": &sha[..8.min(sha.len())],
@@ -247,7 +259,7 @@ async fn get_commit(state: &WebState, project_id: &str, sha: &str) -> serde_json
 }
 
 /// Get current user (placeholder)
-async fn get_current_user(state: &WebState) -> serde_json::Value {
+async fn get_current_user(_state: &WebState) -> serde_json::Value {
     serde_json::json!({
         "id": "1",
         "username": "admin",

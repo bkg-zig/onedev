@@ -1,7 +1,7 @@
 //! Template Helpers and Functions
 
-use tera::{Function, Value, Result as TeraResult};
 use std::collections::HashMap;
+use tera::{Function, Result as TeraResult, Value};
 
 /// Register all custom template functions
 pub fn register_functions(tera: &mut tera::Tera) {
@@ -19,22 +19,24 @@ pub struct UrlForFunction;
 
 impl Function for UrlForFunction {
     fn call(&self, args: &HashMap<String, Value>) -> TeraResult<Value> {
-        let route = args.get("route")
+        let route = args
+            .get("route")
             .and_then(|v| v.as_str())
             .ok_or_else(|| tera::Error::msg("route argument required"))?;
 
         let mut url = format!("/{}", route.trim_start_matches('/'));
 
         // Add query parameters
-        if let Some(params) = args.get("params") {
-            if let Some(obj) = params.as_object() {
-                let query: Vec<String> = obj.iter()
-                    .filter_map(|(k, v)| v.as_str().map(|s| format!("{}={}", k, s)))
-                    .collect();
-                if !query.is_empty() {
-                    url.push('?');
-                    url.push_str(&query.join("&"));
-                }
+        if let Some(params) = args.get("params")
+            && let Some(obj) = params.as_object()
+        {
+            let query: Vec<String> = obj
+                .iter()
+                .filter_map(|(k, v)| v.as_str().map(|s| format!("{}={}", k, s)))
+                .collect();
+            if !query.is_empty() {
+                url.push('?');
+                url.push_str(&query.join("&"));
             }
         }
 
@@ -47,19 +49,20 @@ pub struct AssetUrlFunction;
 
 impl Function for AssetUrlFunction {
     fn call(&self, args: &HashMap<String, Value>) -> TeraResult<Value> {
-        let path = args.get("path")
+        let path = args
+            .get("path")
             .and_then(|v| v.as_str())
             .ok_or_else(|| tera::Error::msg("path argument required"))?;
 
         let mut url = format!("/static/{}", path.trim_start_matches('/'));
 
         // Add cache busting in production
-        if let Some(version) = args.get("version") {
-            if let Some(v) = version.as_str() {
-                url.push('?');
-                url.push_str("v=");
-                url.push_str(v);
-            }
+        if let Some(version) = args.get("version")
+            && let Some(v) = version.as_str()
+        {
+            url.push('?');
+            url.push_str("v=");
+            url.push_str(v);
         }
 
         Ok(Value::String(url))
@@ -71,15 +74,15 @@ pub struct GravatarFunction;
 
 impl Function for GravatarFunction {
     fn call(&self, args: &HashMap<String, Value>) -> TeraResult<Value> {
-        let email = args.get("email")
+        let email = args
+            .get("email")
             .and_then(|v| v.as_str())
             .ok_or_else(|| tera::Error::msg("email argument required"))?;
 
-        let size = args.get("size")
-            .and_then(|v| v.as_u64())
-            .unwrap_or(80) as u32;
+        let size = args.get("size").and_then(|v| v.as_u64()).unwrap_or(80) as u32;
 
-        let default = args.get("default")
+        let default = args
+            .get("default")
             .and_then(|v| v.as_str())
             .unwrap_or("identicon");
 
@@ -99,12 +102,19 @@ pub struct TimeAgoFunction;
 
 impl Function for TimeAgoFunction {
     fn call(&self, args: &HashMap<String, Value>) -> TeraResult<Value> {
-        let timestamp = args.get("timestamp")
+        let timestamp = args
+            .get("timestamp")
             .and_then(|v| v.as_str())
             .ok_or_else(|| tera::Error::msg("timestamp argument required"))?;
 
         let dt = chrono::DateTime::parse_from_rfc3339(timestamp)
-            .or_else(|_| timestamp.parse::<i64>().map(|ts| chrono::DateTime::from_timestamp(ts, 0).unwrap().fixed_offset()))
+            .or_else(|_| {
+                timestamp.parse::<i64>().map(|ts| {
+                    chrono::DateTime::from_timestamp(ts, 0)
+                        .unwrap()
+                        .fixed_offset()
+                })
+            })
             .map_err(|_| tera::Error::msg("invalid timestamp"))?;
 
         let now = chrono::Utc::now();
@@ -133,16 +143,16 @@ pub struct PluralizeFunction;
 
 impl Function for PluralizeFunction {
     fn call(&self, args: &HashMap<String, Value>) -> TeraResult<Value> {
-        let count = args.get("count")
-            .and_then(|v| v.as_u64())
-            .unwrap_or(0);
+        let count = args.get("count").and_then(|v| v.as_u64()).unwrap_or(0);
 
-        let singular = args.get("singular")
+        let singular = args
+            .get("singular")
             .and_then(|v| v.as_str())
             .unwrap_or("item");
 
         let plural_owned = format!("{}s", singular);
-        let plural = args.get("plural")
+        let plural = args
+            .get("plural")
             .and_then(|v| v.as_str())
             .unwrap_or(&plural_owned);
 
@@ -161,13 +171,9 @@ pub struct TruncateHtmlFunction;
 
 impl Function for TruncateHtmlFunction {
     fn call(&self, args: &HashMap<String, Value>) -> TeraResult<Value> {
-        let html = args.get("html")
-            .and_then(|v| v.as_str())
-            .unwrap_or("");
+        let html = args.get("html").and_then(|v| v.as_str()).unwrap_or("");
 
-        let length = args.get("length")
-            .and_then(|v| v.as_u64())
-            .unwrap_or(100) as usize;
+        let length = args.get("length").and_then(|v| v.as_u64()).unwrap_or(100) as usize;
 
         // Simple implementation - strip tags then truncate
         let text = html_escape::encode_safe(html).to_string();
@@ -188,11 +194,10 @@ pub struct HighlightFunction;
 
 impl Function for HighlightFunction {
     fn call(&self, args: &HashMap<String, Value>) -> TeraResult<Value> {
-        let code = args.get("code")
-            .and_then(|v| v.as_str())
-            .unwrap_or("");
+        let code = args.get("code").and_then(|v| v.as_str()).unwrap_or("");
 
-        let language = args.get("language")
+        let language = args
+            .get("language")
             .and_then(|v| v.as_str())
             .unwrap_or("text");
 

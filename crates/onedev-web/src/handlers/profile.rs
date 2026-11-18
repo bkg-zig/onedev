@@ -1,13 +1,13 @@
 //! Profile Handlers
 
+use crate::WebState;
 use axum::{
+    Form,
     extract::State,
     response::{Html, IntoResponse, Redirect},
-    Form,
 };
 use serde::{Deserialize, Serialize};
 use tera::Context;
-use crate::WebState;
 
 /// Profile page
 pub async fn profile_page(State(state): State<WebState>) -> impl IntoResponse {
@@ -36,8 +36,8 @@ pub async fn settings_page(State(state): State<WebState>) -> impl IntoResponse {
 
 /// Update settings
 pub async fn update_settings(
-    State(state): State<WebState>,
-    Form(form): Form<UpdateSettingsForm>,
+    _state: State<WebState>,
+    _form: Form<UpdateSettingsForm>,
 ) -> impl IntoResponse {
     // Update settings (placeholder)
     Redirect::to("/profile/settings?saved=true").into_response()
@@ -57,7 +57,7 @@ pub struct UpdateSettingsForm {
 }
 
 /// Get user stats
-async fn get_user_stats(state: &WebState) -> serde_json::Value {
+async fn get_user_stats(_state: &WebState) -> serde_json::Value {
     serde_json::json!({
         "projects_count": 5,
         "stars_given": 10,
@@ -69,7 +69,7 @@ async fn get_user_stats(state: &WebState) -> serde_json::Value {
 }
 
 /// Get recent activity
-async fn get_recent_activity(state: &WebState) -> Vec<serde_json::Value> {
+async fn get_recent_activity(_state: &WebState) -> Vec<serde_json::Value> {
     vec![
         serde_json::json!({
             "type": "commit",
@@ -93,49 +93,43 @@ async fn get_recent_activity(state: &WebState) -> Vec<serde_json::Value> {
 }
 
 /// Get SSH keys
-async fn get_ssh_keys(state: &WebState) -> Vec<serde_json::Value> {
-    vec![
-        serde_json::json!({
-            "id": 1,
-            "title": "MacBook Pro",
-            "key_type": "ED25519",
-            "fingerprint": "SHA256:abc123...",
-            "created_at": "2024-01-01T10:00:00Z",
-            "last_used": "2024-01-15T09:00:00Z"
-        }),
-    ]
+async fn get_ssh_keys(_state: &WebState) -> Vec<serde_json::Value> {
+    vec![serde_json::json!({
+        "id": 1,
+        "title": "MacBook Pro",
+        "key_type": "ED25519",
+        "fingerprint": "SHA256:abc123...",
+        "created_at": "2024-01-01T10:00:00Z",
+        "last_used": "2024-01-15T09:00:00Z"
+    })]
 }
 
 /// Get GPG keys
-async fn get_gpg_keys(state: &WebState) -> Vec<serde_json::Value> {
-    vec![
-        serde_json::json!({
-            "id": 1,
-            "key_id": "ABCDEF1234567890",
-            "name": "Admin User",
-            "email": "admin@example.com",
-            "created_at": "2024-01-01T10:00:00Z",
-            "expires_at": "2025-01-01T10:00:00Z"
-        }),
-    ]
+async fn get_gpg_keys(_state: &WebState) -> Vec<serde_json::Value> {
+    vec![serde_json::json!({
+        "id": 1,
+        "key_id": "ABCDEF1234567890",
+        "name": "Admin User",
+        "email": "admin@example.com",
+        "created_at": "2024-01-01T10:00:00Z",
+        "expires_at": "2025-01-01T10:00:00Z"
+    })]
 }
 
 /// Get access tokens
-async fn get_access_tokens(state: &WebState) -> Vec<serde_json::Value> {
-    vec![
-        serde_json::json!({
-            "id": 1,
-            "name": "CI/CD Token",
-            "scopes": ["read_repository", "write_repository", "read_build"],
-            "created_at": "2024-01-01T10:00:00Z",
-            "expires_at": "2025-01-01T10:00:00Z",
-            "last_used": "2024-01-15T10:00:00Z"
-        }),
-    ]
+async fn get_access_tokens(_state: &WebState) -> Vec<serde_json::Value> {
+    vec![serde_json::json!({
+        "id": 1,
+        "name": "CI/CD Token",
+        "scopes": ["read_repository", "write_repository", "read_build"],
+        "created_at": "2024-01-01T10:00:00Z",
+        "expires_at": "2025-01-01T10:00:00Z",
+        "last_used": "2024-01-15T10:00:00Z"
+    })]
 }
 
 /// Get sessions
-async fn get_sessions(state: &WebState) -> Vec<serde_json::Value> {
+async fn get_sessions(_state: &WebState) -> Vec<serde_json::Value> {
     vec![
         serde_json::json!({
             "id": "current",
@@ -159,7 +153,7 @@ async fn get_sessions(state: &WebState) -> Vec<serde_json::Value> {
 }
 
 /// Get current user (placeholder)
-async fn get_current_user(state: &WebState) -> serde_json::Value {
+async fn get_current_user(_state: &WebState) -> serde_json::Value {
     serde_json::json!({
         "id": "1",
         "username": "admin",

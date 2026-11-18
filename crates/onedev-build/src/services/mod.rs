@@ -25,7 +25,9 @@ impl BuildExecutor {
         _db_pool: std::sync::Arc<sqlx::PgPool>,
         event_bus: std::sync::Arc<onedev_core::events::InMemoryEventBus>,
     ) -> Self {
-        Self { _event_bus: event_bus }
+        Self {
+            _event_bus: event_bus,
+        }
     }
 
     pub async fn run(&self) {

@@ -1,12 +1,15 @@
 //! Shared Application State
 
-use std::sync::Arc;
-use sqlx::PgPool;
 use crate::config::AppConfig;
-use crate::services::*;
 use crate::lifecycle::LifecycleManager;
-use crate::{BuildScheduler, CleanupService, GitGcService, SearchIndexer, WebhookDispatcher, MetricsCollector};
+use crate::services::*;
+use crate::{
+    BuildScheduler, CleanupService, GitGcService, MetricsCollector, SearchIndexer,
+    WebhookDispatcher,
+};
 use onedev_api::AppState as ApiState;
+use sqlx::PgPool;
+use std::sync::Arc;
 
 /// Complete application state
 #[derive(Clone)]
@@ -42,7 +45,8 @@ pub async fn init_state(
         config.clone(),
         api_state.clone(),
         lifecycle.clone(),
-    ).await?;
+    )
+    .await?;
 
     Ok(AppState {
         config,
@@ -78,7 +82,7 @@ pub async fn init_services(
             db_pool.clone(),
             config.build.clone().into(),
             lifecycle.shutdown_rx(),
-        )
+        ),
     ));
 
     // Cleanup service
@@ -87,7 +91,7 @@ pub async fn init_services(
             db_pool.clone(),
             config.cleanup.clone().into(),
             lifecycle.shutdown_rx(),
-        )
+        ),
     ));
 
     // Git GC service
@@ -96,7 +100,7 @@ pub async fn init_services(
             db_pool.clone(),
             config.git.clone().into(),
             lifecycle.shutdown_rx(),
-        )
+        ),
     ));
 
     // Search indexer
@@ -105,7 +109,7 @@ pub async fn init_services(
             db_pool.clone(),
             config.search.clone().into(),
             lifecycle.shutdown_rx(),
-        )
+        ),
     ));
 
     // Webhook dispatcher
@@ -114,7 +118,7 @@ pub async fn init_services(
             db_pool.clone(),
             config.webhook.clone().into(),
             lifecycle.shutdown_rx(),
-        )?
+        )?,
     ));
 
     // Metrics collector
@@ -182,7 +186,9 @@ impl From<crate::config::SearchConfig> for crate::services::search_indexer::Sear
     }
 }
 
-impl From<crate::config::WebhookConfig> for crate::services::webhook_dispatcher::WebhookDispatcherConfig {
+impl From<crate::config::WebhookConfig>
+    for crate::services::webhook_dispatcher::WebhookDispatcherConfig
+{
     fn from(c: crate::config::WebhookConfig) -> Self {
         Self {
             max_retries: c.max_retries,

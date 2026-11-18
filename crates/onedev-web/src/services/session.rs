@@ -13,18 +13,16 @@ fn get_cookie_value(headers: &HeaderMap, name: &str) -> Option<String> {
         .get(axum::http::header::COOKIE)
         .and_then(|value| value.to_str().ok())
         .and_then(|cookie_str| {
-            cookie_str
-                .split(';')
-                .find_map(|part| {
-                    let part = part.trim();
-                    let mut iter = part.splitn(2, '=');
-                    let cookie_name = iter.next()?;
-                    if cookie_name == name {
-                        iter.next().map(|s| s.to_owned())
-                    } else {
-                        None
-                    }
-                })
+            cookie_str.split(';').find_map(|part| {
+                let part = part.trim();
+                let mut iter = part.splitn(2, '=');
+                let cookie_name = iter.next()?;
+                if cookie_name == name {
+                    iter.next().map(|s| s.to_owned())
+                } else {
+                    None
+                }
+            })
         })
 }
 
@@ -49,8 +47,11 @@ pub struct SessionManager {
 
 impl SessionManager {
     pub fn new(secret: &[u8; 64], cookie_name: &str, secure: bool) -> Self {
+        // secret is used for deriving key material in production; kept for API compatibility
+        debug_assert!(!secret.is_empty());
+        let key = Key::from(secret);
         Self {
-            key: Key::from(secret),
+            key,
             cookie_name: cookie_name.to_string(),
             secure,
             same_site: SameSite::Lax,
@@ -96,11 +97,14 @@ where
 {
     type Rejection = axum::http::StatusCode;
 
-    async fn from_request_parts(parts: &mut axum::http::request::Parts, _state: &S) -> Result<Self, Self::Rejection> {
-        if let Some(session_value) = get_cookie_value(&parts.headers, "session") {
-            if let Ok(session_data) = serde_json::from_str(&session_value) {
-                return Ok(session_data);
-            }
+    async fn from_request_parts(
+        parts: &mut axum::http::request::Parts,
+        _state: &S,
+    ) -> Result<Self, Self::Rejection> {
+        if let Some(session_value) = get_cookie_value(&parts.headers, "session")
+            && let Ok(session_data) = serde_json::from_str(&session_value)
+        {
+            return Ok(session_data);
         }
         Err(axum::http::StatusCode::UNAUTHORIZED)
     }
@@ -115,7 +119,10 @@ where
 {
     type Rejection = std::convert::Infallible;
 
-    async fn from_request_parts(parts: &mut axum::http::request::Parts, _state: &S) -> Result<Self, Self::Rejection> {
+    async fn from_request_parts(
+        parts: &mut axum::http::request::Parts,
+        _state: &S,
+    ) -> Result<Self, Self::Rejection> {
         if let Some(session_value) = get_cookie_value(&parts.headers, "session") {
             let session = serde_json::from_str(&session_value).ok();
             Ok(OptionalSession(session))
@@ -126,6 +133,7 @@ where
 }
 
 /// CSRF protection
+#[derive(Default)]
 pub struct CsrfToken(pub String);
 
 impl CsrfToken {

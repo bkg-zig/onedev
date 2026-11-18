@@ -1,7 +1,7 @@
 //! Web UI Routes
 
-use axum::Router;
 use crate::WebState;
+use axum::Router;
 
 pub fn create_web_router(state: WebState) -> Router<WebState> {
     // This is defined in lib.rs to avoid circular dependencies

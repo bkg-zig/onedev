@@ -9,10 +9,12 @@
 use std::path::PathBuf;
 
 use gix::objs::tree::EntryKind;
-use gix::prelude::*;
 
 use crate::errors::{GitError, GitResult};
-use crate::models::{BlobInfo, CommitInfo, FileChange, FileChangeStatus, GitConfig, GitRef, GitSignature, TreeEntry, TreeEntryKind, CompareResult};
+use crate::models::{
+    BlobInfo, CommitInfo, CompareResult, FileChange, FileChangeStatus, GitConfig, GitRef,
+    GitSignature, TreeEntry, TreeEntryKind,
+};
 use crate::utils::{parse_lfs_pointer, repository_path, run_git};
 
 /// Repository read/create operations for one storage root.
@@ -242,13 +244,17 @@ impl RepositoryService {
     }
 
     /// Commit history starting at `revision`, newest first, at most `limit`.
-    pub fn history(&self, project_path: &str, revision: &str, limit: usize) -> GitResult<Vec<CommitInfo>> {
+    pub fn history(
+        &self,
+        project_path: &str,
+        revision: &str,
+        limit: usize,
+    ) -> GitResult<Vec<CommitInfo>> {
         let repo = self.open(project_path)?;
         let id = repo
             .rev_parse_single(revision)
             .map_err(|_| GitError::InvalidRevision(revision.to_owned()))?;
-        let walk = repo.rev_walk([id]).all()
-            .map_err(GitError::other)?;
+        let walk = repo.rev_walk([id]).all().map_err(GitError::other)?;
 
         let mut commits = Vec::new();
         for info in walk {
@@ -268,7 +274,12 @@ impl RepositoryService {
     }
 
     /// Blame a file at a revision, grouped by commit (vanilla `BlameCommit`).
-    pub fn blame(&self, project_path: &str, revision: &str, path: &str) -> GitResult<Vec<crate::models::BlameCommit>> {
+    pub fn blame(
+        &self,
+        project_path: &str,
+        revision: &str,
+        path: &str,
+    ) -> GitResult<Vec<crate::models::BlameCommit>> {
         let repo = self.repository_path(project_path)?;
         if !repo.is_dir() {
             return Err(GitError::NotFound(repo.display().to_string()));
@@ -288,13 +299,13 @@ impl RepositoryService {
         let mut author_time: i64 = 0;
         let mut summary = String::new();
 
-        let mut push_current = |commits: &mut Vec<crate::models::BlameCommit>,
-                                 id: &str,
-                                 name: &str,
-                                 email: &str,
-                                 time: i64,
-                                 summary: &str,
-                                 line_no: u32| {
+        let push_current = |commits: &mut Vec<crate::models::BlameCommit>,
+                                id: &str,
+                                name: &str,
+                                email: &str,
+                                time: i64,
+                                summary: &str,
+                                line_no: u32| {
             if let Some(existing) = commits.iter_mut().find(|c| c.commit_id == id) {
                 existing.lines.push(line_no);
             } else if !id.is_empty() {
@@ -348,7 +359,11 @@ impl RepositoryService {
     }
 
     /// Submodules of a repository at a revision (`.gitmodules` + gitlinks).
-    pub fn submodules(&self, project_path: &str, revision: &str) -> GitResult<Vec<crate::models::Submodule>> {
+    pub fn submodules(
+        &self,
+        project_path: &str,
+        revision: &str,
+    ) -> GitResult<Vec<crate::models::Submodule>> {
         let gitlinks: Vec<(String, String)> = self
             .list_tree(project_path, revision, "")?
             .into_iter()
@@ -360,22 +375,22 @@ impl RepositoryService {
         }
 
         let mut urls: std::collections::HashMap<String, (String, String)> = Default::default();
-        if let Ok(blob) = self.read_blob(project_path, revision, ".gitmodules") {
-            if let Some(text) = blob.text() {
-                let mut current: Option<String> = None;
-                for line in text.lines() {
-                    let line = line.trim();
-                    if let Some(rest) = line.strip_prefix("[submodule \"") {
-                        current = Some(rest.trim_end_matches("\"]").to_owned());
-                    } else if let (Some(name), Some((key, value))) =
-                        (&current, line.split_once('='))
-                    {
-                        let entry = urls.entry(name.clone()).or_default();
-                        match key.trim() {
-                            "path" => entry.0 = value.trim().to_owned(),
-                            "url" => entry.1 = value.trim().to_owned(),
-                            _ => {}
-                        }
+        if let Ok(blob) = self.read_blob(project_path, revision, ".gitmodules")
+            && let Some(text) = blob.text()
+        {
+            let mut current: Option<String> = None;
+            for line in text.lines() {
+                let line = line.trim();
+                if let Some(rest) = line.strip_prefix("[submodule \"") {
+                    current = Some(rest.trim_end_matches("\"]").to_owned());
+                } else if let (Some(name), Some((key, value))) =
+                    (&current, line.split_once('='))
+                {
+                    let entry = urls.entry(name.clone()).or_default();
+                    match key.trim() {
+                        "path" => entry.0 = value.trim().to_owned(),
+                        "url" => entry.1 = value.trim().to_owned(),
+                        _ => {}
                     }
                 }
             }

@@ -1,8 +1,8 @@
 //! Issue Models
 
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use chrono::{DateTime, Utc};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Issue {
@@ -93,4 +93,15 @@ pub struct UpdateIssueForm {
     pub milestone_id: Option<Uuid>,
     pub confidential: bool,
     pub due_date: Option<DateTime<Utc>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct IssueListParams {
+    pub state: Option<IssueState>,
+    pub assignee_id: Option<Uuid>,
+    pub label_ids: Vec<Uuid>,
+    pub milestone_id: Option<Uuid>,
+    pub search: Option<String>,
+    pub page: Option<u32>,
+    pub per_page: Option<u32>,
 }

@@ -1,11 +1,11 @@
 //! Dashboard Handlers
 
+use crate::WebState;
 use axum::{
     extract::State,
     response::{Html, IntoResponse},
 };
 use tera::Context;
-use crate::WebState;
 
 /// Main dashboard page
 pub async fn dashboard_handler(State(state): State<WebState>) -> impl IntoResponse {
@@ -20,7 +20,7 @@ pub async fn dashboard_handler(State(state): State<WebState>) -> impl IntoRespon
 }
 
 /// Get current user (placeholder)
-async fn get_current_user(state: &WebState) -> serde_json::Value {
+async fn get_current_user(_state: &WebState) -> serde_json::Value {
     serde_json::json!({
         "id": "1",
         "username": "admin",
@@ -31,7 +31,7 @@ async fn get_current_user(state: &WebState) -> serde_json::Value {
 }
 
 /// Get dashboard statistics
-async fn get_dashboard_stats(state: &WebState) -> serde_json::Value {
+async fn get_dashboard_stats(_state: &WebState) -> serde_json::Value {
     serde_json::json!({
         "projects_count": 5,
         "issues_assigned": 3,
@@ -43,7 +43,7 @@ async fn get_dashboard_stats(state: &WebState) -> serde_json::Value {
 }
 
 /// Get recent activity
-async fn get_recent_activity(state: &WebState) -> Vec<serde_json::Value> {
+async fn get_recent_activity(_state: &WebState) -> Vec<serde_json::Value> {
     vec![
         serde_json::json!({
             "id": 1,
@@ -73,7 +73,7 @@ async fn get_recent_activity(state: &WebState) -> Vec<serde_json::Value> {
 }
 
 /// Get user projects
-async fn get_user_projects(state: &WebState) -> Vec<serde_json::Value> {
+async fn get_user_projects(_state: &WebState) -> Vec<serde_json::Value> {
     vec![
         serde_json::json!({
             "id": 1,

@@ -123,17 +123,16 @@ impl GitRef {
         } else {
             GitRefKind::Other
         };
-        GitRef { name, object_id, kind }
+        GitRef {
+            name,
+            object_id,
+            kind,
+        }
     }
 
     /// The name without its `refs/<namespace>/` prefix.
     pub fn short_name(&self) -> &str {
-        for prefix in [
-            "refs/heads/",
-            "refs/tags/",
-            "refs/notes/",
-            "refs/pull/",
-        ] {
+        for prefix in ["refs/heads/", "refs/tags/", "refs/notes/", "refs/pull/"] {
             if let Some(rest) = self.name.strip_prefix(prefix) {
                 return rest;
             }
@@ -376,7 +375,11 @@ pub struct GitHttpResponse {
 
 impl GitHttpResponse {
     pub fn ok(content_type: &'static str, body: Vec<u8>) -> Self {
-        GitHttpResponse { status: 200, content_type, body }
+        GitHttpResponse {
+            status: 200,
+            content_type,
+            body,
+        }
     }
 }
 

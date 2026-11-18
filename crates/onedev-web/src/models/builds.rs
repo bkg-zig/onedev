@@ -1,9 +1,9 @@
 //! Build Models
 
-use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Build {
@@ -90,3 +90,8 @@ pub struct TriggerBuildForm {
     pub branch: String,
     pub variables: HashMap<String, String>,
 }
+
+// Type aliases for compatibility
+pub type Stage = BuildStage;
+pub type Job = BuildJob;
+pub type Artifact = BuildArtifact;

@@ -1,17 +1,17 @@
 //! Authentication Handlers
 
+use crate::WebState;
 use axum::{
+    Form,
     extract::State,
     http::{HeaderValue, StatusCode},
     response::{Html, IntoResponse, Redirect, Response},
-    Form,
 };
 use serde::{Deserialize, Serialize};
 use tera::Context;
-use crate::WebState;
 
 /// Login page
-pub async fn login_page(State(state): State<WebState>) -> impl IntoResponse {
+pub async fn login_page(state: State<WebState>) -> impl IntoResponse {
     let mut context = Context::new();
     context.insert("title", "Sign In");
     render_template(&state, "auth/login.html", context).await
@@ -19,23 +19,23 @@ pub async fn login_page(State(state): State<WebState>) -> impl IntoResponse {
 
 /// Login handler
 pub async fn login_handler(
-    State(state): State<WebState>,
-    Form(form): Form<LoginForm>,
+    state: State<WebState>,
+    form: Form<LoginForm>,
 ) -> impl IntoResponse {
     // Validate credentials (placeholder)
     if form.username == "admin" && form.password == "admin" {
         // Set session cookie
         let mut response = Response::new(axum::body::Body::empty());
         *response.status_mut() = StatusCode::FOUND;
-        response.headers_mut().insert(
-            axum::http::header::LOCATION,
-            HeaderValue::from_static("/")
-        );
+        response
+            .headers_mut()
+            .insert(axum::http::header::LOCATION, HeaderValue::from_static("/"));
         response.headers_mut().insert(
             axum::http::header::SET_COOKIE,
             HeaderValue::from_str(
-                "session=abc123; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=86400"
-            ).unwrap()
+                "session=abc123; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=86400",
+            )
+            .unwrap(),
         );
         return response.into_response();
     }
@@ -45,7 +45,9 @@ pub async fn login_handler(
     context.insert("title", "Sign In");
     context.insert("error", "Invalid username or password");
     context.insert("username", &form.username);
-    render_template(&state, "auth/login.html", context).await.into_response()
+    render_template(&state, "auth/login.html", context)
+        .await
+        .into_response()
 }
 
 /// Logout handler
@@ -54,19 +56,18 @@ pub async fn logout_handler() -> impl IntoResponse {
     *response.status_mut() = StatusCode::FOUND;
     response.headers_mut().insert(
         axum::http::header::LOCATION,
-        HeaderValue::from_static("/login")
+        HeaderValue::from_static("/login"),
     );
     response.headers_mut().insert(
         axum::http::header::SET_COOKIE,
-        HeaderValue::from_str(
-            "session=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0"
-        ).unwrap()
+        HeaderValue::from_str("session=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0")
+            .unwrap(),
     );
     response.into_response()
 }
 
 /// Register page
-pub async fn register_page(State(state): State<WebState>) -> impl IntoResponse {
+pub async fn register_page(state: State<WebState>) -> impl IntoResponse {
     let mut context = Context::new();
     context.insert("title", "Sign Up");
     render_template(&state, "auth/register.html", context).await
@@ -74,8 +75,8 @@ pub async fn register_page(State(state): State<WebState>) -> impl IntoResponse {
 
 /// Register handler
 pub async fn register_handler(
-    State(state): State<WebState>,
-    Form(form): Form<RegisterForm>,
+    state: State<WebState>,
+    form: Form<RegisterForm>,
 ) -> impl IntoResponse {
     // Validate form
     let mut errors = Vec::new();
@@ -97,8 +98,15 @@ pub async fn register_handler(
         let mut context = Context::new();
         context.insert("title", "Sign Up");
         context.insert("errors", &errors);
-        context.insert("form", &form);
-        return render_template(&state, "auth/register.html", context).await.into_response();
+        // Extract form data for template (Form<T> doesn't implement Serialize)
+        let form_data = serde_json::json!({
+            "username": &form.username,
+            "email": &form.email,
+        });
+        context.insert("form", &form_data);
+        return render_template(&state, "auth/register.html", context)
+            .await
+            .into_response();
     }
 
     // Create user (placeholder)

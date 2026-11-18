@@ -1,13 +1,13 @@
 //! Project Handlers
 
+use crate::WebState;
 use axum::{
+    Form,
     extract::{Path, Query, State},
     response::{Html, IntoResponse, Redirect},
-    Form,
 };
 use serde::{Deserialize, Serialize};
 use tera::Context;
-use crate::WebState;
 
 /// List projects
 pub async fn list_projects(
@@ -41,7 +41,9 @@ pub async fn create_project(
         context.insert("title", "New Project");
         context.insert("error", "Project name is required");
         context.insert("form", &form);
-        return render_template(&state, "projects/new.html", context).await.into_response();
+        return render_template(&state, "projects/new.html", context)
+            .await
+            .into_response();
     }
 
     // Create project (placeholder)
@@ -75,9 +77,9 @@ pub async fn project_settings(
 
 /// Update project
 pub async fn update_project(
-    State(state): State<WebState>,
+    _state: State<WebState>,
     Path(id): Path<String>,
-    Form(form): Form<UpdateProjectForm>,
+    _form: Form<UpdateProjectForm>,
 ) -> impl IntoResponse {
     // Update project (placeholder)
     Redirect::to(&format!("/projects/{}/settings?saved=true", id)).into_response()
@@ -114,7 +116,7 @@ pub struct UpdateProjectForm {
 }
 
 /// Get projects list
-async fn get_projects(state: &WebState, params: &ProjectListParams) -> Vec<serde_json::Value> {
+async fn get_projects(_state: &WebState, _params: &ProjectListParams) -> Vec<serde_json::Value> {
     vec![
         serde_json::json!({
             "id": 1,
@@ -146,7 +148,7 @@ async fn get_projects(state: &WebState, params: &ProjectListParams) -> Vec<serde
 }
 
 /// Get single project
-async fn get_project(state: &WebState, id: &str) -> serde_json::Value {
+async fn get_project(_state: &WebState, id: &str) -> serde_json::Value {
     serde_json::json!({
         "id": id,
         "name": "onedev/core",
@@ -173,7 +175,7 @@ async fn get_project(state: &WebState, id: &str) -> serde_json::Value {
 }
 
 /// Get current user (placeholder)
-async fn get_current_user(state: &WebState) -> serde_json::Value {
+async fn get_current_user(_state: &WebState) -> serde_json::Value {
     serde_json::json!({
         "id": "1",
         "username": "admin",

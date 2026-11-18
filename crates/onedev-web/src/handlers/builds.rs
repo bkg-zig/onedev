@@ -1,13 +1,12 @@
 //! Build Handlers
 
+use crate::WebState;
 use axum::{
     extract::{Path, Query, State},
     response::{Html, IntoResponse},
-    Form,
 };
 use serde::{Deserialize, Serialize};
 use tera::Context;
-use crate::WebState;
 
 /// List builds
 pub async fn list_builds(
@@ -38,7 +37,10 @@ pub async fn build_detail(
     context.insert("build", &get_build(&state, &project_id, &id).await);
     context.insert("stages", &get_build_stages(&state, &project_id, &id).await);
     context.insert("jobs", &get_build_jobs(&state, &project_id, &id).await);
-    context.insert("artifacts", &get_build_artifacts(&state, &project_id, &id).await);
+    context.insert(
+        "artifacts",
+        &get_build_artifacts(&state, &project_id, &id).await,
+    );
     context.insert("user", &get_current_user(&state).await);
     render_template(&state, "builds/detail.html", context).await
 }
@@ -62,9 +64,9 @@ pub struct TriggerBuildForm {
 
 /// Get builds list
 async fn get_builds(
-    state: &WebState,
-    project_id: &str,
-    params: &BuildListParams,
+    _state: &WebState,
+    _project_id: &str,
+    _params: &BuildListParams,
 ) -> Vec<serde_json::Value> {
     vec![
         serde_json::json!({
@@ -110,7 +112,7 @@ async fn get_builds(
 }
 
 /// Get single build
-async fn get_build(state: &WebState, project_id: &str, id: &str) -> serde_json::Value {
+async fn get_build(_state: &WebState, _project_id: &str, id: &str) -> serde_json::Value {
     serde_json::json!({
         "id": id,
         "number": 42,
@@ -129,7 +131,7 @@ async fn get_build(state: &WebState, project_id: &str, id: &str) -> serde_json::
 }
 
 /// Get build stages
-async fn get_build_stages(state: &WebState, project_id: &str, id: &str) -> Vec<serde_json::Value> {
+async fn get_build_stages(_state: &WebState, _project_id: &str, _id: &str) -> Vec<serde_json::Value> {
     vec![
         serde_json::json!({
             "name": "test",
@@ -159,7 +161,7 @@ async fn get_build_stages(state: &WebState, project_id: &str, id: &str) -> Vec<s
 }
 
 /// Get build jobs
-async fn get_build_jobs(state: &WebState, project_id: &str, id: &str) -> Vec<serde_json::Value> {
+async fn get_build_jobs(_state: &WebState, _project_id: &str, _id: &str) -> Vec<serde_json::Value> {
     vec![
         serde_json::json!({
             "id": 1,
@@ -213,7 +215,11 @@ async fn get_build_jobs(state: &WebState, project_id: &str, id: &str) -> Vec<ser
 }
 
 /// Get build artifacts
-async fn get_build_artifacts(state: &WebState, project_id: &str, id: &str) -> Vec<serde_json::Value> {
+async fn get_build_artifacts(
+    _state: &WebState,
+    _project_id: &str,
+    _id: &str,
+) -> Vec<serde_json::Value> {
     vec![
         serde_json::json!({
             "name": "onedev-linux-amd64",
@@ -231,7 +237,7 @@ async fn get_build_artifacts(state: &WebState, project_id: &str, id: &str) -> Ve
 }
 
 /// Get pipelines
-async fn get_pipelines(state: &WebState, project_id: &str) -> Vec<serde_json::Value> {
+async fn get_pipelines(_state: &WebState, _project_id: &str) -> Vec<serde_json::Value> {
     vec![
         serde_json::json!({ "name": "ci", "description": "Continuous Integration" }),
         serde_json::json!({ "name": "deploy", "description": "Deploy to production" }),
@@ -240,7 +246,7 @@ async fn get_pipelines(state: &WebState, project_id: &str) -> Vec<serde_json::Va
 }
 
 /// Get project
-async fn get_project(state: &WebState, id: &str) -> serde_json::Value {
+async fn get_project(_state: &WebState, id: &str) -> serde_json::Value {
     serde_json::json!({
         "id": id,
         "name": "onedev/core",
@@ -250,7 +256,7 @@ async fn get_project(state: &WebState, id: &str) -> serde_json::Value {
 }
 
 /// Get current user (placeholder)
-async fn get_current_user(state: &WebState) -> serde_json::Value {
+async fn get_current_user(_state: &WebState) -> serde_json::Value {
     serde_json::json!({
         "id": "1",
         "username": "admin",

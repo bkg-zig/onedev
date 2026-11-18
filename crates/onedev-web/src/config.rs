@@ -1,11 +1,14 @@
 //! Web UI Configuration
 
-use figment::{Figment, providers::{Env, Format, Toml, Json, Yaml}};
+use figment::{
+    Figment,
+    providers::{Env, Format, Json, Toml, Yaml},
+};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
 /// Web UI configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct WebConfig {
     /// Server configuration
     pub server: ServerConfig,
@@ -193,19 +196,7 @@ impl WebConfig {
     }
 }
 
-impl Default for WebConfig {
-    fn default() -> Self {
-        Self {
-            server: ServerConfig::default(),
-            templates: TemplateConfig::default(),
-            static_assets: StaticAssetsConfig::default(),
-            api: ApiConfig::default(),
-            auth: AuthConfig::default(),
-            features: FeatureFlags::default(),
-        }
-    }
-}
-
+/// WebConfig implements Default via derive
 impl Default for ServerConfig {
     fn default() -> Self {
         Self {
@@ -254,7 +245,8 @@ impl Default for AuthConfig {
     fn default() -> Self {
         Self {
             session_cookie_name: default_session_cookie_name(),
-            session_secret: "change-me-in-production-use-strong-random-secret-64-bytes!!".to_string(),
+            session_secret: "change-me-in-production-use-strong-random-secret-64-bytes!!"
+                .to_string(),
             session_max_age: default_session_max_age(),
             secure_cookies: default_true(),
             same_site: default_same_site(),

@@ -2,30 +2,33 @@
 
 use anyhow::Result;
 use axum::{
+    Router,
     extract::State,
     response::{IntoResponse, Response},
     routing::get,
-    Router,
 };
 use metrics::{counter, gauge, histogram};
 use metrics_exporter_prometheus::{PrometheusBuilder, PrometheusHandle};
 use regex::Regex;
 use sqlx::{PgPool, Row};
 use std::time::{Duration, Instant};
-use tracing::{info, debug};
+use tracing::{debug, info};
 
 /// Metrics handle for Prometheus exposition
 pub type MetricsHandle = PrometheusHandle;
 
 /// Initialize metrics recorder
 pub fn init_metrics() -> MetricsHandle {
-    let builder = PrometheusBuilder::new()
-        .expect("Failed to create Prometheus builder")
+    let builder = PrometheusBuilder::new();
+    let builder = builder
         .set_buckets(&[
             0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0,
-        ]);
+        ])
+        .expect("Failed to set buckets");
 
-    let handle = builder.install_recorder().expect("Failed to install Prometheus recorder");
+    let handle = builder
+        .install_recorder()
+        .expect("Failed to install Prometheus recorder");
     info!("Prometheus metrics initialized");
     handle
 }
@@ -44,12 +47,7 @@ pub async fn metrics_handler(handle: MetricsHandle) -> impl IntoResponse {
 }
 
 /// Record HTTP request metrics
-pub fn record_http_request(
-    method: &str,
-    path: &str,
-    status: u16,
-    duration: Duration,
-) {
+pub fn record_http_request(method: &str, path: &str, status: u16, duration: Duration) {
     let labels = [
         ("method", method.to_string()),
         ("path", normalize_path(path)),
@@ -146,7 +144,10 @@ pub fn set_queue_depth(queue_name: &str, depth: usize) {
 
 /// Record cache hit/miss
 pub fn record_cache(cache_name: &str, hit: bool) {
-    let labels = [("cache", cache_name.to_string()), ("result", if hit { "hit" } else { "miss" }.to_string())];
+    let labels = [
+        ("cache", cache_name.to_string()),
+        ("result", if hit { "hit" } else { "miss" }.to_string()),
+    ];
     counter!("cache_operations_total", &labels).increment(1);
 }
 
@@ -155,15 +156,20 @@ pub async fn collect_system_metrics(db_pool: &PgPool) -> Result<()> {
     let start = Instant::now();
 
     // Database connections
-    if let Ok(stats) = sqlx::query("SELECT count(*) as count FROM pg_stat_activity WHERE state = 'active'")
-        .fetch_one(db_pool).await {
+    if let Ok(stats) =
+        sqlx::query("SELECT count(*) as count FROM pg_stat_activity WHERE state = 'active'")
+            .fetch_one(db_pool)
+            .await
+    {
         let count: i64 = stats.try_get("count")?;
         gauge!("db_active_connections").set(count as f64);
     }
 
     // Database size
     if let Ok(size) = sqlx::query("SELECT pg_database_size(current_database()) as size")
-        .fetch_one(db_pool).await {
+        .fetch_one(db_pool)
+        .await
+    {
         let s: i64 = size.try_get("size")?;
         gauge!("db_size_bytes").set(s as f64);
     }
@@ -176,8 +182,11 @@ pub async fn collect_system_metrics(db_pool: &PgPool) -> Result<()> {
         WHERE schemaname = 'public'
         ORDER BY size DESC
         LIMIT 20
-        "#
-    ).fetch_all(db_pool).await {
+        "#,
+    )
+    .fetch_all(db_pool)
+    .await
+    {
         for table in tables {
             let schema: String = table.try_get("schemaname")?;
             let tablename: String = table.try_get("tablename")?;
@@ -189,28 +198,37 @@ pub async fn collect_system_metrics(db_pool: &PgPool) -> Result<()> {
 
     // Build queue depth
     if let Ok(count) = sqlx::query("SELECT count(*) as count FROM builds WHERE status = 'Pending'")
-        .fetch_one(db_pool).await {
+        .fetch_one(db_pool)
+        .await
+    {
         let c: i64 = count.try_get("count")?;
         gauge!("build_queue_depth").set(c as f64);
     }
 
     // Running builds
     if let Ok(count) = sqlx::query("SELECT count(*) as count FROM builds WHERE status = 'Running'")
-        .fetch_one(db_pool).await {
+        .fetch_one(db_pool)
+        .await
+    {
         let c: i64 = count.try_get("count")?;
         gauge!("builds_running").set(c as f64);
     }
 
     // Webhook queue depth
-    if let Ok(count) = sqlx::query("SELECT count(*) as count FROM webhook_deliveries WHERE status = 'Pending'")
-        .fetch_one(db_pool).await {
+    if let Ok(count) =
+        sqlx::query("SELECT count(*) as count FROM webhook_deliveries WHERE status = 'Pending'")
+            .fetch_one(db_pool)
+            .await
+    {
         let c: i64 = count.try_get("count")?;
         gauge!("webhook_queue_depth").set(c as f64);
     }
 
     // Search index size
     if let Ok(count) = sqlx::query("SELECT count(*) as count FROM search_index")
-        .fetch_one(db_pool).await {
+        .fetch_one(db_pool)
+        .await
+    {
         let c: i64 = count.try_get("count")?;
         gauge!("search_index_size").set(c as f64);
     }
@@ -224,7 +242,8 @@ fn normalize_path(path: &str) -> String {
     let mut normalized = path.to_string();
 
     // Replace UUIDs
-    let uuid_regex = Regex::new(r"/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}").unwrap();
+    let uuid_regex =
+        Regex::new(r"/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}").unwrap();
     normalized = uuid_regex.replace_all(&normalized, "/:id").to_string();
 
     // Replace numeric IDs
