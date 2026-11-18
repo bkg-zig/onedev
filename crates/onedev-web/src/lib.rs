@@ -54,6 +54,9 @@ pub struct WebState {
     /// `None` without a database: auth handlers fall back to the
     /// placeholder check so pages stay testable.
     pub auth_service: Option<Arc<onedev_auth::services::auth_service::AuthService>>,
+    /// Database pool shared with the services above. `None` without
+    /// `ONEDEV_WEB_DATABASE_URL`; list handlers then use placeholder data.
+    pub db_pool: Option<onedev_db::DbPool>,
     pub config: Arc<WebConfig>,
     pub tera: Arc<tera::Tera>,
 }
@@ -72,10 +75,16 @@ impl WebState {
 
         // Optional live backend: Postgres + ephemeral RSA keys for JWT.
         // Without a database URL the UI renders with placeholder data.
-        let auth_service = match std::env::var("ONEDEV_WEB_DATABASE_URL") {
+        let db_pool = match std::env::var("ONEDEV_WEB_DATABASE_URL") {
             Ok(url) if !url.trim().is_empty() => {
                 let pool = onedev_db::pool::create_pool(&url, 5).await?;
                 onedev_db::run_migrations(&pool).await?;
+                Some(pool)
+            }
+            _ => None,
+        };
+        let auth_service = match &db_pool {
+            Some(pool) => {
                 let (private_key, public_key) =
                     onedev_auth::models::token::generate_rsa_keys()?;
                 let auth_config = onedev_auth::services::auth_service::AuthConfig {
@@ -92,7 +101,7 @@ impl WebState {
                     ..Default::default()
                 };
                 Some(Arc::new(
-                    onedev_auth::services::auth_service::AuthService::new(auth_config, pool)?,
+                    onedev_auth::services::auth_service::AuthService::new(auth_config, pool.clone())?,
                 ))
             }
             _ => None,
@@ -101,6 +110,7 @@ impl WebState {
         Ok(Self {
             api_state: None,
             auth_service,
+            db_pool,
             config: Arc::new(config),
             tera: Arc::new(tera),
         })

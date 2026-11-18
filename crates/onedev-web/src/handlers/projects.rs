@@ -116,7 +116,43 @@ pub struct UpdateProjectForm {
 }
 
 /// Get projects list
-async fn get_projects(_state: &WebState, _params: &ProjectListParams) -> Vec<serde_json::Value> {
+/// Live project list from the database when configured, otherwise the
+/// dev placeholder rows. `search` is a plain substring filter for now;
+/// the full vanilla query language is a later slice (see report 04).
+async fn get_projects(state: &WebState, params: &ProjectListParams) -> Vec<serde_json::Value> {
+    if let Some(pool) = &state.db_pool {
+        let service = onedev_api::services::ProjectService::new(pool.clone());
+        let per_page = params.per_page.unwrap_or(25).min(100).max(1) as i64;
+        let page = params.page.unwrap_or(0) as i64;
+        if let Ok(rows) = service.list(per_page, page * per_page).await {
+            let needle = params.search.as_deref().unwrap_or("").to_lowercase();
+            return rows
+                .into_iter()
+                .filter(|item| {
+                    needle.is_empty()
+                        || item.project.name.to_lowercase().contains(&needle)
+                        || item.project.path.to_lowercase().contains(&needle)
+                })
+                .map(|item| {
+                    serde_json::json!({
+                        "id": item.project.id,
+                        "name": item.project.name,
+                        "path": item.project.path,
+                        "description": item.project.description,
+                        "visibility": format!("{:?}", item.project.visibility).to_lowercase(),
+                        "stars": item.project.star_count,
+                        "forks": item.project.fork_count,
+                        // Counters come from ProjectResponse, not the list
+                        // item; wired once the stats query lands.
+                        "open_issues": 0,
+                        "open_mrs": 0,
+                        "last_activity": item.last_activity_at,
+                        "owner": { "username": item.owner.name, "avatar_url": item.owner.avatar_url }
+                    })
+                })
+                .collect();
+        }
+    }
     vec![
         serde_json::json!({
             "id": 1,

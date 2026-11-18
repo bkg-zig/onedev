@@ -1,7 +1,51 @@
 {% extends "base.html" %}
-{% block title %}Projects · OneDev{% endblock title %}
-{% block page_title %}Projects{% endblock page_title %}
+{# 1:1 port of ProjectListPage.html + ProjectListPanel.html: side-main  #}
+{# layout with saved-queries side card and the query/operations toolbar;#}
+{# wicket:svg icons become plain text glyphs, AJAX becomes htmx.        #}
+{% block title %}{{ title }} · OneDev{% endblock title %}
+{% block page_title %}{{ title }}{% endblock page_title %}
+{% block head %}
+<link rel="stylesheet" href="/static/vanilla/web/component/project/list/project-list.css">
+<link rel="stylesheet" href="/static/vanilla/web/page/project/project.css">
+{% endblock head %}
 {% block content %}
-<div class="p-2 p-sm-5"><h1>{{ title }}</h1><a href="/projects/new">New Project</a>
-<ul>{% for project in projects | default(value=[]) %}<li><a href="/projects/{{ project.id }}">{{ project.name }}</a></li>{% else %}<li>No projects.</li>{% endfor %}</ul></div>
+<div class="side-main p-2 p-sm-5">
+  <div class="side card"></div>
+  <div class="main">
+    <div class="project-list card no-autofocus">
+      <div class="card-body">
+        <div class="d-flex mb-4">
+          <form class="clearable-wrapper flex-grow-1" hx-get="/projects" hx-target=".project-rows" hx-swap="outerHTML" hx-trigger="submit">
+            <div class="input-group">
+              <input name="search" spellcheck="false" autocomplete="off" class="form-control" placeholder="Query/order projects" value="{{ params.search | default(value='') }}">
+              <span class="input-group-append">
+                <button type="submit" title="Query" class="btn btn-outline-secondary btn-icon">&#x1f50d;</button>
+              </span>
+            </div>
+          </form>
+          <a href="/projects/new" class="btn btn-primary btn-icon flex-shrink-0 ml-3">+</a>
+        </div>
+        <div class="operations mb-4">
+          <a href="#" class="filter text-gray mr-4 mb-2 d-inline-block text-nowrap">Filter</a>
+          <a href="#" class="order-by text-gray d-inline-block mb-2 mr-4">Order By</a>
+        </div>
+        <div class="project-rows">
+          {% for project in projects %}
+          <div class="d-flex align-items-center flex-wrap row-gap-2 font-size-h5">
+            <a href="/projects/{{ project.id }}" class="mr-2"><span>{{ project.path }}</span></a>
+          </div>
+          <div class="mt-2 font-size-sm text-muted">{{ project.description | default(value='') }}</div>
+          <div class="d-flex flex-wrap project-summary">
+            <div class="mt-2 d-flex align-items-center flex-wrap mr-3">&#9733; {{ project.stars }} &nbsp; {{ project.visibility }}</div>
+            <div class="mt-2 d-flex align-items-center flex-wrap mr-3">Issues: {{ project.open_issues }}</div>
+            <div class="mt-2 d-flex align-items-center flex-wrap">MRs: {{ project.open_mrs }}</div>
+          </div>
+          {% else %}
+          <p class="text-muted">No projects found.</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock content %}
