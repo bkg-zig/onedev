@@ -29,7 +29,7 @@ tokio-util = { version = "0.7", features = ["full"] }
 axum = { version = "0.8", features = ["macros", "json", "multipart", "ws"] }
 axum-extra = { version = "0.9", features = ["cookie", "cookie-signed", "cookie-private"] }
 tower = { version = "0.4", features = ["full"] }
-tower-http = { version = "0.6", features = ["cors", "trace", "catch-panic", "compression-br", "compression-gzip", "compression-deflate", "normalize-path", "request-id", "set-header", "timeout"] }
+tower-http = { version = "0.6", features = ["cors", "trace", "catch-panic", "compression-br", "compression-gzip", "compression-deflate", "normalize-path", "request-id", "set-header", "timeout", "limit", "sensitive-headers"] }
 hyper = { version = "1.3", features = ["full"] }
 http = "1.3"
 http-body = "1.0"
@@ -109,7 +109,7 @@ tracing-appender = { version = "0.2", features = ["non-blocking"] }
 # opentelemetry = { version = "0.29", features = ["trace", "metrics", "logs"] }
 # opentelemetry-otlp = { version = "0.29", features = ["tonic", "http", "metrics", "logs", "trace"] }
 # opentelemetry_sdk = { version = "0.29", features = ["trace", "metrics", "logs"] }
-metrics = "0.23"
+metrics = "0.24"
 metrics-exporter-prometheus = "0.16"
 
 # Config
@@ -185,6 +185,12 @@ tungstenite = { version = "0.23", features = ["native-tls", "rustls-tls"] }
 
 # Rate limiting
 governor = { version = "0.7", features = ["std"] }
+
+# Networking helpers
+ipnet = "2.9"
+hex = "0.4"
+libc = "0.2"
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls", "gzip", "brotli"] }
 
 # Sentry
 sentry = { version = "0.38", features = ["tokio", "tracing", "anyhow", "backtrace"] }

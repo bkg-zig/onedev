@@ -39,4 +39,5 @@ tar.workspace = true
 walkdir.workspace = true
 glob.workspace = true
 tempfile = "3.10"
+libc.workspace = true
 which = "8.0"

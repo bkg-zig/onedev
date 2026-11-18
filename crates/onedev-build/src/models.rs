@@ -21,6 +21,46 @@ pub struct BuildSpec {
     /// Project properties referenced as `@property:name@` (kept raw).
     #[serde(default)]
     pub properties: Vec<serde_json::Value>,
+    /// Sidecar services (databases, caches, ...) jobs can require.
+    #[serde(default)]
+    pub services: Vec<ServiceSpec>,
+    /// Reusable step sequences referenced by `UseTemplateStep`.
+    #[serde(default)]
+    pub step_templates: Vec<StepTemplate>,
+}
+
+/// A service container a job may require (`io.onedev.server.buildspec.Service`).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ServiceSpec {
+    pub name: String,
+    pub image: String,
+    /// Extra arguments passed to the container entrypoint.
+    pub arguments: Option<String>,
+    #[serde(default)]
+    pub env_vars: Vec<EnvVar>,
+    /// Command run inside the service until it exits 0.
+    pub readiness_check_command: Option<String>,
+    #[serde(default)]
+    pub run_as: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct EnvVar {
+    pub name: String,
+    #[serde(default)]
+    pub value: String,
+}
+
+/// A named, reusable list of steps (`io.onedev.server.buildspec.step.StepTemplate`).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StepTemplate {
+    pub name: String,
+    #[serde(default)]
+    pub steps: Vec<Step>,
+    #[serde(default)]
+    pub param_specs: Vec<ParamSpec>,
 }
 
 /// `imports:` entry — reuse jobs/templates of another project.
@@ -356,6 +396,24 @@ pub struct StepResult {
     pub name: String,
     pub status: BuildStatus,
     pub exit_code: Option<i32>,
+    /// Wall-clock duration of the step.
+    #[serde(default)]
+    pub duration_ms: u64,
+    /// Files this step published (relative to the job's artifact directory).
+    #[serde(default)]
+    pub artifacts: Vec<String>,
+}
+
+impl StepResult {
+    pub fn new(name: impl Into<String>, status: BuildStatus, exit_code: Option<i32>) -> Self {
+        StepResult {
+            name: name.into(),
+            status,
+            exit_code,
+            duration_ms: 0,
+            artifacts: Vec::new(),
+        }
+    }
 }
 
 /// One executed job.
@@ -367,6 +425,8 @@ pub struct JobResult {
     /// Files collected into the artifact store.
     pub artifacts: Vec<String>,
     pub attempts: u32,
+    #[serde(default)]
+    pub duration_ms: u64,
 }
 
 /// Result of a whole build run.
@@ -374,6 +434,11 @@ pub struct JobResult {
 pub struct BuildReport {
     pub status: BuildStatus,
     pub jobs: Vec<JobResult>,
+    #[serde(default)]
+    pub duration_ms: u64,
+    /// Why the build did not complete normally (`cancelled`, `timed out`, ...).
+    #[serde(default)]
+    pub error: Option<String>,
 }
 
 /// One line of build output, streamed while jobs run.

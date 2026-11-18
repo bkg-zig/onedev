@@ -33,14 +33,19 @@ pub fn validate(spec: &BuildSpec) -> BuildResult<()> {
             return Err(BuildError::Spec("job with empty name".to_owned()));
         }
         if !names.insert(job.name.as_str()) {
-            return Err(BuildError::Spec(format!("duplicate job name: {}", job.name)));
+            return Err(BuildError::Spec(format!(
+                "duplicate job name: {}",
+                job.name
+            )));
         }
         if job.steps.is_empty() {
             return Err(BuildError::Spec(format!("job {} has no steps", job.name)));
         }
         for step in &job.steps {
             if step.step_type == "CommandStep"
-                && step.commands().map_or(true, |commands| commands.trim().is_empty())
+                && step
+                    .commands()
+                    .is_none_or(|commands| commands.trim().is_empty())
             {
                 return Err(BuildError::Spec(format!(
                     "job {} has a CommandStep without commands",
@@ -53,7 +58,10 @@ pub fn validate(spec: &BuildSpec) -> BuildResult<()> {
     for job in &spec.jobs {
         for need in &job.needs() {
             if need == &job.name {
-                return Err(BuildError::Spec(format!("job {} depends on itself", job.name)));
+                return Err(BuildError::Spec(format!(
+                    "job {} depends on itself",
+                    job.name
+                )));
             }
             if !names.contains(need.as_str()) {
                 return Err(BuildError::Spec(format!(
@@ -120,8 +128,11 @@ pub fn execution_order(spec: &BuildSpec) -> BuildResult<Vec<String>> {
 /// Jobs without any trigger only run manually or as a dependency.
 pub fn jobs_for_event(spec: &BuildSpec, event: &TriggerEvent) -> BuildResult<Vec<String>> {
     let order = execution_order(spec)?;
-    let by_name: HashMap<&str, &crate::models::JobSpec> =
-        spec.jobs.iter().map(|job| (job.name.as_str(), job)).collect();
+    let by_name: HashMap<&str, &crate::models::JobSpec> = spec
+        .jobs
+        .iter()
+        .map(|job| (job.name.as_str(), job))
+        .collect();
 
     let mut selected: HashSet<&str> = HashSet::new();
     if matches!(event, TriggerEvent::Manual) {
@@ -138,7 +149,10 @@ pub fn jobs_for_event(spec: &BuildSpec, event: &TriggerEvent) -> BuildResult<Vec
             for job in &spec.jobs {
                 if !selected.contains(job.name.as_str())
                     && !job.needs().is_empty()
-                    && job.needs().iter().all(|need| selected.contains(need.as_str()))
+                    && job
+                        .needs()
+                        .iter()
+                        .all(|need| selected.contains(need.as_str()))
                 {
                     selected.insert(job.name.as_str());
                     added = true;
@@ -200,9 +214,21 @@ jobs:
     #[test]
     fn trigger_matching_respects_branches() {
         let spec = parse_buildspec(SPEC).unwrap();
-        let on_main = jobs_for_event(&spec, &TriggerEvent::Push { branch: "main".into() }).unwrap();
+        let on_main = jobs_for_event(
+            &spec,
+            &TriggerEvent::Push {
+                branch: "main".into(),
+            },
+        )
+        .unwrap();
         assert_eq!(on_main, vec!["build", "test"]); // dependent job is pulled in
-        let on_dev = jobs_for_event(&spec, &TriggerEvent::Push { branch: "dev".into() }).unwrap();
+        let on_dev = jobs_for_event(
+            &spec,
+            &TriggerEvent::Push {
+                branch: "dev".into(),
+            },
+        )
+        .unwrap();
         assert!(on_dev.is_empty());
         let manual = jobs_for_event(&spec, &TriggerEvent::Manual).unwrap();
         assert_eq!(manual, vec!["build", "test"]);
