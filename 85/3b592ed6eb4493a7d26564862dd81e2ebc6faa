@@ -1,0 +1,74 @@
+crates/onedev-server/src/services/git_gc.rs
+  s_b4d4a7c7a80ee3::t_1b733615cb5f11 244,249
+  s_b4d4a7c7a80ee3::t_53417e48b7abeb 6-7
+crates/onedev-server/src/middleware.rs
+  s_b4d4a7c7a80ee3::t_48c43c72c6248d 10,20,27
+crates/onedev-server/src/lib.rs
+  s_0de1f439e1761a::t_90b909610bda7f 49,62
+crates/onedev-server/src/services/build_scheduler.rs
+  s_b4d4a7c7a80ee3::t_3d7a0c9dac3e01 192,195
+  s_b4d4a7c7a80ee3::t_5913e8e5589eb3 380,383
+  s_b4d4a7c7a80ee3::t_adf2b6a266dab9 291
+  s_b4d4a7c7a80ee3::t_c20e9fdb0f963d 359-360,363,367
+crates/onedev-build/src/models.rs
+  s_b4d4a7c7a80ee3::t_1d37a905d5ccb1 327-328,331-332,336
+Cargo.toml
+  s_b4d4a7c7a80ee3::t_88d1424dbb35c2 94
+crates/onedev-server/src/state.rs
+  s_b4d4a7c7a80ee3::t_21a8c833f7d7b7 159
+  s_b4d4a7c7a80ee3::t_f06c8914f06688 95
+  s_b4d4a7c7a80ee3::t_7daa63d967af5f 124
+crates/onedev-db/src/pool.rs
+  s_0de1f439e1761a::t_8ebad67c5d9878 314-315,329,331
+  s_0de1f439e1761a::t_531c0035d45f05 245-246,248-249,251-252,254-255,257-258,260-261
+  s_0de1f439e1761a::t_d2d4637b72a48e 282-283,288-289,294-295
+  s_0de1f439e1761a::t_58683e35ca4f1b 341-342,347-348,353-354
+  s_b4d4a7c7a80ee3::t_6d9ea04761fb89 233-244,247,250,253,256,259,262-281,284-287,290-293,296-313,316-328,330,332-340,343-346,349-352,355-357
+crates/onedev-server/src/metrics.rs
+  s_b4d4a7c7a80ee3::t_0ff225ab3abb26 44
+  s_b4d4a7c7a80ee3::t_44529db307a564 162,170,186-188,197,205,213,221
+crates/onedev-db/src/error.rs
+  s_0de1f439e1761a::t_94ac3d02eb0fce 39-41
+  s_b4d4a7c7a80ee3::t_8d1a5c8fbcc95c 42-44
+crates/onedev-build/src/services/mod.rs
+  s_0de1f439e1761a::t_76e9b3f62d4d43 14-17,32-33
+  s_0de1f439e1761a::t_577cda3f983bd6 13,18-31,34-35
+  s_4dc460dbf339a2::t_639931538c23e2 12
+crates/onedev-server/Cargo.toml
+  s_b4d4a7c7a80ee3::t_37fbc53dc4aaaf 54
+  s_b4d4a7c7a80ee3::t_fe19d042454970 55
+Cargo.lock
+  s_b4d4a7c7a80ee3::t_a456026fd36b07 2434,2494-2507,2922-2924,2926,2928-2930,2998-3011,3080-3091,3361-3381,3403-3423,3466-3481,6163,6185
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "853b592ed6eb4493a7d26564862dd81e2ebc6faa",
+  "prompts": {},
+  "sessions": {
+    "s_0de1f439e1761a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0f2f81bd-eb11-4834-95c4-07542b095264",
+        "model": "poolside/laguna-xs-2.1"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    },
+    "s_4dc460dbf339a2": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e163f433bffe5t2PzgPpubA64u",
+        "model": "nvidia/nemotron-3-ultra-550b-a55b"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    },
+    "s_b4d4a7c7a80ee3": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e15302bc6ffeeevu8JM3MfvFlY",
+        "model": "nvidia/nemotron-3-ultra-550b-a55b"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}
