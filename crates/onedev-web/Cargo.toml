@@ -17,8 +17,8 @@ askama.workspace = true
 markdown.workspace = true
 pulldown-cmark.workspace = true
 syntect.workspace = true
-axum = { workspace = true, default-features = false, features = ["macros", "json", "multipart"] }
-axum-extra = { workspace = true, default-features = false, features = ["cookie", "cookie-signed", "cookie-private"] }
+axum = { workspace = true, features = ["macros", "json", "multipart"] }
+axum-extra = { workspace = true, features = ["cookie", "cookie-signed", "cookie-private"] }
 tower-http = { workspace = true, features = ["fs"] }
 tower.workspace = true
 figment.workspace = true
