@@ -1,0 +1,49 @@
+crates/onedev-server/src/metrics.rs
+  s_fc4968d509c3df::t_61574915a84bbf 27
+  s_fc4968d509c3df::t_7983eedcc21ad1 25
+  s_fc4968d509c3df::t_8636efee110bfb 11,13
+crates/onedev-server/src/services/build_scheduler.rs
+  s_b4d4a7c7a80ee3::t_21788da51165e6 294
+  s_b4d4a7c7a80ee3::t_e0a049663b955d 362-363
+  s_b4d4a7c7a80ee3::t_cfabc425474245 178,181,198
+crates/onedev-server/src/config.rs
+  s_b4d4a7c7a80ee3::t_24fd9d9b1dade0 142-145
+crates/onedev-server/src/middleware.rs
+  s_fc4968d509c3df::t_bc00701eae171a 4-5,9,14,19-20,27
+  s_b4d4a7c7a80ee3::t_cc737bb4a8f272 43-44
+crates/onedev-server/src/services/git_gc.rs
+  s_fc4968d509c3df::t_dee9e556f57327 7
+  s_b4d4a7c7a80ee3::t_710b1c80b08e8d 214,220-221,227,229-232
+  s_b4d4a7c7a80ee3::t_ee766eab3b6523 141,146,148-150,152-158,176,187-196,204
+crates/onedev-server/src/state.rs
+  s_b4d4a7c7a80ee3::t_c671c39477071f 117
+  s_b4d4a7c7a80ee3::t_3b6b9f93e533f9 176-180,189-190,192-194
+  s_b4d4a7c7a80ee3::t_68cc10d9f15db4 131-175,181-188,191,195-196
+  s_b4d4a7c7a80ee3::t_a63185801556d3 115
+crates/onedev-server/src/lib.rs
+  s_b4d4a7c7a80ee3::t_188929e7f90cec 255-257,265-266
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "9b7861c39ddd3dec6e1ef367e8cef546d960dfae",
+  "prompts": {},
+  "sessions": {
+    "s_b4d4a7c7a80ee3": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e15302bc6ffeeevu8JM3MfvFlY",
+        "model": "nvidia/nemotron-3-ultra-550b-a55b"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    },
+    "s_fc4968d509c3df": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e152e6bc4ffejPRtPDKqejzaSv",
+        "model": "combo/best-free"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}
