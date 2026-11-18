@@ -24,11 +24,11 @@ pub struct AppState {
 
 /// Build scheduler handle
 pub struct BuildScheduler {
-    inner: Arc<tokio::sync::Mutex<Option<onedev_server::services::build_scheduler::BuildScheduler>>>,
+    inner: Arc<tokio::sync::Mutex<Option<crate::services::build_scheduler::BuildScheduler>>>,
 }
 
 impl BuildScheduler {
-    pub fn new(scheduler: onedev_server::services::build_scheduler::BuildScheduler) -> Self {
+    pub fn new(scheduler: crate::services::build_scheduler::BuildScheduler) -> Self {
         Self {
             inner: Arc::new(tokio::sync::Mutex::new(Some(scheduler))),
         }
@@ -53,11 +53,11 @@ impl BuildScheduler {
 
 /// Cleanup service handle
 pub struct CleanupService {
-    inner: Arc<tokio::sync::Mutex<Option<onedev_server::services::cleanup::CleanupService>>>,
+    inner: Arc<tokio::sync::Mutex<Option<crate::services::cleanup::CleanupService>>>,
 }
 
 impl CleanupService {
-    pub fn new(service: onedev_server::services::cleanup::CleanupService) -> Self {
+    pub fn new(service: crate::services::cleanup::CleanupService) -> Self {
         Self {
             inner: Arc::new(tokio::sync::Mutex::new(Some(service))),
         }
@@ -74,11 +74,11 @@ impl CleanupService {
 
 /// Git GC service handle
 pub struct GitGcService {
-    inner: Arc<tokio::sync::Mutex<Option<onedev_server::services::git_gc::GitGcService>>>,
+    inner: Arc<tokio::sync::Mutex<Option<crate::services::git_gc::GitGcService>>>,
 }
 
 impl GitGcService {
-    pub fn new(service: onedev_server::services::git_gc::GitGcService) -> Self {
+    pub fn new(service: crate::services::git_gc::GitGcService) -> Self {
         Self {
             inner: Arc::new(tokio::sync::Mutex::new(Some(service))),
         }
@@ -103,11 +103,11 @@ impl GitGcService {
 
 /// Search indexer handle
 pub struct SearchIndexer {
-    inner: Arc<tokio::sync::Mutex<Option<onedev_server::services::search_indexer::SearchIndexer>>>,
+    inner: Arc<tokio::sync::Mutex<Option<crate::services::search_indexer::SearchIndexer>>>,
 }
 
 impl SearchIndexer {
-    pub fn new(indexer: onedev_server::services::search_indexer::SearchIndexer) -> Self {
+    pub fn new(indexer: crate::services::search_indexer::SearchIndexer) -> Self {
         Self {
             inner: Arc::new(tokio::sync::Mutex::new(Some(indexer))),
         }
@@ -132,11 +132,11 @@ impl SearchIndexer {
 
 /// Webhook dispatcher handle
 pub struct WebhookDispatcher {
-    inner: Arc<tokio::sync::Mutex<Option<onedev_server::services::webhook_dispatcher::WebhookDispatcher>>>,
+    inner: Arc<tokio::sync::Mutex<Option<crate::services::webhook_dispatcher::WebhookDispatcher>>>,
 }
 
 impl WebhookDispatcher {
-    pub fn new(dispatcher: onedev_server::services::webhook_dispatcher::WebhookDispatcher) -> Self {
+    pub fn new(dispatcher: crate::services::webhook_dispatcher::WebhookDispatcher) -> Self {
         Self {
             inner: Arc::new(tokio::sync::Mutex::new(Some(dispatcher))),
         }
@@ -200,7 +200,7 @@ pub async fn init_services(
 )> {
     // Build scheduler
     let build_scheduler = Arc::new(BuildScheduler::new(
-        onedev_server::services::build_scheduler::BuildScheduler::new(
+        crate::services::build_scheduler::BuildScheduler::new(
             db_pool.clone(),
             config.build.clone().into(),
             lifecycle.shutdown_rx(),
@@ -209,7 +209,7 @@ pub async fn init_services(
 
     // Cleanup service
     let cleanup_service = Arc::new(CleanupService::new(
-        onedev_server::services::cleanup::CleanupService::new(
+        crate::services::cleanup::CleanupService::new(
             db_pool.clone(),
             config.cleanup.clone().into(),
             lifecycle.shutdown_rx(),
@@ -218,7 +218,7 @@ pub async fn init_services(
 
     // Git GC service
     let git_gc_service = Arc::new(GitGcService::new(
-        onedev_server::services::git_gc::GitGcService::new(
+        crate::services::git_gc::GitGcService::new(
             db_pool.clone(),
             config.git.clone().into(),
             lifecycle.shutdown_rx(),
@@ -227,7 +227,7 @@ pub async fn init_services(
 
     // Search indexer
     let search_indexer = Arc::new(SearchIndexer::new(
-        onedev_server::services::search_indexer::SearchIndexer::new(
+        crate::services::search_indexer::SearchIndexer::new(
             db_pool.clone(),
             config.search.clone().into(),
             lifecycle.shutdown_rx(),
@@ -236,7 +236,7 @@ pub async fn init_services(
 
     // Webhook dispatcher
     let webhook_dispatcher = Arc::new(WebhookDispatcher::new(
-        onedev_server::services::webhook_dispatcher::WebhookDispatcher::new(
+        crate::services::webhook_dispatcher::WebhookDispatcher::new(
             db_pool.clone(),
             config.webhook.clone().into(),
             lifecycle.shutdown_rx(),
@@ -257,7 +257,7 @@ pub async fn init_services(
 }
 
 // Conversion traits for config
-impl From<crate::config::BuildConfig> for onedev_server::services::build_scheduler::BuildSchedulerConfig {
+impl From<crate::config::BuildConfig> for crate::services::build_scheduler::BuildSchedulerConfig {
     fn from(c: crate::config::BuildConfig) -> Self {
         Self {
             max_concurrent_builds: c.max_concurrent_builds,
@@ -268,7 +268,7 @@ impl From<crate::config::BuildConfig> for onedev_server::services::build_schedul
     }
 }
 
-impl From<crate::config::CleanupConfig> for onedev_server::services::cleanup::CleanupConfig {
+impl From<crate::config::CleanupConfig> for crate::services::cleanup::CleanupConfig {
     fn from(c: crate::config::CleanupConfig) -> Self {
         Self {
             build_log_retention_days: c.build_log_retention_days,
@@ -282,7 +282,7 @@ impl From<crate::config::CleanupConfig> for onedev_server::services::cleanup::Cl
     }
 }
 
-impl From<crate::config::GitConfig> for onedev_server::services::git_gc::GitGcConfig {
+impl From<crate::config::GitConfig> for crate::services::git_gc::GitGcConfig {
     fn from(c: crate::config::GitConfig) -> Self {
         Self {
             repos_root: c.repos_root,
@@ -295,7 +295,7 @@ impl From<crate::config::GitConfig> for onedev_server::services::git_gc::GitGcCo
     }
 }
 
-impl From<crate::config::SearchConfig> for onedev_server::services::search_indexer::SearchIndexerConfig {
+impl From<crate::config::SearchConfig> for crate::services::search_indexer::SearchIndexerConfig {
     fn from(c: crate::config::SearchConfig) -> Self {
         Self {
             batch_size: c.batch_size,
@@ -308,7 +308,7 @@ impl From<crate::config::SearchConfig> for onedev_server::services::search_index
     }
 }
 
-impl From<crate::config::WebhookConfig> for onedev_server::services::webhook_dispatcher::WebhookDispatcherConfig {
+impl From<crate::config::WebhookConfig> for crate::services::webhook_dispatcher::WebhookDispatcherConfig {
     fn from(c: crate::config::WebhookConfig) -> Self {
         Self {
             max_retries: c.max_retries,

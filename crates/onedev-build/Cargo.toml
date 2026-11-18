@@ -12,6 +12,7 @@ onedev-core = { path = "../onedev-core" }
 onedev-db = { path = "../onedev-db" }
 onedev-auth = { path = "../onedev-auth" }
 onedev-git = { path = "../onedev-git" }
+sqlx.workspace = true
 tokio.workspace = true
 tokio-util.workspace = true
 anyhow.workspace = true
