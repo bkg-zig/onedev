@@ -1,0 +1,52 @@
+Dioxus.toml
+  s_fc4968d509c3df::t_c07ccd744acca8 1-49
+frontend-workspace/Cargo.toml
+  s_fc4968d509c3df::t_0088d14dc2cc5b 4
+  s_fc4968d509c3df::t_1ac8b4c1e63c1b 1-3,5-37
+docs/progress.md
+  s_fc4968d509c3df::t_18c34d1ccfa5c4 9,13-20,24,28-36,40-75,79,81-86,92-97,101,103-107,124-125
+frontend-workspace/onedev-frontend/Cargo.toml
+  s_fc4968d509c3df::t_8377a6d754bdc6 13
+  s_fc4968d509c3df::t_a880e108502a1b 20
+  s_fc4968d509c3df::t_7d51af670ecb6a 23
+  s_fc4968d509c3df::t_5176e0c79e81bc 1-10,14-19,21-22,24-33
+  s_fc4968d509c3df::t_f0baf019fcf3d4 11-12
+CHANGELOG.md
+  s_fc4968d509c3df::t_c2a6440e8e8934 1-73
+crates/onedev-web/Cargo.toml
+  s_fc4968d509c3df::t_7fc0385166e110 26,55-56,73
+  s_fc4968d509c3df::t_68e13cfa4a09eb 25
+  s_fc4968d509c3df::t_3e9b877e29ba1f 57
+  s_fc4968d509c3df::t_24b345cbb86f36 58-72,74-100
+  s_fc4968d509c3df::t_abee0e5ffd0907 19
+  s_fc4968d509c3df::t_58e609b614646a 20
+  s_fc4968d509c3df::t_e47724a567abcc 101
+frontend-workspace/onedev-frontend/src/main.rs
+  s_fc4968d509c3df::t_6d459257a250cb 69,72-74,140,156-159,191,235,332-334
+  s_fc4968d509c3df::t_5176e0c79e81bc 1-3,5-68,70-71,75-139,141-155,160-190,192-234,236-331,335-365
+  s_fc4968d509c3df::t_9069885898059e 4
+Cargo.toml
+  s_fc4968d509c3df::t_56922f709f5288 185-186
+  s_fc4968d509c3df::t_31bdcdf0e19ebc 31
+  s_fc4968d509c3df::t_6271dbf11eebb7 27-28
+Cargo.lock
+  s_fc4968d509c3df::t_d8c6de129b6be0 2011,2367,2371,5591,6215,7408,7888,8966,8998,9971
+frontend-workspace/Cargo.lock
+  s_fc4968d509c3df::t_8dd72c6113c96e 1-4557
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "b7d2f83c07d19d278d136c3faeaefe7f5413cc07",
+  "prompts": {},
+  "sessions": {
+    "s_fc4968d509c3df": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e152e6bc4ffejPRtPDKqejzaSv",
+        "model": "combo/best-free"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}
