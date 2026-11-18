@@ -1,0 +1,65 @@
+crates/onedev-server/src/services/search_indexer.rs
+  s_fc4968d509c3df::t_d8ff6593a8e297 477
+crates/onedev-server/src/services/git_gc.rs
+  s_fc4968d509c3df::t_5991086cae956f 193
+  s_fc4968d509c3df::t_2c0ca77b1a27fd 5
+  s_fc4968d509c3df::t_9b19004b092ac1 147-148,152,157,161
+  s_fc4968d509c3df::t_c197c4ebd032c3 225
+crates/onedev-server/Cargo.toml
+  s_b4d4a7c7a80ee3::t_e6975160503124 56-57
+crates/onedev-build/src/models.rs
+  s_fc4968d509c3df::t_6a4583848e26c9 327,331
+  s_fc4968d509c3df::t_00cfab1db0aac3 340-352
+crates/onedev-api/src/routes/mod.rs
+  s_fc4968d509c3df::t_52297bc53b74da 219
+  s_b4d4a7c7a80ee3::t_884b88a655a2e9 231
+crates/onedev-server/src/lib.rs
+  s_b4d4a7c7a80ee3::t_f951f3bd51f6c7 27-28
+  s_b4d4a7c7a80ee3::t_7148f1dbcb8207 259-264,272,275,282-283,293
+  s_fc4968d509c3df::t_25160597cd2718 280
+  s_fc4968d509c3df::t_f595848ae6a5ea 281
+crates/onedev-server/src/services/webhook_dispatcher.rs
+  s_fc4968d509c3df::t_3859964471fbdf 400
+  s_fc4968d509c3df::t_b8c6670cdf13e1 170
+crates/onedev-server/src/middleware.rs
+  s_fc4968d509c3df::t_fa62a35b18d44e 39,42,48
+  s_b4d4a7c7a80ee3::t_9e5df36f2c74aa 10
+  s_fc4968d509c3df::t_073cf5e8587d2b 11,25-26
+  s_fc4968d509c3df::t_439b0e2f1a4f65 20-21,28
+crates/onedev-server/src/telemetry.rs
+  s_fc4968d509c3df::t_6f975c3c724665 4
+crates/onedev-server/src/state.rs
+  s_b4d4a7c7a80ee3::t_dcd38089c3f1b5 1,6-7,9,16-23,30-31,33-46,50-57,59-130
+  s_b4d4a7c7a80ee3::t_cb4ec581c34c80 8
+crates/onedev-server/src/metrics.rs
+  s_fc4968d509c3df::t_337a447a770b41 162-163,169-170,184-186,195-196,202-203,209-210,216-217
+  s_fc4968d509c3df::t_98e16a0ad9c8d5 13
+crates/onedev-api/Cargo.toml
+  s_b4d4a7c7a80ee3::t_60d8e68675bf45 22
+Cargo.lock
+  s_b4d4a7c7a80ee3::t_7ee3b134e4529e 5920,6168,6183
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "dd4852c6974d5365140474fd7d4ed52b250bd045",
+  "prompts": {},
+  "sessions": {
+    "s_b4d4a7c7a80ee3": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e15302bc6ffeeevu8JM3MfvFlY",
+        "model": "nvidia/nemotron-3-ultra-550b-a55b"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    },
+    "s_fc4968d509c3df": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e152e6bc4ffejPRtPDKqejzaSv",
+        "model": "combo/best-free"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}
