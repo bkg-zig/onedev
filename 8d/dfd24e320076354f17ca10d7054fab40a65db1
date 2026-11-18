@@ -1,0 +1,46 @@
+crates/onedev-server/src/state.rs
+  s_b4d4a7c7a80ee3::t_689e04da14923d 106,110,230,298
+  s_b4d4a7c7a80ee3::t_581c0c16350a00 77,81,221
+  s_b4d4a7c7a80ee3::t_016dd90e1b418f 135,139,239,311
+  s_b4d4a7c7a80ee3::t_9f8f11c26deac2 27,31,203,260
+  s_b4d4a7c7a80ee3::t_509f1175965208 271
+  s_b4d4a7c7a80ee3::t_b91732a36faf8f 56,60,212
+  s_b4d4a7c7a80ee3::t_0f31e0030b0be3 285
+crates/onedev-server/src/lib.rs
+  s_0de1f439e1761a::t_570c66ca734fd8 216
+  s_b4d4a7c7a80ee3::t_4361936cc84264 151,153-154,156-161
+crates/onedev-server/src/services/git_gc.rs
+  s_b4d4a7c7a80ee3::t_4019e74360e219 242,247
+crates/onedev-build/src/services/mod.rs
+  s_0de1f439e1761a::t_577cda3f983bd6 12
+  s_0de1f439e1761a::t_3ec7fc0f9518ca 10
+  s_b4d4a7c7a80ee3::t_526c9b550dd5d7 11
+crates/onedev-build/Cargo.toml
+  s_b4d4a7c7a80ee3::t_858a817d5ab167 15
+Cargo.lock
+  s_b4d4a7c7a80ee3::t_522e5dfe1f48a2 5901
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "8ddfd24e320076354f17ca10d7054fab40a65db1",
+  "prompts": {},
+  "sessions": {
+    "s_0de1f439e1761a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0f2f81bd-eb11-4834-95c4-07542b095264",
+        "model": "poolside/laguna-xs-2.1"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    },
+    "s_b4d4a7c7a80ee3": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e15302bc6ffeeevu8JM3MfvFlY",
+        "model": "nvidia/nemotron-3-ultra-550b-a55b"
+      },
+      "human_author": "bkg <bkg@skill.eysho.info>"
+    }
+  }
+}
