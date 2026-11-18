@@ -3,9 +3,15 @@
 ## Voraussetzungen
 
 - Docker-Daemon läuft.
-- Secrets liegen unter `/srv/bkg/admin-state/db.env` (DB-Passwort);
-  `docker/secrets/` enthält `private_key.pem`, `public_key.pem`,
-  `webhook_secret.txt`, `db_url.txt` (Beispiele anpassen).
+- DB-Passwort unter `/srv/bkg/admin-state/db.env`.
+- Secrets in `docker/secrets/` (gitignored, pro Maschine erzeugen):
+  ```bash
+  openssl genrsa -out docker/secrets/private_key.pem 2048
+  openssl rsa -in docker/secrets/private_key.pem -pubout -out docker/secrets/public_key.pem
+  chmod 600 docker/secrets/private_key.pem
+  openssl rand -hex 32 > docker/secrets/webhook_secret.txt
+  printf 'postgres://postgres:<PW>@db:5432/onedev' > docker/secrets/db_url.txt
+  ```
 
 ## Starten
 
@@ -31,6 +37,23 @@ docker compose --project-directory . -f docker/compose.yml up -d --build db core
 
 Ports stehen in `docker/ports.env`
 (`BKG_CORE_PORT`, `BKG_WEB_PORT`, `BKG_GATEWAY_PORT`, `BKG_DB_PORT`).
+
+## Temp-DB für Tests (berührt die echte DB nicht)
+
+```bash
+scripts/temp-db.sh start   # pgrust auf Port 55432, URL wird ausgegeben
+scripts/temp-db.sh psql    # psql-Shell
+scripts/temp-db.sh stop    # Container + Daten verwerfen
+```
+
+Web-UI gegen die Temp-DB testen:
+
+```bash
+ONEDEV_WEB_DATABASE_URL=$(scripts/temp-db.sh url) ./target/debug/onedev-web
+```
+
+Skripte: `scripts/docker-build.sh` (bauen/starten, Standard: `db core web`),
+`scripts/temp-db.sh` (`start|stop|url|psql`).
 
 ## Web-UI prüfen
 

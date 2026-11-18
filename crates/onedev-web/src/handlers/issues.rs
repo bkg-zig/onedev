@@ -143,13 +143,60 @@ pub struct UpdateIssueForm {
     pub confidential: bool,
 }
 
-/// Get issues list
+/// Live issue list from the database when configured, otherwise the dev
+/// placeholder rows. `search` is a plain substring filter for now; the
+/// full vanilla query language is a later slice (see report 04).
 async fn get_issues(
-    _state: &WebState,
-    _project_id: &str,
-    _params: &IssueListParams,
+    state: &WebState,
+    project_id: &str,
+    params: &IssueListParams,
 ) -> Vec<serde_json::Value> {
-    vec![
+    let needle = params.search.as_deref().unwrap_or("").to_lowercase();
+    let matches = |title: &str, description: Option<&str>| {
+        needle.is_empty()
+            || title.to_lowercase().contains(&needle)
+            || description.unwrap_or("").to_lowercase().contains(&needle)
+    };
+    if let (Some(pool), Ok(pid)) = (&state.db_pool, project_id.parse::<i64>()) {
+        let issues = onedev_api::services::IssueService::new(pool.clone());
+        let users = onedev_api::services::UserService::new(pool.clone());
+        let per_page = params.per_page.unwrap_or(25).min(100).max(1) as i64;
+        let page = params.page.unwrap_or(0) as i64;
+        if let Ok(rows) = issues.list(pid, per_page, page * per_page).await {
+            let mut out = Vec::new();
+            for row in rows {
+                if !matches(&row.title, row.description.as_deref()) {
+                    continue;
+                }
+                let author_name = users
+                    .get(row.submitter_id)
+                    .await
+                    .map(|user| user.name)
+                    .unwrap_or_default();
+                let assignee_name = match row.assignee_id {
+                    Some(id) => users.get(id).await.map(|user| user.name).unwrap_or_default(),
+                    None => String::new(),
+                };
+                out.push(serde_json::json!({
+                    "id": row.id,
+                    "number": row.number,
+                    "title": row.title,
+                    "description": row.description,
+                    "state": format!("{:?}", row.state).to_lowercase(),
+                    "author": { "username": author_name, "full_name": null, "avatar_url": null },
+                    "assignee": if assignee_name.is_empty() { serde_json::Value::Null } else { serde_json::json!({ "username": assignee_name, "full_name": null, "avatar_url": null }) },
+                    "labels": [],
+                    "milestone": null,
+                    "created_at": row.created_at,
+                    "updated_at": row.updated_at,
+                    "comments_count": 0,
+                    "confidential": false
+                }));
+            }
+            return out;
+        }
+    }
+    [
         serde_json::json!({
             "id": 1,
             "number": 42,
@@ -187,6 +234,14 @@ async fn get_issues(
             "confidential": false
         }),
     ]
+    .into_iter()
+    .filter(|item| {
+        matches(
+            item.get("title").and_then(|v| v.as_str()).unwrap_or(""),
+            item.get("description").and_then(|v| v.as_str()),
+        )
+    })
+    .collect()
 }
 
 /// Get single issue

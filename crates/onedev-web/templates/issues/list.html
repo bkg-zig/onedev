@@ -1,7 +1,64 @@
 {% extends "base.html" %}
-{% block title %}Issues · OneDev{% endblock title %}
-{% block page_title %}Issues{% endblock page_title %}
+{# 1:1 port of ProjectIssueListPage + IssueListPanel.html: side-main     #}
+{# layout, saved-queries side card, query toolbar with operations row,  #}
+{# and per-issue primary/secondary rows; wicket:svg becomes text,      #}
+{# AJAX becomes htmx.                                                   #}
+{% block title %}{{ title }} · OneDev{% endblock title %}
+{% block page_title %}{{ title }}{% endblock page_title %}
+{% block head %}
+<link rel="stylesheet" href="/static/vanilla/web/component/issue/list/issue-list.css">
+<link rel="stylesheet" href="/static/vanilla/web/page/project/issues/list/project-issue-list.css">
+{% endblock head %}
 {% block content %}
-<div class="p-2 p-sm-5"><div class="side-main"><div class="side card"><a href="/projects/{{ project_id | default(value='') }}/issues/new">New Issue</a></div>
-<div class="main"><h1>{{ title | default(value='Issues') }}</h1><ul>{% for issue in issues | default(value=[]) %}<li><a href="/projects/{{ project_id | default(value='') }}/issues/{{ issue.id }}">{{ issue.title }}</a></li>{% else %}<li>No issues.</li>{% endfor %}</ul></div></div></div>
+<div class="side-main p-2 p-sm-5">
+  <div class="side card"></div>
+  <div class="main">
+    <div class="issue-list card no-autofocus">
+      <div class="card-body">
+        <div class="d-flex mb-4">
+          <form class="clearable-wrapper flex-grow-1" hx-get="/projects/{{ project_id }}/issues" hx-target=".issue-rows" hx-swap="outerHTML" hx-trigger="submit">
+            <div class="input-group">
+              <input name="search" spellcheck="false" autocomplete="off" class="form-control" placeholder="Query/order issues" value="{{ params.search | default(value='') }}">
+              <span class="input-group-append">
+                <button type="submit" title="Query" class="btn btn-outline-secondary btn-icon">&#x1f50d;</button>
+              </span>
+            </div>
+          </form>
+          <a href="/projects/{{ project_id }}/issues/new" title="Create new issue" class="add-new btn btn-primary btn-icon flex-shrink-0 ml-3">+</a>
+        </div>
+        <div class="mb-5">
+          <a href="#" class="filter text-gray d-inline-block mb-2 mr-4">Filters</a>
+          <a href="#" class="order-by text-gray d-inline-block mb-2 mr-4">Order By</a>
+          <a href="#" class="operations text-gray mr-4 mb-2 d-inline-block text-nowrap">Operations</a>
+        </div>
+        <div class="body issue-rows">
+          {% for issue in issues %}
+          <div class="issue-item">
+            <div class="primary d-flex mb-3">
+              <div class="mr-4 flex-grow-1 row-gap-2">
+                <span class="mr-2"><a href="/projects/{{ project_id }}/issues/{{ issue.id }}">#{{ issue.number }} {{ issue.title }}</a></span>
+              </div>
+              <div class="flex-shrink-0 d-none d-lg-block text-muted">
+                <span class="comments">&#x1f4ac; {{ issue.comments_count }}</span>
+              </div>
+            </div>
+            <div class="secondary d-flex flex-wrap">
+              <div class="flex-grow-1 d-flex flex-wrap align-items-baseline">
+                <div class="field mr-1 mr-last-child-0">{{ issue.state }}</div>
+              </div>
+              <div class="last-update d-none d-lg-block text-muted font-size-sm">
+                <span class="link-gray">{{ issue.author.username }}</span>
+                <span>{{ issue.updated_at }}</span>
+              </div>
+            </div>
+          </div>
+          {% else %}
+          <p class="text-muted">No issues found.</p>
+          {% endfor %}
+          <div class="form-text text-muted mt-4">By default issues of parent and child projects will also be listed. Use query <code>"Project" is current</code> to show issues only belong to this project</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock content %}
